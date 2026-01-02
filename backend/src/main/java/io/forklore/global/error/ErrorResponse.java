@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ErrorResponse {
 
     private String message;
@@ -40,9 +40,9 @@ public class ErrorResponse {
     public static ErrorResponse of(final ErrorCode code) {
         return new ErrorResponse(code);
     }
-    
-    public static ErrorResponse of(final ErrorCode code, final List<FieldError> errors) {
-        return new ErrorResponse(code, errors);
+
+    public static ErrorResponse of(final List<FieldError> errors) {
+        return new ErrorResponse(CommonErrorCode.INVALID_INPUT_VALUE, errors);
     }
 
     public static ErrorResponse of(MethodArgumentTypeMismatchException e) {
@@ -52,7 +52,7 @@ public class ErrorResponse {
     }
 
     @Getter
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class FieldError {
         private String field;
         private String value;

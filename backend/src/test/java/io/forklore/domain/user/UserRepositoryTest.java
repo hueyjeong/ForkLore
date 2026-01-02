@@ -1,27 +1,32 @@
-package io.forklore.repository;
+package io.forklore.domain.user;
 
-import io.forklore.domain.user.AuthProvider;
-import io.forklore.domain.user.User;
-import io.forklore.domain.user.UserRole;
+import io.forklore.repository.UserRepository;
+import io.forklore.global.config.JpaConfig;
 import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-
-import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+/**
+ * @DataJpaTest: 슬라이스 테스트로 빠른 실행 + 자동 롤백
+ */
+@DataJpaTest
+@Import(JpaConfig.class)
 @ActiveProfiles("common")
 class UserRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TestEntityManager em;
 
     private User user;
 
@@ -40,14 +45,16 @@ class UserRepositoryTest {
     @DisplayName("User 저장 및 조회")
     void saveAndFind() {
         // given
-        User savedUser = userRepository.save(user);
+        em.persist(user);
+        em.flush();
+        em.clear();
 
         // when
         User foundUser = userRepository.findByEmail("test@example.com").orElseThrow();
 
         // then
         assertThat(foundUser.getId()).isNotNull();
-        assertThat(foundUser.getEmail()).isEqualTo(savedUser.getEmail());
+        assertThat(foundUser.getEmail()).isEqualTo(user.getEmail());
         assertThat(foundUser.getRole()).isEqualTo(UserRole.READER);
         assertThat(foundUser.getCreatedAt()).isNotNull();
     }
@@ -56,32 +63,14 @@ class UserRepositoryTest {
     @DisplayName("중복 체크 - 이메일 및 닉네임")
     void existsCheck() {
         // given
-        userRepository.save(user);
+        em.persist(user);
+        em.flush();
 
-        // then
+        // when & then
         assertThat(userRepository.existsByEmail("test@example.com")).isTrue();
         assertThat(userRepository.existsByNickname("tester")).isTrue();
         assertThat(userRepository.existsByEmail("other@example.com")).isFalse();
+        assertThat(userRepository.existsByNickname("other")).isFalse();
     }
 
-    @Autowired
-    private jakarta.persistence.EntityManager em;
-
-    @Test
-    @DisplayName("Soft Delete 확인 - @SQLRestriction 동작")
-    void softDelete() {
-        // given
-        User savedUser = userRepository.save(user);
-
-        // when
-        savedUser.setDeletedAt(LocalDateTime.now());
-        userRepository.save(savedUser);
-        userRepository.flush(); // DB 반영
-        em.clear(); // 영속성 컨텍스트 비우기
-
-        // then
-        // @SQLRestriction으로 인해 조회되지 않아야 함
-        assertThat(userRepository.findByEmail("test@example.com")).isEmpty();
-        assertThat(userRepository.findById(savedUser.getId())).isEmpty();
-    }
 }

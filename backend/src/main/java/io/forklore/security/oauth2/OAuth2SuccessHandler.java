@@ -2,7 +2,6 @@ package io.forklore.security.oauth2;
 
 import io.forklore.domain.refresh.RefreshToken;
 import io.forklore.domain.user.User;
-import io.forklore.repository.UserRepository;
 import io.forklore.repository.refresh.RefreshTokenRepository;
 import io.forklore.security.UserPrincipal;
 import io.forklore.security.jwt.JwtProperties;
@@ -33,7 +32,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private static final String REDIRECT_URI = "http://localhost:3000/oauth2/redirect";
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException, ServletException {
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         User user = principal.getUser();
 

@@ -8,6 +8,7 @@ public class KakaoOAuth2UserInfo implements OAuth2UserInfo {
     private Map<String, Object> attributesAccount;
     private Map<String, Object> attributesProfile;
 
+    @SuppressWarnings("unchecked")
     public KakaoOAuth2UserInfo(Map<String, Object> attributes) {
         this.attributes = attributes;
         this.attributesAccount = (Map<String, Object>) attributes.get("kakao_account");

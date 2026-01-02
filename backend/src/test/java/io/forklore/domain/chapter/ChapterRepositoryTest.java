@@ -1,33 +1,34 @@
 package io.forklore.domain.chapter;
 
 import io.forklore.domain.branch.Branch;
-import io.forklore.domain.branch.BranchRepository;
 import io.forklore.domain.branch.BranchType;
 import io.forklore.domain.branch.BranchVisibility;
 import io.forklore.domain.novel.AgeRating;
 import io.forklore.domain.novel.Genre;
 import io.forklore.domain.novel.Novel;
-import io.forklore.domain.novel.NovelRepository;
 import io.forklore.domain.user.AuthProvider;
 import io.forklore.domain.user.User;
 import io.forklore.domain.user.UserRole;
-import io.forklore.repository.UserRepository;
-import jakarta.persistence.EntityManager;
+import io.forklore.global.config.JpaConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+/**
+ * @DataJpaTest: 슬라이스 테스트로 빠른 실행 + 자동 롤백
+ */
+@DataJpaTest
+@Import(JpaConfig.class)
 @ActiveProfiles("common")
 class ChapterRepositoryTest {
 
@@ -35,16 +36,7 @@ class ChapterRepositoryTest {
     private ChapterRepository chapterRepository;
 
     @Autowired
-    private BranchRepository branchRepository;
-
-    @Autowired
-    private NovelRepository novelRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private EntityManager em;
+    private TestEntityManager em;
 
     private User author;
     private Novel novel;
@@ -59,7 +51,7 @@ class ChapterRepositoryTest {
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
-        userRepository.save(author);
+        em.persist(author);
 
         novel = Novel.builder()
                 .author(author)
@@ -68,7 +60,7 @@ class ChapterRepositoryTest {
                 .ageRating(AgeRating.ALL)
                 .allowBranching(true)
                 .build();
-        novelRepository.save(novel);
+        em.persist(novel);
 
         branch = Branch.builder()
                 .novel(novel)
@@ -78,7 +70,7 @@ class ChapterRepositoryTest {
                 .branchType(BranchType.MAIN)
                 .visibility(BranchVisibility.PUBLIC)
                 .build();
-        branchRepository.save(branch);
+        em.persist(branch);
     }
 
     @Test
@@ -86,7 +78,6 @@ class ChapterRepositoryTest {
     void createAndFind() {
         // given
         Chapter chapter = createChapter("1화. 시작", 1);
-        chapterRepository.save(chapter);
         em.flush();
         em.clear();
 
@@ -127,7 +118,7 @@ class ChapterRepositoryTest {
         ch1.publish();
         Chapter ch2 = createChapter("2화", 2);
         ch2.publish();
-        Chapter ch3 = createChapter("3화 (초안)", 3);
+        createChapter("3화 (초안)", 3);
         em.flush();
         em.clear();
 
@@ -163,11 +154,9 @@ class ChapterRepositoryTest {
         // given
         Chapter scheduled = createChapter("예약 회차", 1);
         scheduled.schedule(LocalDateTime.now().minusMinutes(5)); // 5분 전 예약
-        chapterRepository.save(scheduled);
 
         Chapter futureScheduled = createChapter("미래 예약", 2);
         futureScheduled.schedule(LocalDateTime.now().plusHours(1)); // 1시간 후 예약
-        chapterRepository.save(futureScheduled);
         em.flush();
         em.clear();
 
@@ -190,6 +179,7 @@ class ChapterRepositoryTest {
                 .accessType(AccessType.FREE)
                 .price(0)
                 .build();
-        return chapterRepository.save(chapter);
+        em.persist(chapter);
+        return chapter;
     }
 }

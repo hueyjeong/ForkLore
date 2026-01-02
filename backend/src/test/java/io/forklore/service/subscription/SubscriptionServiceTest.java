@@ -9,37 +9,34 @@ import io.forklore.domain.user.User;
 import io.forklore.domain.user.UserRole;
 import io.forklore.dto.response.SubscriptionResponse;
 import io.forklore.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
-@SpringBootTest
-@Transactional
-@ActiveProfiles("common")
+@ExtendWith(MockitoExtension.class)
 class SubscriptionServiceTest {
 
-    @Autowired
+    @InjectMocks
     private SubscriptionService subscriptionService;
 
-    @Autowired
+    @Mock
     private SubscriptionRepository subscriptionRepository;
 
-    @Autowired
+    @Mock
     private UserRepository userRepository;
-
-    @Autowired
-    private EntityManager em;
 
     private User user;
 
@@ -52,12 +49,21 @@ class SubscriptionServiceTest {
                 .role(UserRole.READER)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
-        userRepository.save(user);
+        ReflectionTestUtils.setField(user, "id", 1L);
     }
 
     @Test
     @DisplayName("월간 구독 생성")
     void subscribeMonthly() {
+        // given
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(subscriptionRepository.existsActiveByUserId(any(), any())).willReturn(false);
+        given(subscriptionRepository.save(any(Subscription.class))).willAnswer(invocation -> {
+            Subscription s = invocation.getArgument(0);
+            ReflectionTestUtils.setField(s, "id", 100L);
+            return s;
+        });
+
         // when
         SubscriptionResponse response = subscriptionService.subscribe(
                 user.getId(), PlanType.MONTHLY, true);
@@ -72,6 +78,15 @@ class SubscriptionServiceTest {
     @Test
     @DisplayName("연간 구독 생성")
     void subscribeYearly() {
+        // given
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(subscriptionRepository.existsActiveByUserId(any(), any())).willReturn(false);
+        given(subscriptionRepository.save(any(Subscription.class))).willAnswer(invocation -> {
+            Subscription s = invocation.getArgument(0);
+            ReflectionTestUtils.setField(s, "id", 101L);
+            return s;
+        });
+
         // when
         SubscriptionResponse response = subscriptionService.subscribe(
                 user.getId(), PlanType.YEARLY, false);
@@ -85,7 +100,8 @@ class SubscriptionServiceTest {
     @DisplayName("중복 구독 방지")
     void preventDuplicateSubscription() {
         // given
-        subscriptionService.subscribe(user.getId(), PlanType.MONTHLY, true);
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(subscriptionRepository.existsActiveByUserId(any(), any())).willReturn(true);
 
         // when & then
         assertThatThrownBy(() -> subscriptionService.subscribe(user.getId(), PlanType.MONTHLY, true))
@@ -97,9 +113,12 @@ class SubscriptionServiceTest {
     @DisplayName("구독 취소")
     void cancel() {
         // given
-        subscriptionService.subscribe(user.getId(), PlanType.MONTHLY, true);
-        em.flush();
-        em.clear();
+        Subscription subscription = Subscription.builder()
+                .user(user)
+                .planType(PlanType.MONTHLY)
+                .autoRenew(true)
+                .build();
+        given(subscriptionRepository.findActiveByUserId(1L)).willReturn(Optional.of(subscription));
 
         // when
         SubscriptionResponse response = subscriptionService.cancel(user.getId());
@@ -113,9 +132,12 @@ class SubscriptionServiceTest {
     @DisplayName("요금제 변경")
     void changePlan() {
         // given
-        subscriptionService.subscribe(user.getId(), PlanType.MONTHLY, true);
-        em.flush();
-        em.clear();
+        Subscription subscription = Subscription.builder()
+                .user(user)
+                .planType(PlanType.MONTHLY)
+                .autoRenew(true)
+                .build();
+        given(subscriptionRepository.findActiveByUserId(1L)).willReturn(Optional.of(subscription));
 
         // when
         SubscriptionResponse response = subscriptionService.changePlan(user.getId(), PlanType.YEARLY);
@@ -128,9 +150,12 @@ class SubscriptionServiceTest {
     @DisplayName("구독 상태 조회")
     void getStatus() {
         // given
-        subscriptionService.subscribe(user.getId(), PlanType.MONTHLY, true);
-        em.flush();
-        em.clear();
+        Subscription subscription = Subscription.builder()
+                .user(user)
+                .planType(PlanType.MONTHLY)
+                .autoRenew(true)
+                .build();
+        given(subscriptionRepository.findActiveByUserId(1L)).willReturn(Optional.of(subscription));
 
         // when
         Optional<SubscriptionResponse> status = subscriptionService.getStatus(user.getId());
@@ -145,10 +170,11 @@ class SubscriptionServiceTest {
     @DisplayName("활성 구독 여부 확인")
     void hasActiveSubscription() {
         // initially no subscription
+        given(subscriptionRepository.existsActiveByUserId(any(), any())).willReturn(false);
         assertThat(subscriptionService.hasActiveSubscription(user.getId())).isFalse();
 
         // after subscribing
-        subscriptionService.subscribe(user.getId(), PlanType.MONTHLY, true);
+        given(subscriptionRepository.existsActiveByUserId(any(), any())).willReturn(true);
         assertThat(subscriptionService.hasActiveSubscription(user.getId())).isTrue();
     }
 }

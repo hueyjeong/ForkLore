@@ -1,10 +1,10 @@
 package io.forklore.global.config;
 
 import io.forklore.security.jwt.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -43,13 +43,23 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/novels", "/novels/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/branches", "/branches/**")
+                        .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**")
                         .permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/chapters", "/chapters/**")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/novels", "/api/novels/**")
+                        .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/branches", "/api/branches/**")
+                        .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/chapters", "/api/chapters/**")
                         .permitAll()
                         .anyRequest().authenticated())
+                // REST API에서 인증 실패 시 401 응답
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.setCharacterEncoding("UTF-8");
+                            response.getWriter().write("{\"error\":\"인증이 필요합니다.\"}");
+                        }))
                 // H2 Console을 위한 Frame Options 설정
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .oauth2Login(oauth2 -> oauth2

@@ -7,7 +7,6 @@ import io.forklore.dto.request.LoginRequest;
 import io.forklore.dto.request.SignUpRequest;
 import io.forklore.dto.response.TokenResponse;
 import io.forklore.global.error.BusinessException;
-import io.forklore.global.error.CommonErrorCode;
 import io.forklore.repository.UserRepository;
 import io.forklore.repository.refresh.RefreshTokenRepository;
 import io.forklore.security.jwt.JwtTokenProvider;
@@ -21,7 +20,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -109,7 +107,7 @@ class AuthServiceTest {
         given(jwtTokenProvider.createRefreshToken(any())).willReturn("refresh");
         given(jwtProperties.getRefreshTokenExpiration()).willReturn(604800000L);
         given(jwtProperties.getAccessTokenExpiration()).willReturn(3600000L);
-        
+
         // when
         TokenResponse response = authService.login(request);
 

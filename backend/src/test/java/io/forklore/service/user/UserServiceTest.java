@@ -17,12 +17,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -48,7 +46,7 @@ class UserServiceTest {
                 .role(UserRole.READER)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
-        
+
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
 
         // when
@@ -88,9 +86,9 @@ class UserServiceTest {
                 .password("encodedOldPw")
                 .build();
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        
+
         UpdatePasswordRequest request = new UpdatePasswordRequest("oldPw", "newPw");
-        
+
         given(passwordEncoder.matches("oldPw", "encodedOldPw")).willReturn(true);
         given(passwordEncoder.encode("newPw")).willReturn("encodedNewPw");
 
@@ -101,7 +99,7 @@ class UserServiceTest {
         assertThat(user.getPassword()).isEqualTo("encodedNewPw");
         verify(passwordEncoder).encode("newPw");
     }
-    
+
     @Test
     @DisplayName("비밀번호 변경 실패 - 현재 비밀번호 불일치")
     void updatePassword_fail_wrongCurrentPassword() {
@@ -113,7 +111,7 @@ class UserServiceTest {
         given(userRepository.findById(1L)).willReturn(Optional.of(user)); // Mocking 추가
 
         UpdatePasswordRequest request = new UpdatePasswordRequest("wrongPw", "newPw");
-        
+
         given(passwordEncoder.matches("wrongPw", "encodedOldPw")).willReturn(false);
 
         // when & then

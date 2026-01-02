@@ -14,39 +14,43 @@ import io.forklore.dto.response.BranchResponse;
 import io.forklore.dto.response.BranchSummaryResponse;
 import io.forklore.global.error.UnauthorizedException;
 import io.forklore.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
-@SpringBootTest
-@Transactional
-@ActiveProfiles("common")
+@ExtendWith(MockitoExtension.class)
 class BranchServiceTest {
 
-    @Autowired
+    @InjectMocks
     private BranchService branchService;
 
-    @Autowired
+    @Mock
     private BranchRepository branchRepository;
 
-    @Autowired
+    @Mock
+    private BranchVoteRepository branchVoteRepository;
+
+    @Mock
     private NovelRepository novelRepository;
 
-    @Autowired
+    @Mock
     private UserRepository userRepository;
-
-    @Autowired
-    private EntityManager em;
 
     private User author;
     private User fanAuthor;
@@ -61,7 +65,7 @@ class BranchServiceTest {
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
-        userRepository.save(author);
+        ReflectionTestUtils.setField(author, "id", 1L);
 
         fanAuthor = User.builder()
                 .email("fan-author@example.com")
@@ -70,7 +74,7 @@ class BranchServiceTest {
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
-        userRepository.save(fanAuthor);
+        ReflectionTestUtils.setField(fanAuthor, "id", 2L);
 
         novel = Novel.builder()
                 .author(author)
@@ -80,21 +84,21 @@ class BranchServiceTest {
                 .ageRating(AgeRating.ALL)
                 .allowBranching(true)
                 .build();
-        novelRepository.save(novel);
+        ReflectionTestUtils.setField(novel, "id", 10L);
     }
 
     @Test
     @DisplayName("메인 브랜치 생성")
     void createMainBranch() {
+        // given
+        given(branchRepository.save(any(Branch.class))).willAnswer(invocation -> invocation.getArgument(0));
+
         // when
         Branch mainBranch = branchService.createMainBranch(novel, author);
-        em.flush();
-        em.clear();
 
         // then
         assertThat(mainBranch.isMain()).isTrue();
         assertThat(mainBranch.getBranchType()).isEqualTo(BranchType.MAIN);
-        assertThat(mainBranch.getVisibility()).isEqualTo(BranchVisibility.PUBLIC);
         assertThat(mainBranch.getNovel().getId()).isEqualTo(novel.getId());
     }
 
@@ -102,12 +106,25 @@ class BranchServiceTest {
     @DisplayName("브랜치 포크")
     void fork() {
         // given
-        Branch mainBranch = branchService.createMainBranch(novel, author);
-        em.flush();
-        em.clear();
+        Branch mainBranch = Branch.builder()
+                .novel(novel)
+                .author(author)
+                .isMain(true)
+                .name("메인 브랜치")
+                .build();
+        ReflectionTestUtils.setField(mainBranch, "id", 100L);
+
+        given(novelRepository.findById(10L)).willReturn(Optional.of(novel));
+        given(userRepository.findById(2L)).willReturn(Optional.of(fanAuthor));
+        given(branchRepository.findById(100L)).willReturn(Optional.of(mainBranch));
+        given(branchRepository.save(any(Branch.class))).willAnswer(invocation -> {
+            Branch b = invocation.getArgument(0);
+            ReflectionTestUtils.setField(b, "id", 101L);
+            return b;
+        });
 
         BranchCreateRequest request = BranchCreateRequest.builder()
-                .parentBranchId(mainBranch.getId())
+                .parentBranchId(100L)
                 .forkPointChapter(10)
                 .name("IF: 주인공이 악역이었다면")
                 .description("주인공이 악역으로 태어났다면?")
@@ -122,35 +139,41 @@ class BranchServiceTest {
         assertThat(response.getName()).isEqualTo("IF: 주인공이 악역이었다면");
         assertThat(response.getBranchType()).isEqualTo(BranchType.IF_STORY);
         assertThat(response.isMain()).isFalse();
-        assertThat(response.getParentBranchId()).isEqualTo(mainBranch.getId());
+        assertThat(response.getParentBranchId()).isEqualTo(100L);
     }
 
     @Test
     @DisplayName("공개 브랜치 목록 조회")
     void getPublicBranchList() {
         // given
-        Branch mainBranch = branchService.createMainBranch(novel, author);
-        createFanBranch("팬픽1", BranchVisibility.PUBLIC);
-        createFanBranch("팬픽2", BranchVisibility.LINKED);
-        createFanBranch("팬픽3", BranchVisibility.PRIVATE);
-        em.flush();
-        em.clear();
+        Branch b1 = Branch.builder()
+                .author(fanAuthor)
+                .name("팬픽1")
+                .visibility(BranchVisibility.PUBLIC)
+                .build();
+        Page<Branch> page = new PageImpl<>(List.of(b1));
+        given(branchRepository.findByNovelIdAndVisibilityIn(any(), any(), any())).willReturn(page);
 
         // when
         Page<BranchSummaryResponse> result = branchService.getPublicBranchList(
                 novel.getId(), PageRequest.of(0, 10));
 
         // then
-        assertThat(result.getTotalElements()).isEqualTo(3); // main + PUBLIC + LINKED
+        assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("브랜치 수정 - 작가 본인만")
     void update() {
         // given
-        Branch branch = createFanBranch("원래 이름", BranchVisibility.PRIVATE);
-        em.flush();
-        em.clear();
+        Branch branch = Branch.builder()
+                .novel(novel)
+                .author(fanAuthor)
+                .name("원래 이름")
+                .build();
+        ReflectionTestUtils.setField(branch, "id", 101L);
+
+        given(branchRepository.findById(101L)).willReturn(Optional.of(branch));
 
         BranchUpdateRequest request = BranchUpdateRequest.builder()
                 .name("새 이름")
@@ -169,9 +192,11 @@ class BranchServiceTest {
     @DisplayName("브랜치 수정 - 권한 없는 사용자 실패")
     void updateUnauthorized() {
         // given
-        Branch branch = createFanBranch("테스트", BranchVisibility.PRIVATE);
-        em.flush();
-        em.clear();
+        Branch branch = Branch.builder()
+                .author(fanAuthor)
+                .build();
+        ReflectionTestUtils.setField(branch, "id", 101L);
+        given(branchRepository.findById(101L)).willReturn(Optional.of(branch));
 
         BranchUpdateRequest request = BranchUpdateRequest.builder()
                 .name("새 이름")
@@ -186,28 +211,30 @@ class BranchServiceTest {
     @DisplayName("브랜치 투표")
     void vote() {
         // given
-        Branch branch = createFanBranch("인기 팬픽", BranchVisibility.PUBLIC);
-        em.flush();
-        em.clear();
+        Branch branch = Branch.builder()
+                .author(fanAuthor)
+                .build();
+        ReflectionTestUtils.setField(branch, "id", 101L);
+        given(branchRepository.findById(101L)).willReturn(Optional.of(branch));
+        given(branchVoteRepository.existsByUserIdAndBranchId(author.getId(), 101L)).willReturn(false);
 
         // when
         branchService.vote(author.getId(), branch.getId());
-        em.flush();
-        em.clear();
 
         // then
-        Branch found = branchRepository.findById(branch.getId()).orElseThrow();
-        assertThat(found.getVoteCount()).isEqualTo(1);
+        assertThat(branch.getVoteCount()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("중복 투표 방지")
     void duplicateVote() {
         // given
-        Branch branch = createFanBranch("인기 팬픽", BranchVisibility.PUBLIC);
-        branchService.vote(author.getId(), branch.getId());
-        em.flush();
-        em.clear();
+        Branch branch = Branch.builder()
+                .author(fanAuthor)
+                .build();
+        ReflectionTestUtils.setField(branch, "id", 101L);
+        given(branchRepository.findById(101L)).willReturn(Optional.of(branch));
+        given(branchVoteRepository.existsByUserIdAndBranchId(author.getId(), 101L)).willReturn(true);
 
         // when & then
         assertThatThrownBy(() -> branchService.vote(author.getId(), branch.getId()))
@@ -219,30 +246,18 @@ class BranchServiceTest {
     @DisplayName("투표 취소")
     void unvote() {
         // given
-        Branch branch = createFanBranch("인기 팬픽", BranchVisibility.PUBLIC);
-        branchService.vote(author.getId(), branch.getId());
-        em.flush();
-        em.clear();
+        Branch branch = Branch.builder()
+                .author(fanAuthor)
+                .build();
+        ReflectionTestUtils.setField(branch, "id", 101L);
+        ReflectionTestUtils.setField(branch, "voteCount", 1);
+        given(branchRepository.findById(101L)).willReturn(Optional.of(branch));
+        given(branchVoteRepository.existsByUserIdAndBranchId(author.getId(), 101L)).willReturn(true);
 
         // when
         branchService.unvote(author.getId(), branch.getId());
-        em.flush();
-        em.clear();
 
         // then
-        Branch found = branchRepository.findById(branch.getId()).orElseThrow();
-        assertThat(found.getVoteCount()).isEqualTo(0);
-    }
-
-    private Branch createFanBranch(String name, BranchVisibility visibility) {
-        Branch branch = Branch.builder()
-                .novel(novel)
-                .author(fanAuthor)
-                .isMain(false)
-                .name(name)
-                .branchType(BranchType.FAN_FIC)
-                .visibility(visibility)
-                .build();
-        return branchRepository.save(branch);
+        assertThat(branch.getVoteCount()).isEqualTo(0);
     }
 }

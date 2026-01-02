@@ -42,10 +42,14 @@ class NovelRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        // 테스트 격리: 매 테스트 전 데이터 정리
+        novelRepository.deleteAll();
+        userRepository.deleteAll();
+
         author = User.builder()
-                .email("novel-repo-author@example.com")
+                .email("author@example.com")
                 .password("password")
-                .nickname("소설저장소작가")
+                .nickname("작가")
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
@@ -74,7 +78,7 @@ class NovelRepositoryTest {
         Novel found = novelRepository.findById(saved.getId()).orElseThrow();
         assertThat(found.getTitle()).isEqualTo("테스트 소설");
         assertThat(found.getGenre()).isEqualTo(Genre.FANTASY);
-        assertThat(found.getAuthor().getNickname()).isEqualTo("소설저장소작가");
+        assertThat(found.getAuthor().getNickname()).isEqualTo("작가");
     }
 
     @Test

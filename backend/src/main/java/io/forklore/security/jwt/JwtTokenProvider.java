@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -25,6 +26,7 @@ import java.util.List;
 public class JwtTokenProvider {
 
     private final JwtProperties jwtProperties;
+    private final org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
     // HMAC256 알고리즘 사용
     private Algorithm getAlgorithm() {
@@ -64,14 +66,9 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         DecodedJWT decodedJWT = JWT.require(getAlgorithm()).build().verify(token);
         String email = decodedJWT.getSubject();
-        String role = decodedJWT.getClaim("role").asString();
-
-        // 역할이 없는 경우 기본값 처리 (Refresh Token 등)
-        List<SimpleGrantedAuthority> authorities = role != null 
-                ? Collections.singletonList(new SimpleGrantedAuthority(role)) 
-                : Collections.emptyList();
-
-        User principal = new User(email, "", authorities);
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+        
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        
+        return new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
     }
 }

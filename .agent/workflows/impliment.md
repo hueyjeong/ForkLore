@@ -6,6 +6,8 @@ description: 구현
 
 ## AI 에이전트 작업 절차 (Workflow)
 
+**@docs/development-guidelines.md 필독**
+
 @mcp:context7 사용, TDD 준수, @docs 설계 준수
 
 프로젝트 작업을 수행할 때 AI 에이전트는 반드시 다음 절차를 준수해야 합니다.

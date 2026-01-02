@@ -2,11 +2,10 @@
 
 ## 프로젝트 개요
 
-**ForkLore**는 Spring Boot 기반의 백엔드 애플리케이션입니다.
+**ForkLore**는 Spring Boot 기반의 인터랙티브 웹소설 플랫폼입니다.
 
 - **그룹**: `io.forklore`
 - **버전**: `0.0.1-SNAPSHOT`
-- **설명**: Spring Boot 데모 프로젝트
 
 ---
 
@@ -20,27 +19,64 @@
 
 ### 주요 의존성
 - **Spring Boot Starters**:
-  - `spring-boot-starter-web` (WebMVC 포함)
+  - `spring-boot-starter-web`
   - `spring-boot-starter-data-jpa`
   - `spring-boot-starter-security`
   - `spring-boot-starter-actuator`
   - `spring-boot-starter-validation`
-  - `spring-boot-devtools` (개발 환경)
   
 - **데이터베이스**:
-  - PostgreSQL (운영 환경)
-  - H2 Database (개발/테스트 환경)
-  - H2 Console 활성화
+  - PostgreSQL 18 (운영) + pgvector
+  - H2 Database (개발/테스트)
+  
+- **AI/임베딩**: Gemini API (text-embedding-001, 3072차원)
   
 - **유틸리티**:
-  - Lombok (코드 간소화)
-  - Springdoc OpenAPI 3.0.0 (Swagger UI)
+  - Lombok
+  - Springdoc OpenAPI 3.0.0
+
+### 프론트엔드 (Frontend)
+- **프레임워크**: Next.js 15
+- **스타일링**: Tailwind CSS + shadcn/ui (New York)
+- **색상 시스템**: OKLCH
+- **아이콘**: Lucide Icons
+- **폰트**: Geist Sans/Mono
 
 ### 인프라
-- **컨테이너**: Docker Compose (V2 문법 사용)
+- **컨테이너**: Docker Compose V2
 - **개발 환경**: Dev Container (VS Code)
 - **데이터베이스**: PostgreSQL 18
-- **베이스 이미지**: `mcr.microsoft.com/devcontainers/base:bookworm`
+
+---
+
+## 핵심 도메인 모델 (v4)
+
+```
+Novel (소설)
+  └── Branch (브랜치)
+        ├── is_main=true: 메인 스토리
+        ├── is_main=false: 외전/팬픽/IF
+        │
+        ├── Chapter (회차)
+        │     ├── content: 마크다운 원본
+        │     ├── content_html: 렌더링 캐시
+        │     └── access_type: FREE | SUBSCRIPTION
+        │
+        ├── WikiEntry (위키)
+        │     └── WikiSnapshot (회차별 스냅샷)
+        │
+        └── Map (지도)
+              └── MapSnapshot (회차별 스냅샷)
+```
+
+### 브랜치 시스템
+- **branch_type**: MAIN, SIDE_STORY, FAN_FIC, IF_STORY
+- **visibility**: PRIVATE, PUBLIC, LINKED (작가 승인 후 작품에 노출)
+- **canon_status**: NON_CANON, CANDIDATE, MERGED
+
+### 구독 시스템
+- **FREE**: 무료 열람
+- **SUBSCRIPTION**: 구독 중 or 소장 시 열람
 
 ---
 
@@ -49,174 +85,101 @@
 ```
 /workspaces/ForkLore/
 ├── .devcontainer/              # Dev Container 설정
-│   ├── devcontainer.json
-│   ├── docker-compose.yml
-│   └── docker-compose.override.yml
-├── .vscode/                    # VS Code 설정
 ├── backend/                    # Spring Boot 백엔드
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/io/forklore/
-│   │   │   └── resources/
-│   │   └── test/
-│   ├── build.gradle           # Gradle 빌드 설정
-│   ├── settings.gradle
-│   ├── gradlew                # Gradle Wrapper (Unix)
-│   └── gradlew.bat            # Gradle Wrapper (Windows)
-└── AGENTS.md                  # 이 파일
+│   ├── src/main/java/io/forklore/
+│   │   ├── domain/            # Entity
+│   │   │   ├── user/
+│   │   │   ├── novel/
+│   │   │   ├── branch/
+│   │   │   ├── chapter/
+│   │   │   ├── wiki/
+│   │   │   ├── map/
+│   │   │   └── subscription/
+│   │   ├── repository/
+│   │   ├── service/
+│   │   ├── controller/
+│   │   ├── dto/
+│   │   ├── exception/
+│   │   └── security/
+│   └── build.gradle
+├── frontend_example/           # Next.js 프론트엔드 예시
+├── docs/                       # 설계 문서
+│   ├── PRD.md
+│   ├── design-system.md
+│   ├── ui-ux-specification.md
+│   ├── wireframes.md
+│   ├── backlog.md
+│   ├── backend-architecture.md
+│   ├── api-specification.md
+│   └── database-schema.md
+└── AGENTS.md                   # 이 파일
 ```
 
 ---
 
-## 개발 규칙 및 가이드라인
+## 개발 규칙
 
-### 1. 코드 작성 규칙
-- **Java 버전**: Java 23 사용 (최신 LTS 기준)
-- **코딩 스타일**: 
-  - Lombok 어노테이션 적극 활용 (`@Getter`, `@Setter`, `@Builder`, `@Data` 등)
-  - Spring Boot 모범 사례 준수
-  - RESTful API 설계 원칙 준수
-- **패키지 구조**:
-  - `io.forklore.domain` - 도메인 모델
-  - `io.forklore.controller` - REST 컨트롤러
-  - `io.forklore.service` - 비즈니스 로직
-  - `io.forklore.repository` - JPA 리포지토리
-  - `io.forklore.config` - 설정 클래스
-  - `io.forklore.security` - 보안 관련 클래스
-  - `io.forklore.dto` - DTO (Data Transfer Object)
-  - `io.forklore.exception` - 예외 처리
+### 1. 코드 작성
+- **Java 23** 사용
+- **Lombok** 적극 활용
+- **RESTful API** 설계 원칙 준수
 
-### 2. 빌드 및 실행
-- **빌드**: `./gradlew build`
-- **테스트**: `./gradlew test`
-- **실행**: `./gradlew bootRun`
-- **클린**: `./gradlew clean`
+### 2. TDD (Test-Driven Development) ⚠️ 필수
 
-### 3. 데이터베이스 규칙
-- **운영 환경**: PostgreSQL 사용
-- **개발 환경**: H2 또는 Docker Compose의 PostgreSQL 사용
-- **마이그레이션**: JPA Auto DDL 또는 Flyway/Liquibase 사용 검토 필요
-- **연결 정보**:
-  - Host: `db` (Docker Compose 서비스명)
-  - Port: `5432`
-  - Database: `app_db`
-  - Username: `postgres`
-  - Password: `postgres`
+> **AI 에이전트가 코드를 작성할 때 반드시 TDD 원칙을 따라야 합니다.**
 
-### 4. API 문서화
-- **Swagger UI**: Springdoc OpenAPI 사용
-- **엔드포인트**: `/swagger-ui.html` 또는 `/v3/api-docs`
-- **모든 API**는 OpenAPI 3.0 스펙에 맞게 문서화할 것
-- Controller에 `@Tag`, `@Operation`, `@ApiResponse` 등 어노테이션 추가 권장
-
-### 5. 보안 규칙
-- **Spring Security** 기본 설정 활성화
-- **비밀번호**: 반드시 BCrypt 등으로 암호화
-- **JWT 또는 세션**: 인증 방식은 요구사항에 따라 결정
-- **CORS 설정**: 필요시 명시적으로 설정
-- **민감 정보**: `application.properties` 또는 환경 변수로 관리
-
-### 6. 테스트 규칙
-- **단위 테스트**: JUnit 5 사용
-- **통합 테스트**: `@SpringBootTest` 사용
-- **보안 테스트**: `@WithMockUser` 등 활용
-- **테스트 커버리지**: 최소 70% 이상 유지 권장
-
-### 7. Docker Compose 규칙
-- **명령어**: `docker compose` (V2 문법) 사용
-- **네트워크**: 기본 브리지 네트워크 사용
-- **볼륨**: `postgres-data` 볼륨으로 데이터 영속성 보장
-- **환경 변수**: `.env` 파일 사용 권장 (현재는 하드코딩)
-
----
-
-## 개발 워크플로우
-
-### 새로운 기능 추가 시
-1. **도메인 모델 정의** (`@Entity`, `@Table`)
-2. **리포지토리 인터페이스 작성** (`JpaRepository` 상속)
-3. **서비스 레이어 작성** (비즈니스 로직)
-4. **DTO 클래스 작성** (요청/응답 객체)
-5. **컨트롤러 작성** (REST API 엔드포인트)
-6. **Swagger 문서화** (어노테이션 추가)
-7. **테스트 코드 작성** (단위 테스트 + 통합 테스트)
-8. **빌드 및 검증** (`./gradlew build`)
-
-### 디버깅
-- **VS Code**: `.vscode/launch.json` 설정 활용
-- **포트**: 기본 Spring Boot 포트는 `8080`
-- **로그**: `application.properties`에서 로그 레벨 조정 가능
-
----
-
-## 주의사항
-
-### AI 에이전트가 지켜야 할 사항
-1. **최신 버전 사용**: 
-   - Java 23, Spring Boot 4.x 등 최신 버전 우선
-   - Docker 이미지도 `latest` 또는 최신 LTS 태그 사용
-   
-2. **타입 안전성**:
-   - Java의 강타입 시스템 활용
-   - Generic, Optional 적극 사용
-   - Null 체크 철저히
-   
-3. **에러 핸들링**:
-   - `@ControllerAdvice`로 전역 예외 처리
-   - 커스텀 예외 클래스 정의
-   - 사용자 친화적인 에러 메시지
-   
-4. **코드 품질**:
-   - SOLID 원칙 준수
-   - DRY (Don't Repeat Yourself)
-   - 의미 있는 변수/메서드명 사용
-   
-5. **문서화**:
-   - JavaDoc 주석 작성
-   - README 업데이트
-   - API 변경 시 Swagger 문서 갱신
-
----
-
-## 환경 변수 (권장)
-
-향후 프로젝트 확장 시 다음 환경 변수 사용 권장:
-
-```properties
-# Database
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
-POSTGRES_DB=app_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-
-# Spring Boot
-SPRING_PROFILES_ACTIVE=dev
-SERVER_PORT=8080
-
-# Security
-JWT_SECRET=your-secret-key
-JWT_EXPIRATION=86400000
+```
+1. RED    → 실패하는 테스트 먼저 작성
+2. GREEN  → 테스트를 통과하는 최소 코드 작성
+3. REFACTOR → 코드 정리 (테스트는 통과 유지)
 ```
 
+**필수 사항:**
+- 기능 구현 전 **테스트 먼저 작성**
+- 테스트 없이 프로덕션 코드 작성 금지
+- 테스트 커버리지 **70% 이상** 유지
+- `./gradlew test` 통과 후 커밋
+
+### 3. 빌드 및 실행
+```bash
+./gradlew build
+./gradlew bootRun
+./gradlew test
+```
+
+### 4. 데이터베이스
+- **Host**: `db` (Docker Compose)
+- **Port**: `5432`
+- **Database**: `app_db`
+- **Extension**: pgvector (벡터 검색)
+
+### 5. API 문서화
+- **Swagger UI**: `/swagger-ui.html`
+- **OpenAPI**: `/v3/api-docs`
+
+### 6. 보안
+- **JWT 인증** (Access + Refresh Token)
+- **BCrypt** 비밀번호 암호화
+- **@PreAuthorize** 권한 검사
+
 ---
 
-## 추가 고려사항
+## 설계 문서 참조
 
-### 향후 도입 검토 사항
-- **Flyway/Liquibase**: 데이터베이스 마이그레이션 관리
-- **Spring Cloud**: 마이크로서비스 아키텍처 전환 시
-- **Redis**: 캐싱 및 세션 관리
-- **Kafka/RabbitMQ**: 비동기 메시징
-- **Elasticsearch**: 검색 기능 강화
-- **Docker Hub/ECR**: 컨테이너 이미지 레지스트리
-- **CI/CD**: GitHub Actions, Jenkins 등
+| 문서 | 설명 |
+|------|------|
+| `docs/PRD.md` | 제품 요구사항 정의 |
+| `docs/database-schema.md` | DB 스키마 (v4) |
+| `docs/backend-architecture.md` | 백엔드 아키텍처 (v4) |
+| `docs/api-specification.md` | REST API 명세 (v2) |
+| `docs/design-system.md` | 디자인 시스템 |
+| `docs/backlog.md` | 제품 백로그 (v2) |
 
 ---
 
 ## 버전 히스토리
-- **v0.0.1-SNAPSHOT**: 초기 프로젝트 구조 생성
-  - Spring Boot 4.0.1
-  - Java 23
-  - PostgreSQL 18
-  - Springdoc OpenAPI 3.0.0
+- **v0.0.1-SNAPSHOT**: 초기 프로젝트 구조 및 설계 문서 완성
+  - Spring Boot 4.0.1 / Java 23
+  - PostgreSQL 18 + pgvector
+  - Gemini Embedding 001 (3072차원)
+  - 브랜치 통합 스키마 (v4)

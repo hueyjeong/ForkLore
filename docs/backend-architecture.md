@@ -2,7 +2,7 @@
 
 **작성일**: 2026.01.02  
 **작성자**: HueyJeong (with Gemini)  
-**문서 버전**: v2.0 (피드백 반영)
+**문서 버전**: v4.0 (최종)
 
 ---
 
@@ -15,10 +15,10 @@ ForkLore 백엔드는 **Spring Boot 4.0.1 + Java 23** 기반의 모놀리식 아
 | 원칙 | 설명 |
 |------|------|
 | **Layered Architecture** | Presentation → Service → Repository → Domain 분리 |
-| **Domain-Driven Design** | 핵심 도메인(소설, 위키, 브랜치) 중심 설계 |
+| **Domain-Driven Design** | 핵심 도메인(소설, 브랜치, 위키) 중심 설계 |
 | **SOLID Principles** | 단일 책임, 개방-폐쇄, 의존성 역전 원칙 준수 |
 | **RESTful API** | 자원 중심의 일관된 API 설계 |
-| **Security by Default** | Spring Security 기반 인증/인가 |
+| **TDD** | 테스트 우선 개발로 동작 보장 |
 
 ---
 
@@ -40,9 +40,9 @@ ForkLore 백엔드는 **Spring Boot 4.0.1 + Java 23** 기반의 모놀리식 아
 
 | 환경 | DB | 용도 |
 |------|-----|------|
-| 개발/테스트 | H2 | 인메모리 DB, 빠른 테스트 |
-| 운영 | PostgreSQL 18 | Core Data 저장 |
-| 운영 | PostgreSQL + pgvector | 벡터 검색 (RAG용) |
+| 개발/테스트 | H2 | 인메모리 DB |
+| 운영 | PostgreSQL 18 | Core Data |
+| 운영 | PostgreSQL + pgvector | 벡터 검색 (Gemini Embedding 3072차원) |
 
 ### 2.3 인프라
 
@@ -58,84 +58,91 @@ ForkLore 백엔드는 **Spring Boot 4.0.1 + Java 23** 기반의 모놀리식 아
 
 ```
 backend/src/main/java/io/forklore/
-├── ForkloreApplication.java          # Spring Boot 메인 클래스
-├── config/                            # 설정 클래스
+├── ForkloreApplication.java
+├── config/
 │   ├── SecurityConfig.java
 │   ├── OpenApiConfig.java
 │   ├── JpaConfig.java
 │   └── WebConfig.java
 │
-├── domain/                            # 도메인 모델 (Entity)
+├── domain/
 │   ├── user/
 │   │   ├── User.java
 │   │   └── UserRole.java
 │   ├── novel/
 │   │   ├── Novel.java
-│   │   ├── AgeRating.java            # ALL, 12, 15, 19
+│   │   ├── AgeRating.java          # ALL, 12, 15, 19
 │   │   ├── Genre.java
 │   │   └── NovelStatus.java
 │   ├── branch/
-│   │   ├── Branch.java               # 메인 + 파생 브랜치 통합
-│   │   ├── Chapter.java              # 브랜치에 귀속
-│   │   ├── BranchStatus.java
-│   │   └── MergeRequest.java
+│   │   ├── Branch.java             # 메인 + 파생 통합
+│   │   ├── BranchType.java         # MAIN, SIDE_STORY, FAN_FIC, IF_STORY
+│   │   ├── BranchVisibility.java   # PRIVATE, PUBLIC, LINKED
+│   │   └── BranchLinkRequest.java
+│   ├── chapter/
+│   │   ├── Chapter.java            # 브랜치에 귀속
+│   │   ├── ChapterStatus.java
+│   │   ├── AccessType.java         # FREE, SUBSCRIPTION
+│   │   └── ChapterChunk.java       # 벡터 임베딩
 │   ├── wiki/
-│   │   ├── WikiEntry.java            # 브랜치별 위키
+│   │   ├── WikiEntry.java          # 브랜치별 위키
 │   │   ├── WikiSnapshot.java
-│   │   ├── WikiTagDefinition.java    # 사용자 정의 태그
-│   │   └── WikiTag.java
+│   │   └── WikiTagDefinition.java
 │   ├── map/
-│   │   ├── Map.java                  # 브랜치별 지도
-│   │   ├── MapSnapshot.java          # 회차별 지도 스냅샷
+│   │   ├── Map.java                # 브랜치별 지도
+│   │   ├── MapSnapshot.java
 │   │   ├── MapLayer.java
 │   │   └── MapObject.java
+│   ├── subscription/
+│   │   ├── Subscription.java       # 구독
+│   │   └── Purchase.java           # 소장
 │   ├── reading/
-│   │   ├── ReadingLog.java           # 읽은 기록 (삭제 가능)
+│   │   ├── ReadingLog.java
 │   │   └── Bookmark.java
 │   └── common/
-│       ├── BaseEntity.java           # 공통 엔티티 (생성일, 수정일)
-│       └── SoftDeletable.java        # 소프트 삭제 인터페이스
+│       ├── BaseEntity.java
+│       └── SoftDeletable.java
 │
-├── repository/                        # JPA 리포지토리
-│   ├── user/
-│   │   └── UserRepository.java
-│   ├── novel/
-│   │   ├── NovelRepository.java
-│   │   └── ChapterRepository.java
-│   ├── wiki/
-│   │   └── WikiEntryRepository.java
-│   └── branch/
-│       └── BranchRepository.java
+├── repository/
+│   ├── user/UserRepository.java
+│   ├── novel/NovelRepository.java
+│   ├── branch/BranchRepository.java
+│   ├── chapter/ChapterRepository.java
+│   ├── wiki/WikiEntryRepository.java
+│   ├── map/MapRepository.java
+│   └── subscription/SubscriptionRepository.java
 │
-├── service/                           # 비즈니스 로직
+├── service/
 │   ├── user/
 │   │   ├── UserService.java
 │   │   └── AuthService.java
-│   ├── novel/
-│   │   ├── NovelService.java
-│   │   └── ChapterService.java
-│   ├── wiki/
-│   │   └── WikiService.java
+│   ├── novel/NovelService.java
 │   ├── branch/
 │   │   ├── BranchService.java
-│   │   └── MergeService.java
+│   │   └── BranchLinkService.java
+│   ├── chapter/ChapterService.java
+│   ├── wiki/WikiService.java
+│   ├── map/MapService.java
+│   ├── subscription/
+│   │   ├── SubscriptionService.java
+│   │   └── PurchaseService.java
+│   ├── reading/ReadingService.java
 │   └── ai/
 │       ├── AIService.java
 │       └── EmbeddingService.java
 │
-├── controller/                        # REST API 컨트롤러
-│   ├── user/
-│   │   ├── AuthController.java
-│   │   └── UserController.java
-│   ├── novel/
-│   │   ├── NovelController.java
-│   │   └── ChapterController.java
-│   ├── wiki/
-│   │   └── WikiController.java
-│   └── branch/
-│       └── BranchController.java
+├── controller/
+│   ├── AuthController.java
+│   ├── UserController.java
+│   ├── NovelController.java
+│   ├── BranchController.java
+│   ├── ChapterController.java
+│   ├── WikiController.java
+│   ├── MapController.java
+│   ├── SubscriptionController.java
+│   └── AIController.java
 │
-├── dto/                               # Data Transfer Objects
+├── dto/
 │   ├── request/
 │   │   ├── SignUpRequest.java
 │   │   ├── LoginRequest.java
@@ -145,18 +152,18 @@ backend/src/main/java/io/forklore/
 │   │   ├── UserResponse.java
 │   │   ├── NovelResponse.java
 │   │   ├── ChapterResponse.java
-│   │   └── ApiResponse.java          # 공통 응답 래퍼
+│   │   └── ApiResponse.java
 │   └── mapper/
-│       └── NovelMapper.java          # Entity ↔ DTO 변환
+│       └── NovelMapper.java
 │
-├── exception/                         # 예외 처리
-│   ├── GlobalExceptionHandler.java   # @ControllerAdvice
-│   ├── BusinessException.java        # 비즈니스 예외 기본 클래스
+├── exception/
+│   ├── GlobalExceptionHandler.java
+│   ├── BusinessException.java
 │   ├── NotFoundException.java
 │   ├── UnauthorizedException.java
 │   └── ValidationException.java
 │
-├── security/                          # 보안 관련
+├── security/
 │   ├── jwt/
 │   │   ├── JwtTokenProvider.java
 │   │   ├── JwtAuthenticationFilter.java
@@ -166,7 +173,7 @@ backend/src/main/java/io/forklore/
 │   │   └── CustomOAuth2UserService.java
 │   └── UserPrincipal.java
 │
-└── util/                              # 유틸리티
+└── util/
     ├── MarkdownParser.java
     └── SlugGenerator.java
 ```
@@ -215,7 +222,6 @@ backend/src/main/java/io/forklore/
 
 **금지 사항**:
 - HTTP 관련 로직 ❌
-- DTO 직접 반환 (선택적) ❌
 
 ### 4.3 Repository Layer (Persistence)
 
@@ -251,90 +257,32 @@ backend/src/main/java/io/forklore/
 
 ---
 
-## 5. 핵심 도메인 모델
+## 5. 핵심 도메인 모델 (v4)
 
-### 5.1 핵심 설계 변경 (v2)
-
-> **브랜치 통합**: 메인 스토리도 브랜치로 관리. 모든 챕터는 브랜치에 귀속.
-> **브랜치별 위키/지도**: 각 브랜치가 독립적인 위키와 지도를 가질 수 있음.
-> **지도 스냅샷**: 위키처럼 지도도 회차별 스냅샷 지원.
-
-### 5.2 도메인 관계도
+### 5.1 도메인 관계도
 
 ```mermaid
 erDiagram
     USER ||--o{ NOVEL : writes
     USER ||--o{ BRANCH : creates
-    USER ||--o{ READING_LOG : has
-    USER ||--o{ BOOKMARK : has
-    USER ||--o{ LIKE : gives
-    USER ||--o{ COMMENT : writes
+    USER ||--o{ SUBSCRIPTION : has
+    USER ||--o{ PURCHASE : owns
     
     NOVEL ||--o{ BRANCH : contains
-    NOVEL ||--o{ NOVEL_TAG : tagged_with
     
     BRANCH ||--o{ CHAPTER : contains
     BRANCH ||--o{ WIKI_ENTRY : has
     BRANCH ||--o{ MAP : has
-    BRANCH ||--o{ MERGE_REQUEST : submits
-    BRANCH ||--o{ BRANCH_VOTE : receives
-    BRANCH }o--|| BRANCH : "forked from (parent)"
+    BRANCH }o--|| BRANCH : "forked from"
     
     CHAPTER ||--o{ CHAPTER_CHUNK : contains
-    CHAPTER ||--o{ COMMENT : receives
-    CHAPTER ||--o{ LIKE : receives
-    
     WIKI_ENTRY ||--o{ WIKI_SNAPSHOT : versions
-    WIKI_ENTRY ||--o{ WIKI_TAG : tagged_with
-    WIKI_ENTRY ||--o{ WIKI_APPEARANCE : appears_in
-    
     MAP ||--o{ MAP_SNAPSHOT : versions
-    MAP_SNAPSHOT ||--o{ MAP_LAYER : contains
-    MAP_LAYER ||--o{ MAP_OBJECT : contains
 ```
 
-### 5.3 주요 엔티티 설계
+### 5.2 주요 엔티티 설계
 
-#### User (사용자)
-
-```java
-@Entity
-@Table(name = "users")
-public class User extends BaseEntity implements SoftDeletable {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @Column(unique = true, nullable = false)
-    private String email;
-    
-    private String passwordHash;  // BCrypt 암호화
-    
-    @Column(unique = true, nullable = false)
-    private String nickname;
-    
-    private String profileImageUrl;
-    private String bio;
-    
-    // 연령 확인용 생년월일
-    private LocalDate birthDate;
-    
-    @Enumerated(EnumType.STRING)
-    private UserRole role;  // READER, AUTHOR, ADMIN
-    
-    @Enumerated(EnumType.STRING)
-    private AuthProvider authProvider;  // LOCAL, GOOGLE, KAKAO
-    private String providerId;
-    
-    private Integer mileage = 0;
-    private Integer coin = 0;
-    
-    private boolean emailVerified = false;
-    
-    private LocalDateTime deletedAt;  // 소프트 삭제
-}
-```
-
-#### Novel (소설 - 메타 정보 컨테이너)
+#### Novel (소설 - 메타 컨테이너)
 
 ```java
 @Entity
@@ -357,28 +305,25 @@ public class Novel extends BaseEntity implements SoftDeletable {
     @Enumerated(EnumType.STRING)
     private Genre genre;
     
-    // 연령 등급 (ALL, 12, 15, 19)
     @Enumerated(EnumType.STRING)
-    private AgeRating ageRating = AgeRating.ALL;
+    private AgeRating ageRating = AgeRating.ALL;  // ALL, 12, 15, 19
     
     @Enumerated(EnumType.STRING)
-    private NovelStatus status;  // ONGOING, COMPLETED, HIATUS
+    private NovelStatus status = NovelStatus.ONGOING;
     
-    // 브랜치 목록 (메인 + 파생)
-    @OneToMany(mappedBy = "novel", cascade = CascadeType.ALL)
-    private List<Branch> branches = new ArrayList<>();
+    private boolean allowBranching = true;
     
     // 집계 (캐시)
     private Long totalViewCount = 0L;
     private Long totalLikeCount = 0L;
     private Integer totalChapterCount = 0;
-    private Integer branchCount = 1;  // 최소 1 (메인 브랜치)
+    private Integer branchCount = 1;
     
     private LocalDateTime deletedAt;
 }
 ```
 
-#### Branch (브랜치 - 메인 & 파생 통합)
+#### Branch (브랜치 - 메인 + 파생 통합)
 
 ```java
 @Entity
@@ -390,43 +335,37 @@ public class Branch extends BaseEntity implements SoftDeletable {
     @ManyToOne(fetch = FetchType.LAZY)
     private Novel novel;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User author;
+    
     // 메인 브랜치 여부 (소설당 하나만 true)
     private boolean isMain = false;
     
-    // 파생 브랜치인 경우: 부모 브랜치 + 분기점
+    // 파생 시 부모 브랜치 + 분기점
     @ManyToOne(fetch = FetchType.LAZY)
     private Branch parentBranch;
     private Integer forkPointChapter;
     
-    // 파생 브랜치 작성자 (메인은 novel.author와 동일)
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User author;
-    
-    private String title;  // 메인: null (소설 제목 사용), 파생: "IF: ..."
+    @Column(nullable = false)
+    private String name;
     
     @Column(columnDefinition = "TEXT")
     private String description;
     
     private String coverImageUrl;
     
-    // 정사 편입 관련
     @Enumerated(EnumType.STRING)
-    private BranchStatus status = BranchStatus.ACTIVE;
-    private Integer mergedAtChapter;  // 정사 편입 시 본편 연결 회차
-    private Integer voteThreshold = 1000;
+    private BranchType branchType = BranchType.FAN_FIC;
     
-    // 회차, 위키, 지도 (브랜치별 독립)
-    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
-    private List<Chapter> chapters = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    private BranchVisibility visibility = BranchVisibility.PRIVATE;
     
-    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
-    private List<WikiEntry> wikiEntries = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    private CanonStatus canonStatus = CanonStatus.NON_CANON;
+    private Integer mergedAtChapter;
     
-    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
-    private List<Map> maps = new ArrayList<>();
-    
-    // 집계
     private Long voteCount = 0L;
+    private Integer voteThreshold = 1000;
     private Long viewCount = 0L;
     private Integer chapterCount = 0;
     
@@ -434,7 +373,7 @@ public class Branch extends BaseEntity implements SoftDeletable {
 }
 ```
 
-#### Chapter (회차 - 브랜치에 귀속)
+#### Chapter (회차 - 브랜치 귀속)
 
 ```java
 @Entity
@@ -444,7 +383,7 @@ public class Chapter extends BaseEntity {
     private Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    private Branch branch;  // Novel이 아닌 Branch에 귀속
+    private Branch branch;
     
     private Integer chapterNumber;
     
@@ -452,17 +391,19 @@ public class Chapter extends BaseEntity {
     private String title;
     
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String content;  // Markdown 원본
+    private String content;       // 마크다운 원본
     
     @Column(columnDefinition = "TEXT")
-    private String contentHtml;  // 렌더링 캐시
+    private String contentHtml;   // 렌더링 캐시
     
     private Integer wordCount = 0;
     
     @Enumerated(EnumType.STRING)
     private ChapterStatus status = ChapterStatus.DRAFT;
     
-    private boolean isPaid = false;
+    @Enumerated(EnumType.STRING)
+    private AccessType accessType = AccessType.FREE;
+    
     private Integer price = 0;
     
     private LocalDateTime scheduledAt;
@@ -474,7 +415,7 @@ public class Chapter extends BaseEntity {
 }
 ```
 
-#### WikiEntry (위키 항목 - 브랜치별)
+#### WikiEntry (위키 - 브랜치 귀속)
 
 ```java
 @Entity
@@ -484,7 +425,10 @@ public class WikiEntry extends BaseEntity {
     private Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    private Branch branch;  // Novel이 아닌 Branch에 귀속
+    private Branch branch;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    private WikiEntry sourceWiki;  // 포크 시 원본
     
     @Column(nullable = false)
     private String name;
@@ -492,137 +436,28 @@ public class WikiEntry extends BaseEntity {
     private String imageUrl;
     private Integer firstAppearance;
     
-    // 작가 전용 비공개 메모
     @Column(columnDefinition = "TEXT")
     private String hiddenNote;
     
-    // AI 분석 메타데이터 (JSONB)
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> aiMetadata;
     
-    // 스냅샷 버전 관리 (문맥 인식 위키)
     @OneToMany(mappedBy = "wikiEntry", cascade = CascadeType.ALL)
     @OrderBy("validFromChapter DESC")
     private List<WikiSnapshot> snapshots = new ArrayList<>();
     
-    // 사용자 정의 태그 (나무위키 스타일)
     @ManyToMany
     @JoinTable(name = "wiki_tags")
     private Set<WikiTagDefinition> tags = new HashSet<>();
 }
 ```
 
-#### WikiTagDefinition (위키 사용자 정의 태그)
-
-```java
-@Entity
-@Table(name = "wiki_tag_definitions")
-public class WikiTagDefinition extends BaseEntity {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Branch branch;
-    
-    @Column(nullable = false)
-    private String name;  // "인물", "지역", "마법 체계", ...
-    
-    private String color;  // Hex color
-    private String icon;   // Lucide icon name
-    private String description;
-    private Integer displayOrder = 0;
-}
-```
-
-#### MapSnapshot (지도 스냅샷 - 회차별)
-
-```java
-@Entity
-@Table(name = "map_snapshots")
-public class MapSnapshot extends BaseEntity {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Map map;
-    
-    // 이 스냅샷이 유효한 시작 회차 (위키와 동일 로직)
-    private Integer validFromChapter;
-    
-    private String baseImageUrl;
-    
-    @OneToMany(mappedBy = "snapshot", cascade = CascadeType.ALL)
-    @OrderBy("zIndex ASC")
-    private List<MapLayer> layers = new ArrayList<>();
-}
-```
-
-#### ReadingLog (읽은 기록 - 삭제 가능)
-
-```java
-@Entity
-@Table(name = "reading_logs")
-public class ReadingLog extends BaseEntity {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Chapter chapter;
-    
-    private BigDecimal progress = BigDecimal.ZERO;  // 0.0 ~ 1.0
-    private boolean isCompleted = false;
-    
-    private LocalDateTime readAt;
-    private LocalDateTime deletedAt;  // 사용자가 삭제 가능
-}
-```
-
-
-
 ---
 
 ## 6. 횡단 관심사 (Cross-Cutting Concerns)
 
-### 6.1 인증/인가
-
-```
-┌─────────────────────────────────────────────────────┐
-│                   JWT 기반 인증                      │
-│                                                     │
-│  1. 로그인 → Access Token + Refresh Token 발급      │
-│  2. API 요청 → Bearer Token 검증                    │
-│  3. Token 만료 → Refresh Token으로 갱신             │
-│  4. 인가 → @PreAuthorize("hasRole('AUTHOR')")       │
-└─────────────────────────────────────────────────────┘
-```
-
-### 6.2 예외 처리
-
-```java
-@ControllerAdvice
-public class GlobalExceptionHandler {
-    
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNotFound(NotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(ApiResponse.error(e.getMessage()));
-    }
-    
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidation(ValidationException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.error(e.getMessage()));
-    }
-    
-    // ...
-}
-```
-
-### 6.3 공통 응답 형식
+### 6.1 공통 응답 형식 (ApiResponse)
 
 ```java
 @Data
@@ -651,7 +486,33 @@ public class ApiResponse<T> {
 }
 ```
 
-### 6.4 감사 (Auditing)
+### 6.2 전역 예외 처리
+
+```java
+@ControllerAdvice
+public class GlobalExceptionHandler {
+    
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(NotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(e.getMessage()));
+    }
+    
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(ApiResponse.error(e.getMessage()));
+    }
+    
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error("유효성 검사 실패"));
+    }
+}
+```
+
+### 6.3 감사 (Auditing)
 
 ```java
 @MappedSuperclass
@@ -664,80 +525,93 @@ public abstract class BaseEntity {
     
     @LastModifiedDate
     private LocalDateTime updatedAt;
+}
+```
+
+### 6.4 JWT 인증/인가
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   JWT 기반 인증                      │
+│                                                     │
+│  1. 로그인 → Access Token + Refresh Token 발급      │
+│  2. API 요청 → Bearer Token 검증                    │
+│  3. Token 만료 → Refresh Token으로 갱신             │
+│  4. 인가 → @PreAuthorize("hasRole('AUTHOR')")       │
+└─────────────────────────────────────────────────────┘
+```
+
+### 6.5 열람 권한 검사
+
+```java
+@Service
+public class AccessService {
     
-    @CreatedBy
-    @Column(updatable = false)
-    private String createdBy;
-    
-    @LastModifiedBy
-    private String updatedBy;
+    public boolean canAccessChapter(Long userId, Chapter chapter) {
+        // 1. FREE 회차
+        if (chapter.getAccessType() == AccessType.FREE) return true;
+        
+        // 2. 소장 중
+        if (purchaseRepository.existsByUserIdAndChapterId(userId, chapter.getId())) {
+            return true;
+        }
+        
+        // 3. 구독 중
+        return subscriptionRepository.existsActiveByUserId(userId);
+    }
 }
 ```
 
 ---
 
-## 7. 외부 서비스 연동
+## 7. AI 서비스 연동
 
-### 7.1 AI 서비스 (OpenAI API)
+### 7.1 Gemini API
 
+```java
+@Service
+public class EmbeddingService {
+    private static final int EMBEDDING_DIMENSION = 3072;
+    
+    public float[] embed(String text) {
+        // Gemini Embedding 001 호출
+    }
+    
+    public List<ChunkResult> search(float[] embedding, int limit) {
+        // pgvector 유사도 검색
+    }
+}
 ```
-┌─────────────────────────────────────────────────────┐
-│                 AI Service Layer                    │
-│                                                     │
-│  AIService                                          │
-│  ├── generateWikiSuggestion(chapterContent)         │
-│  ├── checkConsistency(novelId, newContent)          │
-│  └── answerQuestion(novelId, currentChapter, query) │
-│                                                     │
-│  EmbeddingService                                   │
-│  ├── embed(text) → float[]                          │
-│  └── search(embedding, limit) → List<ChunkResult>   │
-└─────────────────────────────────────────────────────┘
-```
 
-### 7.2 벡터 DB (pgvector + Gemini Embedding)
+### 7.2 벡터 DB (pgvector)
 
 ```sql
--- 확장 설치
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- 청크 테이블
 CREATE TABLE chapter_chunks (
     id SERIAL PRIMARY KEY,
     chapter_id BIGINT REFERENCES chapters(id),
     chunk_index INTEGER,
     content TEXT,
-    embedding vector(768)  -- Gemini Embedding 001 차원
+    embedding vector(3072)  -- Gemini Embedding 001
 );
 
--- 인덱스
-CREATE INDEX ON chapter_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+CREATE INDEX ON chapter_chunks 
+    USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
 ---
 
-## 8. 환경 설정 전략
-
-### 8.1 프로파일 구조
-
-```
-application.yml              # 공통 설정
-application-local.yml        # 로컬 개발 (H2)
-application-dev.yml          # Docker 개발 환경 (PostgreSQL)
-application-prod.yml         # 운영 환경
-```
-
-### 8.2 주요 설정 항목
+## 8. 환경 설정
 
 ```yaml
-# application.yml
 spring:
   application:
     name: forklore
   
   jpa:
     hibernate:
-      ddl-auto: validate  # 운영: validate, 개발: update
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
@@ -749,18 +623,17 @@ spring:
         default-page-size: 20
         max-page-size: 100
 
-# JWT 설정
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration: 3600000   # 1시간
-  refresh-token-expiration: 604800000 # 7일
+  access-token-expiration: 3600000
+  refresh-token-expiration: 604800000
 
-# AI 설정  
 ai:
   gemini:
     api-key: ${GEMINI_API_KEY}
     model: gemini-1.5-pro
-    embedding-model: text-embedding-001  # 768차원
+    embedding-model: text-embedding-001
+    embedding-dimension: 3072
 ```
 
 ---
@@ -788,6 +661,12 @@ ai:
 | Integration | @WebMvcTest | Controller |
 | E2E | @SpringBootTest + TestRestTemplate | 전체 플로우 |
 | Security | @WithMockUser | 인증/인가 |
+
+### 9.3 TDD 원칙
+
+- **Red → Green → Refactor** 사이클 준수
+- 기능 구현 전 테스트 먼저 작성
+- 테스트 커버리지 70% 이상 유지
 
 ---
 

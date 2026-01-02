@@ -164,6 +164,33 @@ pnpm build
 - **BCrypt** 비밀번호 암호화
 - **@PreAuthorize** 권한 검사
 
+### 7. 보안 - 민감 정보 관리 ⚠️ 필수
+> **AI 에이전트가 절대 위반해서는 안 되는 규칙입니다.**
+
+- **하드코딩 금지**: JWT Secret, OAuth Client ID/Secret, DB Password 등 민감 정보를 코드에 직접 작성 금지
+- **환경 변수 사용**: 모든 민감 설정은 `${VARIABLE_NAME}` 형식으로 환경 변수 참조
+- **.gitignore 필수**: `application-local.yml`, `application-dev.yml`, `application-prod.yml`, `.env` 등 환경별 설정 파일은 반드시 `.gitignore`에 추가
+- **커밋 전 확인**: `git diff --cached`로 민감 정보 포함 여부 확인
+- **히스토리 주의**: 한 번 커밋된 민감 정보는 `filter-branch` 등으로 완전 삭제 필요
+
+### 8. 테스트 프레임워크 ⚠️ 필수
+> **Spring Boot 4.x에서 변경된 테스트 방식입니다.**
+
+- **MockitoBean 사용**: `@MockBean` 대신 `@MockitoBean` 사용 (Spring Boot 3.4+)
+- **Context7 MCP 참조**: deprecated 코드 방지를 위해 구현 전 최신 API 문서 확인
+- **RestTemplate 통합 테스트**: `@WebMvcTest` 대신 `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `RestTemplate` 권장
+
+### 9. Context7 MCP 활용 ⚠️ 필수
+> **deprecated 코드 사용을 방지하기 위한 필수 절차입니다.**
+
+1. 새 기능 구현 전 `resolve-library-id`로 라이브러리 ID 조회
+2. `query-docs`로 최신 API 사용법 검색
+3. deprecated 경고가 있는 코드는 즉시 대체 구현 적용
+
+### 10. Git 운영 규칙 ⚠️ 필수
+- **허락 없이 베이스 브랜치 조작 금지**: `main`, `develop` 브랜치를 사용자 승인 없이 강제 푸시/덮어쓰기 금지
+- **작업 완료 시 반드시 PR**: 기능 완료 후 Push와 PR 생성을 빠뜨리지 않음
+
 ---
 
 ## GitHub 템플릿 사용법

@@ -8,13 +8,14 @@ import io.forklore.domain.novel.NovelStatus;
 import io.forklore.domain.user.AuthProvider;
 import io.forklore.domain.user.User;
 import io.forklore.domain.user.UserRole;
-import jakarta.persistence.EntityManager;
+import io.forklore.global.config.JpaConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @DataJpaTest: 슬라이스 테스트로 빠른 실행 + 자동 롤백
  */
 @DataJpaTest
+@Import(JpaConfig.class)
 @ActiveProfiles("common")
 class NovelRepositoryTest {
 

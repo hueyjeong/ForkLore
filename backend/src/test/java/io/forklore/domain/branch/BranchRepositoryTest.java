@@ -7,17 +7,18 @@ import io.forklore.domain.novel.NovelRepository;
 import io.forklore.domain.user.AuthProvider;
 import io.forklore.domain.user.User;
 import io.forklore.domain.user.UserRole;
+import io.forklore.global.config.JpaConfig;
 import io.forklore.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,8 +26,11 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+/**
+ * @DataJpaTest: 슬라이스 테스트로 빠른 실행 + 자동 롤백
+ */
+@DataJpaTest
+@Import(JpaConfig.class)
 @ActiveProfiles("common")
 class BranchRepositoryTest {
 
@@ -40,7 +44,7 @@ class BranchRepositoryTest {
     private UserRepository userRepository;
 
     @Autowired
-    private EntityManager em;
+    private TestEntityManager em;
 
     private User author;
     private Novel novel;
@@ -54,7 +58,7 @@ class BranchRepositoryTest {
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
-        userRepository.save(author);
+        em.persist(author);
 
         novel = Novel.builder()
                 .author(author)
@@ -63,7 +67,7 @@ class BranchRepositoryTest {
                 .ageRating(AgeRating.ALL)
                 .allowBranching(true)
                 .build();
-        novelRepository.save(novel);
+        em.persist(novel);
     }
 
     @Test
@@ -71,7 +75,7 @@ class BranchRepositoryTest {
     void createAndFindMainBranch() {
         // given
         Branch mainBranch = Branch.createMainBranch(novel, author);
-        branchRepository.save(mainBranch);
+        em.persist(mainBranch);
         em.flush();
         em.clear();
 
@@ -90,7 +94,7 @@ class BranchRepositoryTest {
     void createForkBranch() {
         // given
         Branch mainBranch = Branch.createMainBranch(novel, author);
-        branchRepository.save(mainBranch);
+        em.persist(mainBranch);
         em.flush();
         em.clear();
 
@@ -101,7 +105,7 @@ class BranchRepositoryTest {
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
-        userRepository.save(forkAuthor);
+        em.persist(forkAuthor);
 
         Branch forkBranch = Branch.builder()
                 .novel(novel)
@@ -113,7 +117,7 @@ class BranchRepositoryTest {
                 .branchType(BranchType.IF_STORY)
                 .visibility(BranchVisibility.PRIVATE)
                 .build();
-        branchRepository.save(forkBranch);
+        em.persist(forkBranch);
         em.flush();
         em.clear();
 
@@ -132,7 +136,7 @@ class BranchRepositoryTest {
     void findByNovelIdAndVisibility() {
         // given
         Branch mainBranch = Branch.createMainBranch(novel, author);
-        branchRepository.save(mainBranch);
+        em.persist(mainBranch);
 
         createFanBranch("팬픽1", BranchVisibility.PUBLIC);
         createFanBranch("팬픽2", BranchVisibility.PUBLIC);
@@ -153,7 +157,7 @@ class BranchRepositoryTest {
     void findByNovelIdAndVisibilityIn() {
         // given
         Branch mainBranch = Branch.createMainBranch(novel, author);
-        branchRepository.save(mainBranch);
+        em.persist(mainBranch);
 
         createFanBranch("팬픽1", BranchVisibility.PUBLIC);
         createFanBranch("팬픽2", BranchVisibility.LINKED);
@@ -183,7 +187,7 @@ class BranchRepositoryTest {
         // when
         Branch found = branchRepository.findById(branchId).orElseThrow();
         found.setDeletedAt(LocalDateTime.now());
-        branchRepository.save(found);
+        em.persist(found);
         em.flush();
         em.clear();
 
@@ -200,6 +204,7 @@ class BranchRepositoryTest {
                 .branchType(BranchType.FAN_FIC)
                 .visibility(visibility)
                 .build();
-        return branchRepository.save(branch);
+        em.persist(branch);
+        return branch;
     }
 }

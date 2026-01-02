@@ -186,24 +186,59 @@ io.forklore/
 
 ## 10. 트러블슈팅 및 주의사항 (Lessons Learned)
 
-### 10.1 Spring Boot 4.x / Spring 7 테스트 전략
-*   **이슈 상황**: `spring-boot-starter-data-jpa-test` 등의 의존성이 Spring Boot 4.x 프리뷰/초기 버전에서 패키지 구조 변경이나 호환성 문제로 인해 `@DataJpaTest`가 정상 동작하지 않거나 설정이 까다로운 경우가 발생함.
-*   **해결 가이드**:
-    *   **`@SpringBootTest` + `@Transactional` 조합 권장**: 슬라이스 테스트(`@DataJpaTest`) 대신 통합 테스트 환경을 사용하여 설정 복잡도를 낮추고 확실한 동작을 보장.
-    *   Repository 테스트라도 실제 Context 로딩을 통해 Entity 설정(Lazy Loading, Cascade 등) 완결성을 검증하는 것이 유리.
+### 10.1 Spring Boot 4.x 테스트 전략
 
+#### 테스트 계층 구분
+| 계층 | 어노테이션 | 용도 |
+|------|-----------|------|
+| **Unit Test** | `@ExtendWith(MockitoExtension.class)` | 단일 클래스 테스트 (Mock 사용) |
+| **Slice Test** | `@DataJpaTest`, `@WebMvcTest` | 특정 레이어만 로드 |
+| **Integration Test** | `@SpringBootTest` | 전체 컨텍스트 로드 |
+| **E2E Test** | `@SpringBootTest(webEnvironment=RANDOM_PORT)` | 실제 HTTP 요청 |
+
+#### Spring Boot 4 패키지 변경 (중요!)
 ```java
-// ❌ 설정이 까다로운 슬라이스 테스트
-//@DataJpaTest
-//@Import(JpaConfig.class) 
+// ❌ Spring Boot 3 (구버전)
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
-// ✅ 권장: 통합 테스트 + 롤백
-@SpringBootTest
-@Transactional
-class NovelRepositoryTest { ... }
+// ✅ Spring Boot 4 (신버전)
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 ```
 
-### 10.2 Git 작업 시작 시 Base Branch 확인 (치명적)
+#### Repository 테스트: @DataJpaTest 사용
+```java
+// ✅ 권장: 슬라이스 테스트 (자동 롤백, 빠른 실행)
+@DataJpaTest
+@ActiveProfiles("common")
+class NovelRepositoryTest {
+    @Autowired
+    private TestEntityManager em;
+    
+    @BeforeEach
+    void setUp() {
+        // deleteAll() 불필요 - @DataJpaTest는 자동 롤백
+        author = User.builder()...
+        em.persist(author);
+    }
+}
+```
+
+#### 필요 의존성
+```gradle
+testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+```
+
+### 10.2 테스트 격리 문제 해결
+*   **문제**: `@SpringBootTest`에서 테스트 간 데이터 간섭
+*   **원인**: ApplicationContext 캐싱으로 DB 상태 공유
+*   **해결책**:
+    - **상책**: `@DataJpaTest` 사용 (자동 롤백)
+    - **중책**: `@BeforeEach`에서 `deleteAll()` 호출
+    - **하책**: 고유 이메일 사용 (비권장)
+
+### 10.3 Git 작업 시작 시 Base Branch 확인 (치명적)
 *   **이슈 상황**: `main` 브랜치에서 실수로 Feature 브랜치를 생성하여, `develop`에만 반영된 공통 코드(`BaseEntity`, `User` 등)가 누락되어 컴파일 에러 폭탄 발생.
 *   **예방 가이드**:
     *   작업 시작 전 **반드시** 현재 로컬의 `develop`이 최신인지 확인 (`git pull origin develop`)
@@ -215,5 +250,6 @@ class NovelRepositoryTest { ... }
 
 | 버전 | 날짜 | 변경 내용 |
 |------|------|----------|
+| 1.2 | 2026-01-02 | Spring Boot 4 @DataJpaTest 테스트 전략 가이드 추가 |
 | 1.1 | 2026-01-02 | 트러블슈팅(테스트 전략, Git Base) 섹션 추가 |
 | 1.0 | 2026-01-02 | 초기 문서 작성 |

@@ -1,4 +1,12 @@
 .devcontainer/docker-compose.override.yml
 .vscode
 .agent
-.vscode
+.DS_Store
+build/
+out/
+.gradle/
+bin/
+
+# Local configuration
+**/src/main/resources/application-local.yml
+.env

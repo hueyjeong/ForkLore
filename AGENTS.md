@@ -240,7 +240,8 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 ### 2. 이슈 확인 및 선정
 - `GitHub MCP`를 사용하여 열려있는 이슈 목록을 확인합니다.
 - **선정 기준**:
-  - 선행 작업(종속성)이 완료되어 `develop` 브랜치에 반영된 이슈
+  - `docs/backend-pert-chart.md` (백엔드) 또는 관련 로직 흐름도를 참조하여 선행 작업(종속성)이 완료되었는지 확인
+  - 선행 작업이 완료되어 `develop` 브랜치에 반영된 이슈
   - 병렬 처리가 가능한 독립적인 이슈
   - 우선순위(P0 > P1)가 높은 이슈
 
@@ -272,9 +273,12 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 | 문서 | 설명 |
 |------|------|
 | `docs/PRD.md` | 제품 요구사항 정의 |
+| `docs/backlog.md` | 제품 백로그 (v2) |
 | `docs/database-schema.md` | DB 스키마 (v4) |
 | `docs/backend-architecture.md` | 백엔드 아키텍처 (v4) |
 | `docs/api-specification.md` | REST API 명세 (v2) |
+| `docs/ui-ux-specification.md` | UI/UX 명세서 |
+| `docs/wireframes.md` | 와이어프레임 |
 | `docs/design-system.md` | 디자인 시스템 |
 | `docs/backend-tasks.md` | 백엔드 태스크 목록 |
 | `docs/frontend-tasks.md` | 프론트엔드 태스크 목록 |

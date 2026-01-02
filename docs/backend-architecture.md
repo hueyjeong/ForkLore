@@ -2,7 +2,7 @@
 
 **작성일**: 2026.01.02  
 **작성자**: HueyJeong (with Gemini)  
-**문서 버전**: v1.0
+**문서 버전**: v2.0 (피드백 반영)
 
 ---
 
@@ -68,21 +68,30 @@ backend/src/main/java/io/forklore/
 ├── domain/                            # 도메인 모델 (Entity)
 │   ├── user/
 │   │   ├── User.java
-│   │   ├── UserRole.java
-│   │   └── UserProfile.java
+│   │   └── UserRole.java
 │   ├── novel/
 │   │   ├── Novel.java
-│   │   ├── Chapter.java
+│   │   ├── AgeRating.java            # ALL, 12, 15, 19
 │   │   ├── Genre.java
 │   │   └── NovelStatus.java
-│   ├── wiki/
-│   │   ├── WikiEntry.java
-│   │   ├── WikiSnapshot.java
-│   │   └── WikiCategory.java
 │   ├── branch/
-│   │   ├── Branch.java
+│   │   ├── Branch.java               # 메인 + 파생 브랜치 통합
+│   │   ├── Chapter.java              # 브랜치에 귀속
 │   │   ├── BranchStatus.java
 │   │   └── MergeRequest.java
+│   ├── wiki/
+│   │   ├── WikiEntry.java            # 브랜치별 위키
+│   │   ├── WikiSnapshot.java
+│   │   ├── WikiTagDefinition.java    # 사용자 정의 태그
+│   │   └── WikiTag.java
+│   ├── map/
+│   │   ├── Map.java                  # 브랜치별 지도
+│   │   ├── MapSnapshot.java          # 회차별 지도 스냅샷
+│   │   ├── MapLayer.java
+│   │   └── MapObject.java
+│   ├── reading/
+│   │   ├── ReadingLog.java           # 읽은 기록 (삭제 가능)
+│   │   └── Bookmark.java
 │   └── common/
 │       ├── BaseEntity.java           # 공통 엔티티 (생성일, 수정일)
 │       └── SoftDeletable.java        # 소프트 삭제 인터페이스
@@ -244,34 +253,47 @@ backend/src/main/java/io/forklore/
 
 ## 5. 핵심 도메인 모델
 
-### 5.1 도메인 관계도
+### 5.1 핵심 설계 변경 (v2)
+
+> **브랜치 통합**: 메인 스토리도 브랜치로 관리. 모든 챕터는 브랜치에 귀속.
+> **브랜치별 위키/지도**: 각 브랜치가 독립적인 위키와 지도를 가질 수 있음.
+> **지도 스냅샷**: 위키처럼 지도도 회차별 스냅샷 지원.
+
+### 5.2 도메인 관계도
 
 ```mermaid
 erDiagram
     USER ||--o{ NOVEL : writes
     USER ||--o{ BRANCH : creates
+    USER ||--o{ READING_LOG : has
     USER ||--o{ BOOKMARK : has
     USER ||--o{ LIKE : gives
     USER ||--o{ COMMENT : writes
     
-    NOVEL ||--o{ CHAPTER : contains
-    NOVEL ||--o{ WIKI_ENTRY : has
-    NOVEL ||--o{ BRANCH : "forked from"
-    NOVEL ||--o{ MAP : has
-    
-    CHAPTER ||--o{ WIKI_SNAPSHOT : "valid at"
-    CHAPTER ||--o{ COMMENT : receives
-    
-    WIKI_ENTRY ||--o{ WIKI_SNAPSHOT : versions
+    NOVEL ||--o{ BRANCH : contains
+    NOVEL ||--o{ NOVEL_TAG : tagged_with
     
     BRANCH ||--o{ CHAPTER : contains
+    BRANCH ||--o{ WIKI_ENTRY : has
+    BRANCH ||--o{ MAP : has
     BRANCH ||--o{ MERGE_REQUEST : submits
+    BRANCH ||--o{ BRANCH_VOTE : receives
+    BRANCH }o--|| BRANCH : "forked from (parent)"
     
-    MAP ||--o{ MAP_LAYER : contains
+    CHAPTER ||--o{ CHAPTER_CHUNK : contains
+    CHAPTER ||--o{ COMMENT : receives
+    CHAPTER ||--o{ LIKE : receives
+    
+    WIKI_ENTRY ||--o{ WIKI_SNAPSHOT : versions
+    WIKI_ENTRY ||--o{ WIKI_TAG : tagged_with
+    WIKI_ENTRY ||--o{ WIKI_APPEARANCE : appears_in
+    
+    MAP ||--o{ MAP_SNAPSHOT : versions
+    MAP_SNAPSHOT ||--o{ MAP_LAYER : contains
     MAP_LAYER ||--o{ MAP_OBJECT : contains
 ```
 
-### 5.2 주요 엔티티 설계
+### 5.3 주요 엔티티 설계
 
 #### User (사용자)
 
@@ -285,29 +307,34 @@ public class User extends BaseEntity implements SoftDeletable {
     @Column(unique = true, nullable = false)
     private String email;
     
-    private String password;  // BCrypt 암호화
+    private String passwordHash;  // BCrypt 암호화
     
     @Column(unique = true, nullable = false)
     private String nickname;
+    
+    private String profileImageUrl;
+    private String bio;
+    
+    // 연령 확인용 생년월일
+    private LocalDate birthDate;
     
     @Enumerated(EnumType.STRING)
     private UserRole role;  // READER, AUTHOR, ADMIN
     
     @Enumerated(EnumType.STRING)
-    private AuthProvider provider;  // LOCAL, GOOGLE, KAKAO
+    private AuthProvider authProvider;  // LOCAL, GOOGLE, KAKAO
+    private String providerId;
     
-    private String profileImageUrl;
-    private String bio;
-    
-    // 마일리지, 코인
     private Integer mileage = 0;
     private Integer coin = 0;
     
-    private boolean deleted = false;
+    private boolean emailVerified = false;
+    
+    private LocalDateTime deletedAt;  // 소프트 삭제
 }
 ```
 
-#### Novel (소설)
+#### Novel (소설 - 메타 정보 컨테이너)
 
 ```java
 @Entity
@@ -330,119 +357,28 @@ public class Novel extends BaseEntity implements SoftDeletable {
     @Enumerated(EnumType.STRING)
     private Genre genre;
     
+    // 연령 등급 (ALL, 12, 15, 19)
+    @Enumerated(EnumType.STRING)
+    private AgeRating ageRating = AgeRating.ALL;
+    
     @Enumerated(EnumType.STRING)
     private NovelStatus status;  // ONGOING, COMPLETED, HIATUS
     
-    @ElementCollection
-    @CollectionTable(name = "novel_tags")
-    private Set<String> tags = new HashSet<>();
-    
+    // 브랜치 목록 (메인 + 파생)
     @OneToMany(mappedBy = "novel", cascade = CascadeType.ALL)
-    @OrderBy("chapterNumber ASC")
-    private List<Chapter> chapters = new ArrayList<>();
+    private List<Branch> branches = new ArrayList<>();
     
-    // 통계
-    private Long viewCount = 0L;
-    private Long likeCount = 0L;
+    // 집계 (캐시)
+    private Long totalViewCount = 0L;
+    private Long totalLikeCount = 0L;
+    private Integer totalChapterCount = 0;
+    private Integer branchCount = 1;  // 최소 1 (메인 브랜치)
     
-    private boolean deleted = false;
+    private LocalDateTime deletedAt;
 }
 ```
 
-#### Chapter (회차)
-
-```java
-@Entity
-@Table(name = "chapters")
-public class Chapter extends BaseEntity {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Novel novel;
-    
-    private Integer chapterNumber;
-    
-    @Column(nullable = false)
-    private String title;
-    
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String content;  // Markdown
-    
-    @Enumerated(EnumType.STRING)
-    private ChapterStatus status;  // DRAFT, SCHEDULED, PUBLISHED
-    
-    private LocalDateTime publishedAt;
-    private LocalDateTime scheduledAt;
-    
-    private Long viewCount = 0L;
-    private Long likeCount = 0L;
-    
-    private boolean isPaid = false;
-    private Integer price = 0;  // 코인 단위
-}
-```
-
-#### WikiEntry (위키 항목)
-
-```java
-@Entity
-@Table(name = "wiki_entries")
-public class WikiEntry extends BaseEntity {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Novel novel;
-    
-    @Column(nullable = false)
-    private String name;
-    
-    @Enumerated(EnumType.STRING)
-    private WikiCategory category;  // CHARACTER, LOCATION, ITEM, CONCEPT
-    
-    private String imageUrl;
-    
-    // 스냅샷 버전 관리 (문맥 인식 위키)
-    @OneToMany(mappedBy = "wikiEntry", cascade = CascadeType.ALL)
-    @OrderBy("validFromChapter DESC")
-    private List<WikiSnapshot> snapshots = new ArrayList<>();
-    
-    // 작가 전용 비공개 메모
-    @Column(columnDefinition = "TEXT")
-    private String hiddenNote;
-    
-    private Integer firstAppearanceChapter;
-}
-```
-
-#### WikiSnapshot (위키 스냅샷)
-
-```java
-@Entity
-@Table(name = "wiki_snapshots")
-public class WikiSnapshot extends BaseEntity {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private WikiEntry wikiEntry;
-    
-    @Column(columnDefinition = "TEXT")
-    private String summary;
-    
-    @Column(columnDefinition = "TEXT")
-    private String fullDescription;
-    
-    // 문맥 인식: 이 스냅샷이 유효한 시작 회차
-    private Integer validFromChapter;
-    
-    // 기여자 (AI 또는 사용자)
-    private String contributor;
-}
-```
-
-#### Branch (브랜치)
+#### Branch (브랜치 - 메인 & 파생 통합)
 
 ```java
 @Entity
@@ -452,34 +388,200 @@ public class Branch extends BaseEntity implements SoftDeletable {
     private Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    private Novel originalNovel;
+    private Novel novel;
     
+    // 메인 브랜치 여부 (소설당 하나만 true)
+    private boolean isMain = false;
+    
+    // 파생 브랜치인 경우: 부모 브랜치 + 분기점
     @ManyToOne(fetch = FetchType.LAZY)
-    private User author;  // 팬작가
+    private Branch parentBranch;
+    private Integer forkPointChapter;
     
-    @Column(nullable = false)
-    private String title;  // IF: ...
+    // 파생 브랜치 작성자 (메인은 novel.author와 동일)
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User author;
+    
+    private String title;  // 메인: null (소설 제목 사용), 파생: "IF: ..."
     
     @Column(columnDefinition = "TEXT")
     private String description;
     
     private String coverImageUrl;
     
-    // 분기 포인트
-    private Integer forkPointChapter;
-    
+    // 정사 편입 관련
     @Enumerated(EnumType.STRING)
-    private BranchStatus status;  // ACTIVE, CANDIDATE, REVIEWING, MERGED
+    private BranchStatus status = BranchStatus.ACTIVE;
+    private Integer mergedAtChapter;  // 정사 편입 시 본편 연결 회차
+    private Integer voteThreshold = 1000;
     
+    // 회차, 위키, 지도 (브랜치별 독립)
     @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
     private List<Chapter> chapters = new ArrayList<>();
     
+    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
+    private List<WikiEntry> wikiEntries = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
+    private List<Map> maps = new ArrayList<>();
+    
+    // 집계
     private Long voteCount = 0L;
     private Long viewCount = 0L;
+    private Integer chapterCount = 0;
     
-    private boolean deleted = false;
+    private LocalDateTime deletedAt;
 }
 ```
+
+#### Chapter (회차 - 브랜치에 귀속)
+
+```java
+@Entity
+@Table(name = "chapters")
+public class Chapter extends BaseEntity {
+    @Id @GeneratedValue
+    private Long id;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Branch branch;  // Novel이 아닌 Branch에 귀속
+    
+    private Integer chapterNumber;
+    
+    @Column(nullable = false)
+    private String title;
+    
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content;  // Markdown 원본
+    
+    @Column(columnDefinition = "TEXT")
+    private String contentHtml;  // 렌더링 캐시
+    
+    private Integer wordCount = 0;
+    
+    @Enumerated(EnumType.STRING)
+    private ChapterStatus status = ChapterStatus.DRAFT;
+    
+    private boolean isPaid = false;
+    private Integer price = 0;
+    
+    private LocalDateTime scheduledAt;
+    private LocalDateTime publishedAt;
+    
+    private Long viewCount = 0L;
+    private Long likeCount = 0L;
+    private Integer commentCount = 0;
+}
+```
+
+#### WikiEntry (위키 항목 - 브랜치별)
+
+```java
+@Entity
+@Table(name = "wiki_entries")
+public class WikiEntry extends BaseEntity {
+    @Id @GeneratedValue
+    private Long id;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Branch branch;  // Novel이 아닌 Branch에 귀속
+    
+    @Column(nullable = false)
+    private String name;
+    
+    private String imageUrl;
+    private Integer firstAppearance;
+    
+    // 작가 전용 비공개 메모
+    @Column(columnDefinition = "TEXT")
+    private String hiddenNote;
+    
+    // AI 분석 메타데이터 (JSONB)
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> aiMetadata;
+    
+    // 스냅샷 버전 관리 (문맥 인식 위키)
+    @OneToMany(mappedBy = "wikiEntry", cascade = CascadeType.ALL)
+    @OrderBy("validFromChapter DESC")
+    private List<WikiSnapshot> snapshots = new ArrayList<>();
+    
+    // 사용자 정의 태그 (나무위키 스타일)
+    @ManyToMany
+    @JoinTable(name = "wiki_tags")
+    private Set<WikiTagDefinition> tags = new HashSet<>();
+}
+```
+
+#### WikiTagDefinition (위키 사용자 정의 태그)
+
+```java
+@Entity
+@Table(name = "wiki_tag_definitions")
+public class WikiTagDefinition extends BaseEntity {
+    @Id @GeneratedValue
+    private Long id;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Branch branch;
+    
+    @Column(nullable = false)
+    private String name;  // "인물", "지역", "마법 체계", ...
+    
+    private String color;  // Hex color
+    private String icon;   // Lucide icon name
+    private String description;
+    private Integer displayOrder = 0;
+}
+```
+
+#### MapSnapshot (지도 스냅샷 - 회차별)
+
+```java
+@Entity
+@Table(name = "map_snapshots")
+public class MapSnapshot extends BaseEntity {
+    @Id @GeneratedValue
+    private Long id;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Map map;
+    
+    // 이 스냅샷이 유효한 시작 회차 (위키와 동일 로직)
+    private Integer validFromChapter;
+    
+    private String baseImageUrl;
+    
+    @OneToMany(mappedBy = "snapshot", cascade = CascadeType.ALL)
+    @OrderBy("zIndex ASC")
+    private List<MapLayer> layers = new ArrayList<>();
+}
+```
+
+#### ReadingLog (읽은 기록 - 삭제 가능)
+
+```java
+@Entity
+@Table(name = "reading_logs")
+public class ReadingLog extends BaseEntity {
+    @Id @GeneratedValue
+    private Long id;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Chapter chapter;
+    
+    private BigDecimal progress = BigDecimal.ZERO;  // 0.0 ~ 1.0
+    private boolean isCompleted = false;
+    
+    private LocalDateTime readAt;
+    private LocalDateTime deletedAt;  // 사용자가 삭제 가능
+}
+```
+
+
 
 ---
 
@@ -593,7 +695,7 @@ public abstract class BaseEntity {
 └─────────────────────────────────────────────────────┘
 ```
 
-### 7.2 벡터 DB (pgvector)
+### 7.2 벡터 DB (pgvector + Gemini Embedding)
 
 ```sql
 -- 확장 설치
@@ -605,11 +707,11 @@ CREATE TABLE chapter_chunks (
     chapter_id BIGINT REFERENCES chapters(id),
     chunk_index INTEGER,
     content TEXT,
-    embedding vector(1536)  -- OpenAI ada-002 차원
+    embedding vector(768)  -- Gemini Embedding 001 차원
 );
 
 -- 인덱스
-CREATE INDEX ON chapter_chunks USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX ON chapter_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 ```
 
 ---
@@ -655,10 +757,10 @@ jwt:
 
 # AI 설정  
 ai:
-  openai:
-    api-key: ${OPENAI_API_KEY}
-    model: gpt-4
-    embedding-model: text-embedding-ada-002
+  gemini:
+    api-key: ${GEMINI_API_KEY}
+    model: gemini-1.5-pro
+    embedding-model: text-embedding-001  # 768차원
 ```
 
 ---

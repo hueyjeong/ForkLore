@@ -13,19 +13,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@Transactional
+/**
+ * @DataJpaTest: 슬라이스 테스트로 빠른 실행 + 자동 롤백
+ */
+@DataJpaTest
 @ActiveProfiles("common")
 class NovelRepositoryTest {
 
@@ -36,16 +38,12 @@ class NovelRepositoryTest {
     private UserRepository userRepository;
 
     @Autowired
-    private EntityManager em;
+    private TestEntityManager em;
 
     private User author;
 
     @BeforeEach
     void setUp() {
-        // 테스트 격리: 매 테스트 전 데이터 정리
-        novelRepository.deleteAll();
-        userRepository.deleteAll();
-
         author = User.builder()
                 .email("author@example.com")
                 .password("password")
@@ -53,7 +51,7 @@ class NovelRepositoryTest {
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
-        userRepository.save(author);
+        em.persist(author);
     }
 
     @Test

@@ -181,8 +181,39 @@ io.forklore/
 
 ---
 
-## 버전 히스토리
+
+---
+
+## 10. 트러블슈팅 및 주의사항 (Lessons Learned)
+
+### 10.1 Spring Boot 4.x / Spring 7 테스트 전략
+*   **이슈 상황**: `spring-boot-starter-data-jpa-test` 등의 의존성이 Spring Boot 4.x 프리뷰/초기 버전에서 패키지 구조 변경이나 호환성 문제로 인해 `@DataJpaTest`가 정상 동작하지 않거나 설정이 까다로운 경우가 발생함.
+*   **해결 가이드**:
+    *   **`@SpringBootTest` + `@Transactional` 조합 권장**: 슬라이스 테스트(`@DataJpaTest`) 대신 통합 테스트 환경을 사용하여 설정 복잡도를 낮추고 확실한 동작을 보장.
+    *   Repository 테스트라도 실제 Context 로딩을 통해 Entity 설정(Lazy Loading, Cascade 등) 완결성을 검증하는 것이 유리.
+
+```java
+// ❌ 설정이 까다로운 슬라이스 테스트
+//@DataJpaTest
+//@Import(JpaConfig.class) 
+
+// ✅ 권장: 통합 테스트 + 롤백
+@SpringBootTest
+@Transactional
+class NovelRepositoryTest { ... }
+```
+
+### 10.2 Git 작업 시작 시 Base Branch 확인 (치명적)
+*   **이슈 상황**: `main` 브랜치에서 실수로 Feature 브랜치를 생성하여, `develop`에만 반영된 공통 코드(`BaseEntity`, `User` 등)가 누락되어 컴파일 에러 폭탄 발생.
+*   **예방 가이드**:
+    *   작업 시작 전 **반드시** 현재 로컬의 `develop`이 최신인지 확인 (`git pull origin develop`)
+    *   브랜치 생성 시 명시적으로 base 지정: `git checkout -b feat/new-feature develop`
+
+---
+
+## 11. 버전 히스토리
 
 | 버전 | 날짜 | 변경 내용 |
 |------|------|----------|
+| 1.1 | 2026-01-02 | 트러블슈팅(테스트 전략, Git Base) 섹션 추가 |
 | 1.0 | 2026-01-02 | 초기 문서 작성 |

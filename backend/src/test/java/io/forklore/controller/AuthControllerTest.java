@@ -29,6 +29,10 @@ class AuthControllerTest {
     @MockitoBean
     private AuthService authService;
 
+    private String getBaseUrl(String path) {
+        return "http://localhost:" + port + path;
+    }
+
     @Test
     @DisplayName("회원가입 API 성공")
     void signup_api_success() {
@@ -42,8 +46,7 @@ class AuthControllerTest {
         given(authService.signup(any(SignUpRequest.class))).willReturn(1L);
 
         // when
-        String url = "http://localhost:" + port + "/auth/signup";
-        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(getBaseUrl("/auth/signup"), request, String.class);
 
         // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -68,8 +71,7 @@ class AuthControllerTest {
         given(authService.login(any(LoginRequest.class))).willReturn(tokenResponse);
 
         // when
-        String url = "http://localhost:" + port + "/auth/login";
-        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(getBaseUrl("/auth/login"), request, String.class);
 
         // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

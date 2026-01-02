@@ -106,25 +106,25 @@ public class AccessService {
 
         // 무료 회차
         if (chapter.getAccessType() == AccessType.FREE) {
-            return AccessResult.allowed();
+            return AccessResult.allow();
         }
 
         // 비로그인
         if (userId == null) {
-            return AccessResult.denied("로그인이 필요합니다.");
+            return AccessResult.deny("로그인이 필요합니다.");
         }
 
         // 구매 확인
         if (purchaseRepository.existsByUserIdAndChapterId(userId, chapterId)) {
-            return AccessResult.allowed();
+            return AccessResult.allow();
         }
 
         // 구독 확인
         if (subscriptionRepository.existsActiveByUserId(userId, LocalDate.now())) {
-            return AccessResult.allowed();
+            return AccessResult.allow();
         }
 
-        return AccessResult.denied("구독 또는 개별 구매가 필요합니다.", chapter.getPrice());
+        return AccessResult.deny("구독 또는 개별 구매가 필요합니다.", chapter.getPrice());
     }
 
     private int calculateAge(LocalDate birthDate) {
@@ -135,18 +135,18 @@ public class AccessService {
      * 접근 결과 DTO
      */
     public record AccessResult(
-            boolean allowed,
+            boolean isAllowed,
             String reason,
             Integer requiredPrice) {
-        public static AccessResult allowed() {
+        public static AccessResult allow() {
             return new AccessResult(true, null, null);
         }
 
-        public static AccessResult denied(String reason) {
+        public static AccessResult deny(String reason) {
             return new AccessResult(false, reason, null);
         }
 
-        public static AccessResult denied(String reason, int price) {
+        public static AccessResult deny(String reason, int price) {
             return new AccessResult(false, reason, price);
         }
     }

@@ -51,6 +51,10 @@ class NovelServiceTest {
 
     @BeforeEach
     void setUp() {
+        // 테스트 격리: 매 테스트 전 데이터 정리
+        novelRepository.deleteAll();
+        userRepository.deleteAll();
+
         author = User.builder()
                 .email("author@example.com")
                 .password("password")

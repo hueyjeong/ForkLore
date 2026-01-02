@@ -2,7 +2,7 @@
 
 ## 프로젝트 개요
 
-**ForkLore**는 Spring Boot 기반의 인터랙티브 웹소설 플랫폼입니다.
+**ForkLore**는 인터랙티브 웹소설 플랫폼입니다.
 
 - **그룹**: `io.forklore`
 - **버전**: `0.0.1-SNAPSHOT`
@@ -12,40 +12,42 @@
 ## 기술 스택
 
 ### 백엔드 (Backend)
-- **언어**: Java 23
-- **프레임워크**: Spring Boot 4.0.1
-- **빌드 도구**: Gradle (Wrapper 포함)
-- **패키지명**: `io.forklore`
-
-### 주요 의존성
-- **Spring Boot Starters**:
-  - `spring-boot-starter-web`
-  - `spring-boot-starter-data-jpa`
-  - `spring-boot-starter-security`
-  - `spring-boot-starter-actuator`
-  - `spring-boot-starter-validation`
-  
-- **데이터베이스**:
-  - PostgreSQL 18 (운영) + pgvector
-  - H2 Database (개발/테스트)
-  
-- **AI/임베딩**: Gemini API (text-embedding-001, 3072차원)
-  
-- **유틸리티**:
-  - Lombok
-  - Springdoc OpenAPI 3.0.0
+| 카테고리 | 기술 | 버전 |
+|----------|------|------|
+| **언어** | Java | 23 |
+| **프레임워크** | Spring Boot | 4.0.1 |
+| **빌드** | Gradle | Wrapper |
+| **ORM** | Spring Data JPA | - |
+| **보안** | Spring Security + JWT | - |
+| **API 문서** | Springdoc OpenAPI | 3.0.0 |
+| **데이터베이스** | PostgreSQL + pgvector | 18 |
+| **AI** | Gemini API | text-embedding-001 (3072차원) |
 
 ### 프론트엔드 (Frontend)
-- **프레임워크**: Next.js 15
-- **스타일링**: Tailwind CSS + shadcn/ui (New York)
-- **색상 시스템**: OKLCH
-- **아이콘**: Lucide Icons
-- **폰트**: Geist Sans/Mono
+| 카테고리 | 기술 | 버전/스타일 |
+|----------|------|-------------|
+| **프레임워크** | Next.js (App Router) | 16 |
+| **언어** | TypeScript | 5.x |
+| **패키지 매니저** | pnpm | - |
+| **CSS** | Tailwind CSS | 4.x |
+| **컴포넌트** | shadcn/ui | New York 스타일 |
+| **색상 시스템** | OKLCH | - |
+| **아이콘** | Lucide Icons | - |
+| **폰트** | Geist Sans/Mono | - |
+| **서버 상태** | TanStack Query | v5 |
+| **클라이언트 상태** | Zustand | - |
+| **폼** | React Hook Form + Zod | - |
+| **에디터** | Tiptap | - |
+| **지도** | Leaflet + React Leaflet | - |
+| **인증** | NextAuth.js | v5 |
+| **테스트** | Vitest + Playwright | - |
 
 ### 인프라
-- **컨테이너**: Docker Compose V2
-- **개발 환경**: Dev Container (VS Code)
-- **데이터베이스**: PostgreSQL 18
+| 카테고리 | 기술 |
+|----------|------|
+| **컨테이너** | Docker Compose V2 |
+| **개발 환경** | Dev Container (VS Code) |
+| **CI/CD** | GitHub Actions (예정) |
 
 ---
 
@@ -70,8 +72,8 @@ Novel (소설)
 ```
 
 ### 브랜치 시스템
-- **branch_type**: MAIN, SIDE_STORY, FAN_FIC, IF_STORY
-- **visibility**: PRIVATE, PUBLIC, LINKED (작가 승인 후 작품에 노출)
+- **branch_type**: SIDE_STORY, FAN_FIC, IF_STORY
+- **visibility**: PRIVATE, PUBLIC, LINKED
 - **canon_status**: NON_CANON, CANDIDATE, MERGED
 
 ### 구독 시스템
@@ -88,13 +90,6 @@ Novel (소설)
 ├── backend/                    # Spring Boot 백엔드
 │   ├── src/main/java/io/forklore/
 │   │   ├── domain/            # Entity
-│   │   │   ├── user/
-│   │   │   ├── novel/
-│   │   │   ├── branch/
-│   │   │   ├── chapter/
-│   │   │   ├── wiki/
-│   │   │   ├── map/
-│   │   │   └── subscription/
 │   │   ├── repository/
 │   │   ├── service/
 │   │   ├── controller/
@@ -102,29 +97,29 @@ Novel (소설)
 │   │   ├── exception/
 │   │   └── security/
 │   └── build.gradle
-├── frontend_example/           # Next.js 프론트엔드 예시
+├── frontend/                   # Next.js 프론트엔드 (예정)
+│   ├── app/                   # App Router 라우트
+│   ├── components/            # UI 컴포넌트
+│   ├── lib/                   # 유틸, API 클라이언트
+│   ├── hooks/                 # 커스텀 훅
+│   ├── stores/                # Zustand 스토어
+│   └── types/                 # TypeScript 타입
 ├── docs/                       # 설계 문서
 │   ├── PRD.md
-│   ├── design-system.md
-│   ├── ui-ux-specification.md
-│   ├── wireframes.md
-│   ├── backlog.md
+│   ├── database-schema.md
 │   ├── backend-architecture.md
 │   ├── api-specification.md
-│   └── database-schema.md
-└── AGENTS.md                   # 이 파일
+│   ├── design-system.md
+│   ├── backend-tasks.md       # 백엔드 태스크
+│   └── frontend-tasks.md      # 프론트엔드 태스크
+└── AGENTS.md
 ```
 
 ---
 
 ## 개발 규칙
 
-### 1. 코드 작성
-- **Java 23** 사용
-- **Lombok** 적극 활용
-- **RESTful API** 설계 원칙 준수
-
-### 2. TDD (Test-Driven Development) ⚠️ 필수
+### 1. TDD (Test-Driven Development) ⚠️ 필수
 
 > **AI 에이전트가 코드를 작성할 때 반드시 TDD 원칙을 따라야 합니다.**
 
@@ -138,20 +133,27 @@ Novel (소설)
 - 기능 구현 전 **테스트 먼저 작성**
 - 테스트 없이 프로덕션 코드 작성 금지
 - 테스트 커버리지 **70% 이상** 유지
-- `./gradlew test` 통과 후 커밋
 
-### 3. 빌드 및 실행
+### 2. 백엔드 명령어
 ```bash
 ./gradlew build
 ./gradlew bootRun
 ./gradlew test
 ```
 
+### 3. 프론트엔드 명령어
+```bash
+pnpm install
+pnpm dev
+pnpm test
+pnpm build
+```
+
 ### 4. 데이터베이스
 - **Host**: `db` (Docker Compose)
 - **Port**: `5432`
 - **Database**: `app_db`
-- **Extension**: pgvector (벡터 검색)
+- **Extension**: pgvector
 
 ### 5. API 문서화
 - **Swagger UI**: `/swagger-ui.html`
@@ -173,13 +175,15 @@ Novel (소설)
 | `docs/backend-architecture.md` | 백엔드 아키텍처 (v4) |
 | `docs/api-specification.md` | REST API 명세 (v2) |
 | `docs/design-system.md` | 디자인 시스템 |
-| `docs/backlog.md` | 제품 백로그 (v2) |
+| `docs/backend-tasks.md` | 백엔드 태스크 목록 |
+| `docs/frontend-tasks.md` | 프론트엔드 태스크 목록 |
 
 ---
 
 ## 버전 히스토리
 - **v0.0.1-SNAPSHOT**: 초기 프로젝트 구조 및 설계 문서 완성
   - Spring Boot 4.0.1 / Java 23
+  - Next.js 16 / TypeScript / TanStack Query / Zustand
   - PostgreSQL 18 + pgvector
   - Gemini Embedding 001 (3072차원)
   - 브랜치 통합 스키마 (v4)

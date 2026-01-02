@@ -244,12 +244,100 @@ testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     *   작업 시작 전 **반드시** 현재 로컬의 `develop`이 최신인지 확인 (`git pull origin develop`)
     *   브랜치 생성 시 명시적으로 base 지정: `git checkout -b feat/new-feature develop`
 
+#### JPA Auditing과 @DataJpaTest
+```java
+// @DataJpaTest는 @EnableJpaAuditing을 자동으로 활성화하지 않음
+// JpaConfig를 명시적으로 import 필요!
+@DataJpaTest
+@Import(JpaConfig.class)  // ← 필수!
+@ActiveProfiles("common")
+class SomeRepositoryTest { }
+```
+
+### 10.4 Integration Test: @SpringBootTest
+```java
+@SpringBootTest
+@Transactional  // 테스트 후 자동 롤백
+@ActiveProfiles("common")
+class NovelIntegrationTest {
+    @Autowired
+    private NovelService novelService;
+    
+    @Autowired
+    private EntityManager em;
+    
+    @Test
+    void createNovelThenAppearInList() {
+        // 여러 계층 간 상호작용 검증
+        NovelResponse created = novelService.create(authorId, request);
+        em.flush();
+        em.clear();
+        
+        Page<NovelSummaryResponse> list = novelService.getList(null, null, pageable);
+        assertThat(list.getContent()).extracting("title").contains("테스트 소설");
+    }
+}
+```
+
+### 10.5 E2E Test: RestTestClient (Spring Framework 7)
+
+#### 패키지 경로 (중요!)
+```java
+// ✅ Spring Framework 7 (정확한 패키지)
+import org.springframework.test.web.servlet.client.RestTestClient;
+
+// ❌ 잘못된 패키지 (Spring Boot - deprecated)
+// import org.springframework.boot.test.web.client.TestRestTemplate;
+// import org.springframework.boot.resttestclient.RestTestClient;
+```
+
+#### E2E 테스트 예시
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("common")
+class AuthE2ETest {
+
+    @LocalServerPort
+    private int port;
+
+    private RestTestClient restTestClient;
+
+    @BeforeEach
+    void setUp() {
+        restTestClient = RestTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port + "/api")
+                .build();
+    }
+
+    @Test
+    void signUpThenLogin() {
+        String signUpJson = """
+            {"email": "test@example.com", "password": "password123!", "nickname": "테스터"}
+            """;
+
+        restTestClient.post().uri("/auth/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(signUpJson)
+                .exchange()
+                .expectStatus().isCreated();
+    }
+}
+```
+
+#### 필요 의존성
+```gradle
+// E2E 테스트용 (Spring Framework 7)
+testImplementation 'org.springframework.boot:spring-boot-resttestclient'
+```
+
 ---
 
 ## 11. 버전 히스토리
 
 | 버전 | 날짜 | 변경 내용 |
 |------|------|----------|
+| 1.3 | 2026-01-02 | Integration/E2E 테스트 가이드 (RestTestClient) 추가 |
 | 1.2 | 2026-01-02 | Spring Boot 4 @DataJpaTest 테스트 전략 가이드 추가 |
 | 1.1 | 2026-01-02 | 트러블슈팅(테스트 전략, Git Base) 섹션 추가 |
 | 1.0 | 2026-01-02 | 초기 문서 작성 |
+

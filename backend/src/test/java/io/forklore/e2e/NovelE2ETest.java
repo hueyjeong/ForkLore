@@ -1,0 +1,170 @@
+package io.forklore.e2e;
+
+import io.forklore.domain.user.AuthProvider;
+import io.forklore.domain.user.User;
+import io.forklore.domain.user.UserRole;
+import io.forklore.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.client.RestTestClient;
+
+/**
+ * 소설 E2E 테스트
+ * - 소설 CRUD 전체 플로우 검증
+ * - 인증된 사용자의 소설 관리 테스트
+ */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("common")
+@DisplayName("소설 E2E 테스트")
+class NovelE2ETest {
+
+    @LocalServerPort
+    private int port;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private RestTestClient restTestClient;
+
+    @BeforeEach
+    void setUp() {
+        restTestClient = RestTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port + "/api")
+                .build();
+        userRepository.deleteAll();
+    }
+
+    @Nested
+    @DisplayName("소설 목록 조회")
+    class NovelList {
+
+        @Test
+        @DisplayName("인증 없이 소설 목록 조회 가능")
+        void getNovelListWithoutAuth() {
+            restTestClient.get().uri("/novels")
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody()
+                    .jsonPath("$.data").isArray();
+        }
+
+        @Test
+        @DisplayName("장르별 소설 필터링")
+        void filterNovelsByGenre() {
+            restTestClient.get().uri("/novels?genre=FANTASY")
+                    .exchange()
+                    .expectStatus().isOk();
+        }
+    }
+
+    @Nested
+    @DisplayName("소설 생성")
+    class CreateNovel {
+
+        @Test
+        @DisplayName("인증 없이 소설 생성 시 401 응답")
+        void createNovelWithoutAuth() {
+            String novelJson = """
+                    {
+                        "title": "테스트 소설",
+                        "description": "설명",
+                        "genre": "FANTASY",
+                        "ageRating": "ALL",
+                        "allowBranching": true
+                    }
+                    """;
+
+            restTestClient.post().uri("/novels")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(novelJson)
+                    .exchange()
+                    .expectStatus().isUnauthorized();
+        }
+
+        @Test
+        @DisplayName("인증된 작가가 소설 생성 성공")
+        void createNovelWithAuth() {
+            // given - 작가 생성 및 로그인
+            User author = createAuthorAndLogin();
+            String token = getAuthToken(author);
+
+            String novelJson = """
+                    {
+                        "title": "새로운 판타지 소설",
+                        "description": "멋진 모험 이야기",
+                        "genre": "FANTASY",
+                        "ageRating": "ALL",
+                        "allowBranching": true
+                    }
+                    """;
+
+            // when & then
+            restTestClient.post().uri("/novels")
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(novelJson)
+                    .exchange()
+                    .expectStatus().isCreated()
+                    .expectBody()
+                    .jsonPath("$.data.title").isEqualTo("새로운 판타지 소설")
+                    .jsonPath("$.data.genre").isEqualTo("FANTASY");
+        }
+    }
+
+    @Nested
+    @DisplayName("소설 상세 조회")
+    class NovelDetail {
+
+        @Test
+        @DisplayName("존재하지 않는 소설 조회 시 404 응답")
+        void getNovelDetailNotFound() {
+            restTestClient.get().uri("/novels/99999")
+                    .exchange()
+                    .expectStatus().isNotFound();
+        }
+    }
+
+    private User createAuthorAndLogin() {
+        User author = User.builder()
+                .email("author@example.com")
+                .password(passwordEncoder.encode("password"))
+                .nickname("작가")
+                .role(UserRole.AUTHOR)
+                .authProvider(AuthProvider.LOCAL)
+                .build();
+        return userRepository.save(author);
+    }
+
+    private String getAuthToken(User user) {
+        String loginJson = String.format("""
+                {"email": "%s", "password": "password"}
+                """, user.getEmail());
+
+        byte[] responseBody = restTestClient.post().uri("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(loginJson)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .returnResult()
+                .getResponseBody();
+
+        if (responseBody == null)
+            return "";
+        String response = new String(responseBody);
+        int start = response.indexOf("accessToken\":\"") + 14;
+        int end = response.indexOf("\"", start);
+        return response.substring(start, end);
+    }
+}

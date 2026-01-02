@@ -15,9 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.springframework.web.context.WebApplicationContext;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * E2E 테스트 (End-to-End Test)
@@ -38,9 +35,6 @@ class AuthE2ETest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private WebApplicationContext context;
 
     private RestTestClient restTestClient;
 

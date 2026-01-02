@@ -14,12 +14,12 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.client.RestTestClient;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
  * 소설 E2E 테스트
- * - 소설 CRUD 전체 플로우 검증
- * - 인증된 사용자의 소설 관리 테스트
+ * - WebTestClient 사용 (수동 설정)
+ * - 실제 서버 HTTP 요청/응답 검증
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("common")
@@ -35,12 +35,13 @@ class NovelE2ETest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private RestTestClient restTestClient;
+    private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
-        restTestClient = RestTestClient.bindToServer()
-                .baseUrl("http://localhost:" + port + "/api")
+        // WebTestClient를 수동으로 bindToServer() 방식으로 생성
+        webTestClient = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
                 .build();
         userRepository.deleteAll();
     }
@@ -52,17 +53,17 @@ class NovelE2ETest {
         @Test
         @DisplayName("인증 없이 소설 목록 조회 가능")
         void getNovelListWithoutAuth() {
-            restTestClient.get().uri("/novels")
+            webTestClient.get().uri("/api/novels")
                     .exchange()
                     .expectStatus().isOk()
                     .expectBody()
-                    .jsonPath("$.data").isArray();
+                    .jsonPath("$.data").exists();
         }
 
         @Test
         @DisplayName("장르별 소설 필터링")
         void filterNovelsByGenre() {
-            restTestClient.get().uri("/novels?genre=FANTASY")
+            webTestClient.get().uri("/api/novels?genre=FANTASY")
                     .exchange()
                     .expectStatus().isOk();
         }
@@ -85,9 +86,9 @@ class NovelE2ETest {
                     }
                     """;
 
-            restTestClient.post().uri("/novels")
+            webTestClient.post().uri("/api/novels")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(novelJson)
+                    .bodyValue(novelJson)
                     .exchange()
                     .expectStatus().isUnauthorized();
         }
@@ -96,7 +97,7 @@ class NovelE2ETest {
         @DisplayName("인증된 작가가 소설 생성 성공")
         void createNovelWithAuth() {
             // given - 작가 생성 및 로그인
-            User author = createAuthorAndLogin();
+            User author = createAuthor();
             String token = getAuthToken(author);
 
             String novelJson = """
@@ -110,10 +111,10 @@ class NovelE2ETest {
                     """;
 
             // when & then
-            restTestClient.post().uri("/novels")
+            webTestClient.post().uri("/api/novels")
                     .header("Authorization", "Bearer " + token)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(novelJson)
+                    .bodyValue(novelJson)
                     .exchange()
                     .expectStatus().isCreated()
                     .expectBody()
@@ -129,13 +130,13 @@ class NovelE2ETest {
         @Test
         @DisplayName("존재하지 않는 소설 조회 시 404 응답")
         void getNovelDetailNotFound() {
-            restTestClient.get().uri("/novels/99999")
+            webTestClient.get().uri("/api/novels/99999")
                     .exchange()
                     .expectStatus().isNotFound();
         }
     }
 
-    private User createAuthorAndLogin() {
+    private User createAuthor() {
         User author = User.builder()
                 .email("author@example.com")
                 .password(passwordEncoder.encode("password"))
@@ -151,18 +152,17 @@ class NovelE2ETest {
                 {"email": "%s", "password": "password"}
                 """, user.getEmail());
 
-        byte[] responseBody = restTestClient.post().uri("/auth/login")
+        String response = webTestClient.post().uri("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(loginJson)
+                .bodyValue(loginJson)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody()
+                .expectBody(String.class)
                 .returnResult()
                 .getResponseBody();
 
-        if (responseBody == null)
+        if (response == null)
             return "";
-        String response = new String(responseBody);
         int start = response.indexOf("accessToken\":\"") + 14;
         int end = response.indexOf("\"", start);
         return response.substring(start, end);

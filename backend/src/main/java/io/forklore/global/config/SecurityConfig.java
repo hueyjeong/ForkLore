@@ -43,11 +43,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/novels", "/novels/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/branches", "/branches/**")
+                        .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**")
                         .permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/chapters", "/chapters/**")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/novels", "/api/novels/**")
+                        .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/branches", "/api/branches/**")
+                        .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/chapters", "/api/chapters/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 // H2 Console을 위한 Frame Options 설정

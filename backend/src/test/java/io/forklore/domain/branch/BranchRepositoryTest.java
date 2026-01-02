@@ -3,12 +3,10 @@ package io.forklore.domain.branch;
 import io.forklore.domain.novel.AgeRating;
 import io.forklore.domain.novel.Genre;
 import io.forklore.domain.novel.Novel;
-import io.forklore.domain.novel.NovelRepository;
 import io.forklore.domain.user.AuthProvider;
 import io.forklore.domain.user.User;
 import io.forklore.domain.user.UserRole;
 import io.forklore.global.config.JpaConfig;
-import io.forklore.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,12 +34,6 @@ class BranchRepositoryTest {
 
     @Autowired
     private BranchRepository branchRepository;
-
-    @Autowired
-    private NovelRepository novelRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private TestEntityManager em;

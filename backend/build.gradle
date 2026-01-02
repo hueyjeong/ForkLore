@@ -63,5 +63,5 @@ tasks.named('test') {
 }
 
 test {
-	maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1 
+	maxParallelForks = Runtime.runtime.availableProcessors() ?: 1 
 }

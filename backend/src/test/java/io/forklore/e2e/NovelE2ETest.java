@@ -5,7 +5,7 @@ import io.forklore.domain.user.User;
 import io.forklore.domain.user.UserRole;
 import io.forklore.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * - GET /api/novels 500 에러 수정
  * - POST /api/novels 인증 처리 수정
  */
-@Disabled("Security 설정 및 API 엔드포인트 문제로 인해 임시 비활성화")
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("common")
 @DisplayName("소설 E2E 테스트")
@@ -49,7 +49,6 @@ class NovelE2ETest {
         webTestClient = WebTestClient.bindToServer()
                 .baseUrl("http://localhost:" + port)
                 .build();
-        userRepository.deleteAll();
     }
 
     @Nested
@@ -143,8 +142,9 @@ class NovelE2ETest {
     }
 
     private User createAuthor() {
+        String email = "author-" + System.currentTimeMillis() + "@example.com";
         User author = User.builder()
-                .email("author@example.com")
+                .email(email)
                 .password(passwordEncoder.encode("password"))
                 .nickname("작가")
                 .role(UserRole.AUTHOR)

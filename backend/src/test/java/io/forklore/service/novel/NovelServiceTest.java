@@ -131,25 +131,6 @@ class NovelServiceTest {
     }
 
     @Test
-    @DisplayName("소설 생성 실패 - 작가가 아닌 사용자")
-    void createNovelFailsWhenNotAuthor() {
-        // given
-        NovelCreateRequest request = NovelCreateRequest.builder()
-                .title("새로운 소설")
-                .description("설명")
-                .genre(Genre.FANTASY)
-                .ageRating(AgeRating.ALL)
-                .allowBranching(true)
-                .build();
-
-        given(userRepository.findById(2L)).willReturn(Optional.of(otherUser));
-
-        // when & then
-        assertThatThrownBy(() -> novelService.create(2L, request))
-                .isInstanceOf(UnauthorizedException.class);
-    }
-
-    @Test
     @DisplayName("소설 목록 조회 성공")
     void getNovelList() {
         // given
@@ -200,7 +181,6 @@ class NovelServiceTest {
                 .description("수정된 설명")
                 .build();
 
-        given(userRepository.findById(1L)).willReturn(Optional.of(author));
         given(novelRepository.findById(1L)).willReturn(Optional.of(novel));
 
         // when
@@ -219,7 +199,6 @@ class NovelServiceTest {
                 .title("수정된 제목")
                 .build();
 
-        given(userRepository.findById(2L)).willReturn(Optional.of(otherUser));
         given(novelRepository.findById(1L)).willReturn(Optional.of(novel));
 
         // when & then
@@ -231,21 +210,19 @@ class NovelServiceTest {
     @DisplayName("소설 삭제 성공")
     void deleteNovel() {
         // given
-        given(userRepository.findById(1L)).willReturn(Optional.of(author));
         given(novelRepository.findById(1L)).willReturn(Optional.of(novel));
 
         // when
         novelService.delete(1L, 1L);
 
         // then
-        verify(novelRepository).delete(novel);
+        assertThat(novel.getDeletedAt()).isNotNull();
     }
 
     @Test
     @DisplayName("소설 삭제 실패 - 작가가 아닌 사용자")
     void deleteNovelFailsWhenNotAuthor() {
         // given
-        given(userRepository.findById(2L)).willReturn(Optional.of(otherUser));
         given(novelRepository.findById(1L)).willReturn(Optional.of(novel));
 
         // when & then

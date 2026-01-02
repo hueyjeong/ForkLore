@@ -57,7 +57,7 @@ class UserControllerTest {
         restTemplate.setRequestFactory(new JdkClientHttpRequestFactory());
 
         userRepository.deleteAll();
-        
+
         user = User.builder()
                 .email("test@email.com")
                 .password("password")
@@ -95,11 +95,11 @@ class UserControllerTest {
 
         // when
         ResponseEntity<ApiResponse<UserResponse>> result = restTemplate.exchange(
-                getBaseUrl("/users/me"),
+                getBaseUrl("/api/users/me"),
                 HttpMethod.GET,
                 new HttpEntity<>(getHeaders()),
-                new ParameterizedTypeReference<ApiResponse<UserResponse>>() {}
-        );
+                new ParameterizedTypeReference<ApiResponse<UserResponse>>() {
+                });
 
         // then
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -120,11 +120,11 @@ class UserControllerTest {
 
         // when
         ResponseEntity<ApiResponse<UserResponse>> result = restTemplate.exchange(
-                getBaseUrl("/users/me"),
+                getBaseUrl("/api/users/me"),
                 HttpMethod.PATCH,
                 new HttpEntity<>(request, getHeaders()),
-                new ParameterizedTypeReference<ApiResponse<UserResponse>>() {}
-        );
+                new ParameterizedTypeReference<ApiResponse<UserResponse>>() {
+                });
 
         // then
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -140,11 +140,11 @@ class UserControllerTest {
 
         // when
         ResponseEntity<ApiResponse<Void>> result = restTemplate.exchange(
-                getBaseUrl("/users/me/password"),
+                getBaseUrl("/api/users/me/password"),
                 HttpMethod.POST,
                 new HttpEntity<>(request, getHeaders()),
-                new ParameterizedTypeReference<ApiResponse<Void>>() {}
-        );
+                new ParameterizedTypeReference<ApiResponse<Void>>() {
+                });
 
         // then
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);

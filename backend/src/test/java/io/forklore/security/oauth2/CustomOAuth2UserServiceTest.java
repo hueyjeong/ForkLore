@@ -16,7 +16,6 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +36,7 @@ class CustomOAuth2UserServiceTest {
 
     @Mock
     private OAuth2UserRequest oAuth2UserRequest;
-    
+
     @Mock
     private OAuth2User oAuth2User;
 
@@ -62,7 +61,7 @@ class CustomOAuth2UserServiceTest {
         attributes.put("name", "Test User");
         attributes.put("email", "test@gmail.com");
         attributes.put("picture", "http://image.com");
-        
+
         given(oAuth2User.getAttributes()).willReturn(attributes);
         given(userRepository.findByEmail("test@gmail.com")).willReturn(Optional.empty());
 
@@ -83,7 +82,7 @@ class CustomOAuth2UserServiceTest {
         UserPrincipal principal = (UserPrincipal) result;
         assertThat(principal.getUser().getEmail()).isEqualTo("test@gmail.com");
         assertThat(principal.getUser().getAuthProvider()).isEqualTo(AuthProvider.GOOGLE);
-        
+
         verify(userRepository).save(any(User.class));
     }
 }

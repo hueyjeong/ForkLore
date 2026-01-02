@@ -1,18 +1,15 @@
 package io.forklore.domain.chapter;
 
 import io.forklore.domain.branch.Branch;
-import io.forklore.domain.branch.BranchRepository;
 import io.forklore.domain.branch.BranchType;
 import io.forklore.domain.branch.BranchVisibility;
 import io.forklore.domain.novel.AgeRating;
 import io.forklore.domain.novel.Genre;
 import io.forklore.domain.novel.Novel;
-import io.forklore.domain.novel.NovelRepository;
 import io.forklore.domain.user.AuthProvider;
 import io.forklore.domain.user.User;
 import io.forklore.domain.user.UserRole;
 import io.forklore.global.config.JpaConfig;
-import io.forklore.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,15 +34,6 @@ class ChapterRepositoryTest {
 
     @Autowired
     private ChapterRepository chapterRepository;
-
-    @Autowired
-    private BranchRepository branchRepository;
-
-    @Autowired
-    private NovelRepository novelRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private TestEntityManager em;
@@ -130,7 +118,7 @@ class ChapterRepositoryTest {
         ch1.publish();
         Chapter ch2 = createChapter("2화", 2);
         ch2.publish();
-        Chapter ch3 = createChapter("3화 (초안)", 3);
+        createChapter("3화 (초안)", 3);
         em.flush();
         em.clear();
 

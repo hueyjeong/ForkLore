@@ -80,7 +80,7 @@ class NovelIntegrationTest {
                     .build();
 
             // when
-            NovelResponse created = novelService.create(author.getId(), request);
+            novelService.create(author.getId(), request);
             em.flush();
             em.clear();
 

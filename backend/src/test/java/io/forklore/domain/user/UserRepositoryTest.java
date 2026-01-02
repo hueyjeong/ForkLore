@@ -1,10 +1,9 @@
-package io.forklore.repository;
+package io.forklore.domain.user;
 
-import io.forklore.domain.user.AuthProvider;
-import io.forklore.domain.user.User;
-import io.forklore.domain.user.UserRole;
+import io.forklore.repository.UserRepository;
 import io.forklore.global.config.JpaConfig;
 import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

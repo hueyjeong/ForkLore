@@ -279,17 +279,8 @@ class NovelIntegrationTest {
 }
 ```
 
-### 10.5 E2E Test: RestTestClient (Spring Framework 7)
-
-#### 패키지 경로 (중요!)
-```java
-// ✅ Spring Framework 7 (정확한 패키지)
-import org.springframework.test.web.servlet.client.RestTestClient;
-
-// ❌ 잘못된 패키지 (Spring Boot - deprecated)
-// import org.springframework.boot.test.web.client.TestRestTemplate;
-// import org.springframework.boot.resttestclient.RestTestClient;
-```
+### 10.5 E2E Test: WebTestClient
+> 기존의 `TestRestTemplate`이나 `RestTestClient` 대신 리액티브 및 논블로킹 테스트에 용이한 `WebTestClient`를 표준으로 사용합니다.
 
 #### E2E 테스트 예시
 ```java
@@ -300,12 +291,13 @@ class AuthE2ETest {
     @LocalServerPort
     private int port;
 
-    private RestTestClient restTestClient;
+    private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
-        restTestClient = RestTestClient.bindToServer()
-                .baseUrl("http://localhost:" + port + "/api")
+        // 실제 동작 중인 서버 포트에 바인딩
+        webTestClient = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
                 .build();
     }
 
@@ -315,19 +307,18 @@ class AuthE2ETest {
             {"email": "test@example.com", "password": "password123!", "nickname": "테스터"}
             """;
 
-        restTestClient.post().uri("/auth/signup")
+        webTestClient.post().uri("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(signUpJson)
+                .bodyValue(signUpJson)
                 .exchange()
-                .expectStatus().isCreated();
+                .expectStatus().isOk(); // or isCreated()
     }
 }
 ```
 
 #### 필요 의존성
 ```gradle
-// E2E 테스트용 (Spring Framework 7)
-testImplementation 'org.springframework.boot:spring-boot-resttestclient'
+testImplementation 'org.springframework.boot:spring-boot-starter-webflux' // WebTestClient 포함
 ```
 
 ---

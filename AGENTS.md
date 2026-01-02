@@ -95,7 +95,13 @@ Novel (소설)
 │   │   ├── controller/
 │   │   ├── dto/
 │   │   ├── exception/
-│   │   └── security/
+│   │   ├── security/
+│   │   └── global/
+│   └── src/test/java/io/forklore/  # 테스트 코드 (도메인별 위치)
+│       ├── domain/            # Repository Test (@DataJpaTest)
+│       ├── service/           # Service Unit Test (Mockito)
+│       ├── controller/        # Controller Test
+│       └── e2e/               # E2E Test (WebTestClient)
 │   └── build.gradle
 ├── frontend/                   # Next.js 프론트엔드 (예정)
 │   ├── app/                   # App Router 라우트
@@ -173,12 +179,30 @@ pnpm build
 - **커밋 전 확인**: `git diff --cached`로 민감 정보 포함 여부 확인
 - **히스토리 주의**: 한 번 커밋된 민감 정보는 `filter-branch` 등으로 완전 삭제 필요
 
-### 8. 테스트 프레임워크 ⚠️ 필수
-> **Spring Boot 4.x에서 변경된 테스트 방식입니다.**
+### 8. 테스트 전략 (Standardized) ⚠️ 필수
+> **프로젝트 표준 테스트 전략입니다. 반드시 준수해야 합니다.**
 
-- **MockitoBean 사용**: `@MockBean` 대신 `@MockitoBean` 사용 (Spring Boot 3.4+)
-- **Context7 MCP 참조**: deprecated 코드 방지를 위해 구현 전 최신 API 문서 확인
-- **RestTemplate 통합 테스트**: `@WebMvcTest` 대신 `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `RestTemplate` 권장
+**1. Service Layer (Unit Test)**
+- **규칙**: `@SpringBootTest` **사용 금지**. 순수 Mockito 테스트로 작성.
+- **도구**: `@ExtendWith(MockitoExtension.class)`, `@InjectMocks`, `@Mock`
+- **이유**: 빠른 실행 속도 및 테스트 격리 보장
+
+**2. Repository Layer (Slice Test)**
+- **규칙**: `@DataJpaTest` 사용.
+- **설정**: `@Import(JpaConfig.class)` (Auditing 활성화), `@ActiveProfiles("common")`
+- **이유**: 가벼운 컨텍스트 로드 및 자동 롤백
+
+**3. Controller Layer (Slice Test)**
+- **규칙**: `@WebMvcTest` 사용 권장 (단, Spring Security 의존성 해결 필요 시 `@SpringBootTest` 허용)
+
+**4. E2E Test**
+- **규칙**: `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `WebTestClient`
+- **설정**: `WebTestClient.bindToServer()` 사용
+
+**5. Deprecated Features**
+- `@MockBean` (대체: `@MockitoBean`)
+- `TestRestTemplate` (대체: `WebTestClient`)
+
 
 ### 9. Context7 MCP 활용 ⚠️ 필수
 > **deprecated 코드 사용을 방지하기 위한 필수 절차입니다.**

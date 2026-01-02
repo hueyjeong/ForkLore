@@ -12,6 +12,7 @@ import io.forklore.dto.response.NovelSummaryResponse;
 import io.forklore.global.error.EntityNotFoundException;
 import io.forklore.global.error.UnauthorizedException;
 import io.forklore.repository.UserRepository;
+import io.forklore.service.branch.BranchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ public class NovelService {
 
     private final NovelRepository novelRepository;
     private final UserRepository userRepository;
+    private final BranchService branchService;
 
     /**
      * 소설 생성
@@ -49,7 +51,8 @@ public class NovelService {
 
         Novel saved = novelRepository.save(novel);
         
-        // TODO: BranchService.createMainBranch(novel) 호출
+        // 메인 브랜치 자동 생성
+        branchService.createMainBranch(saved, author);
         
         return NovelResponse.from(saved);
     }

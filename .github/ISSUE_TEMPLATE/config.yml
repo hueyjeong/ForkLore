@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📚 프로젝트 문서
+    url: https://github.com/hueyjeong/ForkLore/tree/main/docs
+    about: 프로젝트의 상세 문서를 확인하세요
+  - name: 💬 질문 및 토론
+    url: https://github.com/hueyjeong/ForkLore/discussions
+    about: 질문이나 아이디어가 있으신가요? Discussions에서 대화해보세요

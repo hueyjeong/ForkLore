@@ -166,6 +166,69 @@ pnpm build
 
 ---
 
+## GitHub 템플릿 사용법
+
+### Issue 템플릿
+
+프로젝트에는 백엔드와 프론트엔드를 위한 Issue 템플릿이 준비되어 있습니다:
+
+#### 백엔드
+- **🔧 기능 개발**: `.github/ISSUE_TEMPLATE/backend-feature.md`
+  - 신규 기능 개발 또는 개선
+  - TDD 체크리스트 포함
+  - Entity, Service, Controller, Repository 구조
+  
+- **🐛 버그 수정**: `.github/ISSUE_TEMPLATE/backend-bug.md`
+  - 버그 리포트 및 수정
+  - 재현 단계 명시
+  - 우선순위별 분류
+
+#### 프론트엔드
+- **🎨 기능 개발**: `.github/ISSUE_TEMPLATE/frontend-feature.md`
+  - 신규 기능 개발 또는 개선
+  - 디자인 시스템 체크리스트
+  - 반응형 및 접근성 체크
+  
+- **🎨 버그 수정**: `.github/ISSUE_TEMPLATE/frontend-bug.md`
+  - UI/UX 버그 리포트
+  - 브라우저 호환성 체크
+
+**사용 방법**: GitHub Issues → New Issue → 템플릿 선택
+
+### Pull Request 템플릿
+
+PR 생성 시 백엔드/프론트엔드 템플릿을 선택할 수 있습니다:
+
+#### 방법 1: URL 쿼리 파라미터 사용
+```
+# 백엔드 PR
+https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_template_backend.md
+
+# 프론트엔드 PR
+https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_template_frontend.md
+```
+
+#### 방법 2: PR 생성 후 수동 선택
+1. PR 생성 페이지 접속
+2. 우측 "Preview template" 드롭다운에서 템플릿 선택
+3. 또는 템플릿 파일 내용을 복사하여 붙여넣기
+
+#### 백엔드 PR 체크리스트
+- ✅ TDD 원칙 준수 (RED-GREEN-REFACTOR)
+- ✅ 테스트 커버리지 70% 이상
+- ✅ Swagger API 문서 업데이트
+- ✅ 보안 체크 (SQL Injection, XSS 등)
+- ✅ 성능 체크 (N+1 쿼리 등)
+
+#### 프론트엔드 PR 체크리스트
+- ✅ 디자인 시스템 준수 (shadcn/ui, Tailwind CSS)
+- ✅ 반응형 디자인 (모바일/태블릿/데스크톱)
+- ✅ 접근성 (a11y) 확인
+- ✅ 브라우저 호환성 확인
+- ✅ 성능 최적화 체크
+
+---
+
 ## 설계 문서 참조
 
 | 문서 | 설명 |

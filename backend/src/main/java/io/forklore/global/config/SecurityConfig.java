@@ -16,11 +16,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration authenticationConfiguration;
+
+    @Bean
+    public org.springframework.security.authentication.AuthenticationManager authenticationManager() throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

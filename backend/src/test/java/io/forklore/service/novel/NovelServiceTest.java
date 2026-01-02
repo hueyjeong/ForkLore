@@ -52,16 +52,16 @@ class NovelServiceTest {
     @BeforeEach
     void setUp() {
         author = User.builder()
-                .email("author@example.com")
+                .email("novel-svc-author@example.com")
                 .password("password")
-                .nickname("작가")
+                .nickname("소설서비스작가")
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
         userRepository.save(author);
 
         otherUser = User.builder()
-                .email("other@example.com")
+                .email("novel-svc-other@example.com")
                 .password("password")
                 .nickname("다른사용자")
                 .role(UserRole.READER)
@@ -88,7 +88,7 @@ class NovelServiceTest {
         // then
         assertThat(response.getId()).isNotNull();
         assertThat(response.getTitle()).isEqualTo("테스트 소설");
-        assertThat(response.getAuthor().getNickname()).isEqualTo("작가");
+        assertThat(response.getAuthor().getNickname()).isEqualTo("소설서비스작가");
         assertThat(response.getGenre()).isEqualTo(Genre.FANTASY);
         assertThat(response.getStatus()).isEqualTo(NovelStatus.ONGOING);
     }

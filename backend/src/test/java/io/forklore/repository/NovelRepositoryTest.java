@@ -43,9 +43,9 @@ class NovelRepositoryTest {
     @BeforeEach
     void setUp() {
         author = User.builder()
-                .email("author@example.com")
+                .email("novel-repo-author@example.com")
                 .password("password")
-                .nickname("작가")
+                .nickname("소설저장소작가")
                 .role(UserRole.AUTHOR)
                 .authProvider(AuthProvider.LOCAL)
                 .build();
@@ -64,7 +64,7 @@ class NovelRepositoryTest {
                 .ageRating(AgeRating.ALL)
                 .allowBranching(true)
                 .build();
-        
+
         // when
         Novel saved = novelRepository.save(novel);
         em.flush();
@@ -74,7 +74,7 @@ class NovelRepositoryTest {
         Novel found = novelRepository.findById(saved.getId()).orElseThrow();
         assertThat(found.getTitle()).isEqualTo("테스트 소설");
         assertThat(found.getGenre()).isEqualTo(Genre.FANTASY);
-        assertThat(found.getAuthor().getNickname()).isEqualTo("작가");
+        assertThat(found.getAuthor().getNickname()).isEqualTo("소설저장소작가");
     }
 
     @Test

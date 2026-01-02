@@ -255,6 +255,7 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 2. 이슈 체크리스트 업데이트 (`update_issue`)
 3. **TDD 사이클** 수행 (Red → Green → Refactor)
 4. 완료 시 이슈 체크리스트 최종 완료 표시
+5. 브랜치에 푸시
 
 ### 5. Pull Request 생성
 - 작업이 완료되면 `GitHub MCP`를 사용하여 PR을 생성합니다.

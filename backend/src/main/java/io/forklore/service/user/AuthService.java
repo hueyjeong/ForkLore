@@ -31,6 +31,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final io.forklore.security.jwt.JwtProperties jwtProperties;
 
     @Transactional
     public Long signup(SignUpRequest request) {
@@ -62,13 +63,13 @@ public class AuthService {
         refreshTokenRepository.save(RefreshToken.builder()
                 .user(user)
                 .token(refreshToken)
-                .expiryDate(Instant.now().plusMillis(604800000L)) // 7일 (하드코딩 개선 필요하지만 일단 진행)
+                .expiryDate(Instant.now().plusMillis(jwtProperties.getRefreshTokenExpiration()))
                 .build());
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .expiresIn(3600L) // 1시간
+                .expiresIn(jwtProperties.getAccessTokenExpiration() / 1000)
                 .build();
     }
 
@@ -89,7 +90,7 @@ public class AuthService {
         return TokenResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(token) // Rotate 하지 않고 그대로 반환 (정책에 따라 다름)
-                .expiresIn(3600L)
+                .expiresIn(jwtProperties.getAccessTokenExpiration() / 1000)
                 .build();
     }
 }

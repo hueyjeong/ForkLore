@@ -51,6 +51,9 @@ class AuthServiceTest {
     @Mock
     private AuthenticationManager authenticationManager;
 
+    @Mock
+    private io.forklore.security.jwt.JwtProperties jwtProperties;
+
     @Test
     @DisplayName("회원가입 성공")
     void signup_success() {
@@ -104,6 +107,8 @@ class AuthServiceTest {
         given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.of(user));
         given(jwtTokenProvider.createAccessToken(any(), any())).willReturn("access");
         given(jwtTokenProvider.createRefreshToken(any())).willReturn("refresh");
+        given(jwtProperties.getRefreshTokenExpiration()).willReturn(604800000L);
+        given(jwtProperties.getAccessTokenExpiration()).willReturn(3600000L);
         
         // when
         TokenResponse response = authService.login(request);

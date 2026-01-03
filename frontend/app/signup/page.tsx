@@ -3,9 +3,9 @@
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
-import { UserLoginForm } from "@/components/auth/user-login-form"
+import { UserSignupForm } from "@/components/auth/user-signup-form"
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <div className="fixed inset-0 min-h-screen flex items-stretch">
       {/* Left Panel: Immersive Decorative */}
@@ -23,10 +23,10 @@ export default function LoginPage() {
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-4">
             <p className="text-2xl font-serif italic leading-relaxed">
-              "모든 이야기는 갈림길에서 시작되고,<br />
-              당신의 선택으로 전설이 완성됩니다."
+              "당신만의 전설을 시작하세요.<br />
+              무한한 이야기의 세계가 기다립니다."
             </p>
-            <footer className="text-sm font-medium opacity-80">ForkLore Multiverse</footer>
+            <footer className="text-sm font-medium opacity-80">Join the Multiverse</footer>
           </blockquote>
         </div>
       </div>
@@ -35,31 +35,31 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background relative selection:bg-primary/20">
         <div className="absolute top-8 right-8">
           <Link
-            href="/signup"
+            href="/login"
             className={cn(
               buttonVariants({ variant: "ghost" }),
               "text-sm font-medium hover:bg-accent/50"
             )}
           >
-            회원가입
+            로그인
           </Link>
         </div>
 
-        <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[400px]">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[400px] py-12">
           <div className="flex flex-col space-y-3 text-center lg:text-left">
             <h1 className="text-3xl font-bold font-serif tracking-tight text-premium">
-              Welcome back
+              Create Account
             </h1>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              이야기의 다음 장을 써내려갈 준비가 되셨나요?<br />
-              이메일로 로그인하여 계속하세요.
+              ForkLore의 일원이 되어 나만의 이야기를 발견하고<br />
+              작가들과 소통해보세요.
             </p>
           </div>
           
-          <UserLoginForm />
+          <UserSignupForm />
           
           <p className="px-8 text-center text-xs text-muted-foreground leading-relaxed">
-            로그인 시 ForkLore의{" "}
+            회원가입 시 ForkLore의{" "}
             <Link
               href="/terms"
               className="underline underline-offset-4 hover:text-primary transition-colors"

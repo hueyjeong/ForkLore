@@ -215,6 +215,21 @@ pnpm build
 - **허락 없이 베이스 브랜치 조작 금지**: `main`, `develop` 브랜치를 사용자 승인 없이 강제 푸시/덮어쓰기 금지
 - **작업 완료 시 반드시 PR**: 기능 완료 후 Push와 PR 생성을 빠뜨리지 않음
 
+### 11. 브라우저 CDP 연결 (Dev Container) ⚠️ 필수
+> **브라우저 테스트 시 127.0.0.1:9222 연결이 거부되면 반드시 아래 절차를 따르세요.**
+
+**1. 호스트에서 Chrome을 CDP 모드로 실행:**
+```bash
+google-chrome --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0
+```
+
+**2. 컨테이너 내부에서 socat으로 포트 포워딩:**
+```bash
+socat TCP-LISTEN:9222,bind=127.0.0.1,fork TCP:host.docker.internal:9222 &
+```
+
+**원리**: Dev Container 내부에서 `127.0.0.1:9222`에 접근하면 호스트의 Chrome CDP 포트로 연결됩니다.
+
 ---
 
 ## GitHub 템플릿 사용법

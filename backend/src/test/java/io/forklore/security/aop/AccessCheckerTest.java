@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
-@ActiveProfiles("common")
+@ActiveProfiles("test")
 class AccessCheckerTest {
 
     @Autowired

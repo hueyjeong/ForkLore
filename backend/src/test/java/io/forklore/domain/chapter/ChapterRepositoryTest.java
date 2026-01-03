@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DataJpaTest
 @Import(JpaConfig.class)
-@ActiveProfiles("common")
+@ActiveProfiles("test")
 class ChapterRepositoryTest {
 
     @Autowired

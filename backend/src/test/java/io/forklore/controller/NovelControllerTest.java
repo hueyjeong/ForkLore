@@ -32,7 +32,7 @@ import org.springframework.web.client.RestTemplate;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("common")
+@ActiveProfiles("test")
 class NovelControllerTest {
 
         @LocalServerPort

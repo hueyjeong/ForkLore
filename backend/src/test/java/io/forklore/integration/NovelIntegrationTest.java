@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @Transactional
-@ActiveProfiles("common")
+@ActiveProfiles("test")
 @DisplayName("소설 서비스 통합 테스트")
 class NovelIntegrationTest {
 

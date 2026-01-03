@@ -28,7 +28,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  */
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("common")
+@ActiveProfiles("test")
 @DisplayName("소설 E2E 테스트")
 class NovelE2ETest {
 

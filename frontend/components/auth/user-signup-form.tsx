@@ -13,7 +13,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons"
 
-interface UserSignupFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface UserSignupFormProps extends React.HTMLAttributes<HTMLDivElement> {
+  // Add specific props if needed
+}
 
 const signupSchema = z.object({
   email: z.string().email({ message: "이메일 형식이 올바르지 않습니다." }),
@@ -41,6 +44,7 @@ export function UserSignupForm({ className, ...props }: UserSignupFormProps) {
 
   async function onSubmit(data: FormData) {
     setIsLoading(true)
+    console.log(data)
 
     // Simulate API call
     setTimeout(() => {

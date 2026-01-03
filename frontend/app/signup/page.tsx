@@ -23,8 +23,8 @@ export default function SignupPage() {
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-4">
             <p className="text-2xl font-serif italic leading-relaxed">
-              "당신만의 전설을 시작하세요.<br />
-              무한한 이야기의 세계가 기다립니다."
+              &quot;당신만의 전설을 시작하세요.<br />
+              무한한 이야기의 세계가 기다립니다.&quot;
             </p>
             <footer className="text-sm font-medium opacity-80">Join the Multiverse</footer>
           </blockquote>

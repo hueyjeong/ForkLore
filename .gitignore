@@ -11,6 +11,7 @@ out/
 .gradle/
 bin/
 target/
+.pnpm-store/
 .apt_generated/
 .classpath
 .factorypath

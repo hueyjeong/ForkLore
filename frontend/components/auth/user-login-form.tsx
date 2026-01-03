@@ -48,6 +48,13 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
     }, 1500)
   }
 
+  const handleSocialLogin = (provider: 'google' | 'github') => {
+    // TODO: Issue #59 - NextAuth.js v5 소셜 로그인 연동
+    // import { signIn } from "next-auth/react"
+    // await signIn(provider, { callbackUrl: "/" })
+    toast.info(`${provider} 로그인 준비 중...`);
+  };
+
   return (
     <div className={cn("grid gap-6", className)} {...props}>
       <form onSubmit={handleSubmit(onSubmit)}>

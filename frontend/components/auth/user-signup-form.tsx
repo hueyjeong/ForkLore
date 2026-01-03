@@ -46,6 +46,20 @@ export function UserSignupForm({ className, ...props }: UserSignupFormProps) {
     setIsLoading(true)
     console.log(data)
 
+    // TODO: Issue #59 - NextAuth.js v5 이메일/비밀번호 회원가입 연동
+    // import { signIn } from "next-auth/react"
+    // const result = await signIn("credentials", {
+    //   redirect: false,
+    //   email: data.email,
+    //   password: data.password,
+    // });
+    // if (result?.error) {
+    //   toast.error(result.error);
+    // } else {
+    //   toast.success("회원가입이 완료되었습니다. 로그인해주세요.");
+    //   router.push("/login");
+    // }
+
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false)

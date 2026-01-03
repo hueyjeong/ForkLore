@@ -36,7 +36,7 @@ const MOCK_NOVELS = [
     title: '검은 숲의 비명',
     author: '쉐도우',
     genre: '호러',
-    coverUrl: 'https://images.unsplash.com/photo-1505635330303-d3f146aa1a60?auto=format&fit=crop&q=80&w=400',
+    coverUrl: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?auto=format&fit=crop&q=80&w=400',
     rating: 4.2,
   },
   {

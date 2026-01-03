@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons"
+import { useAuthStore } from "@/stores/auth-store"
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface UserLoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -27,6 +28,8 @@ type FormData = z.infer<typeof loginSchema>
 
 export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
   const router = useRouter()
+  const login = useAuthStore((state) => state.login)
+  
   const {
     register,
     handleSubmit,
@@ -38,14 +41,17 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
 
   async function onSubmit(data: FormData) {
     setIsLoading(true)
-    console.log(data)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      await login(data)
       toast.success("로그인에 성공했습니다.")
       router.push("/")
-    }, 1500)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "로그인에 실패했습니다."
+      toast.error(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSocialLogin = (provider: 'google' | 'github') => {

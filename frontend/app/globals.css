@@ -43,7 +43,7 @@
     var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     'Liberation Mono', 'Courier New', monospace;
   --font-serif:
-    var(--font-playfair), ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    var(--font-playfair-display), ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
 
   /* Radius */
   --radius-lg: var(--radius);

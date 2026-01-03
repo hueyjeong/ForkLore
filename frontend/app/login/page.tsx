@@ -23,8 +23,8 @@ export default function LoginPage() {
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-4">
             <p className="text-2xl font-serif italic leading-relaxed">
-              "모든 이야기는 갈림길에서 시작되고,<br />
-              당신의 선택으로 전설이 완성됩니다."
+              &quot;모든 이야기는 갈림길에서 시작되고,<br />
+              당신의 선택으로 전설이 완성됩니다.&quot;
             </p>
             <footer className="text-sm font-medium opacity-80">ForkLore Multiverse</footer>
           </blockquote>

@@ -22,6 +22,7 @@ target/
 
 # Docker & Container
 .devcontainer/docker-compose.override.yml
+.devcontainer/init.sh
 
 # AI Agent
 .agent/

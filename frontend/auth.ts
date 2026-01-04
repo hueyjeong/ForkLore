@@ -1,52 +1,15 @@
 /**
- * NextAuth.js v5 설정 파일
+ * 인증 관련 모듈
  * 
- * TODO: Issue #59 - NextAuth.js v5 설정 및 소셜 로그인 연동
+ * 백엔드 JWT API를 직접 호출하는 방식으로 구현했습니다.
  * 
- * 구현 필요 사항:
- * 1. NextAuth v5 설치 및 기본 설정
- *    - npm install next-auth@beta
+ * 구현 완료 사항:
+ * 1. 로그인/회원가입 API 연동 (lib/api/auth.api.ts)
+ * 2. 토큰 관리 (lib/token.ts)
+ * 3. 인증 상태 관리 (stores/auth-store.ts)
+ * 4. 보호된 라우트 미들웨어 (middleware.ts)
  * 
- * 2. OAuth Providers 설정
- *    - Google OAuth 2.0
- *    - GitHub OAuth
- * 
- * 3. JWT 전략 설정
- *    - 백엔드 API와 연동하여 토큰 검증
- *    - Session callback에서 사용자 정보 동기화
- * 
- * 4. Credential Provider (이메일/비밀번호 로그인)
- *    - 백엔드 /api/auth/login 연동
- * 
- * 5. 환경 변수 설정 (.env.local)
- *    - NEXTAUTH_URL
- *    - NEXTAUTH_SECRET
- *    - GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
- *    - GITHUB_ID / GITHUB_SECRET
- * 
- * 참고: https://authjs.dev/getting-started/migrating-to-v5
+ * 향후 구현 예정:
+ * - NextAuth.js v5를 사용한 소셜 로그인 (Google, GitHub)
+ * - OAuth2 Provider 설정
  */
-
-// TODO: NextAuth 설정 구현
-// import NextAuth from "next-auth"
-// import Google from "next-auth/providers/google"
-// import GitHub from "next-auth/providers/github"
-// import Credentials from "next-auth/providers/credentials"
-
-// export const { handlers, signIn, signOut, auth } = NextAuth({
-//   providers: [
-//     Google,
-//     GitHub,
-//     Credentials({
-//       // 백엔드 API 연동
-//     })
-//   ],
-//   callbacks: {
-//     async jwt({ token, user }) {
-//       // JWT 토큰 커스터마이징
-//     },
-//     async session({ session, token }) {
-//       // 세션 데이터 커스터마이징
-//     }
-//   }
-// })

@@ -4,6 +4,7 @@ import io.forklore.dto.request.LoginRequest;
 import io.forklore.dto.request.SignUpRequest;
 import io.forklore.dto.response.TokenResponse;
 import io.forklore.service.user.AuthService;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+@Transactional
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class AuthControllerTest {

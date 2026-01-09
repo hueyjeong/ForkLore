@@ -310,7 +310,7 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 - **실행**: 구현 전 `Context7` 도구를 사용하여 최신 공식 문서와 예제를 확인합니다. (예: Next.js 16, Spring Boot 4.x)
 
 ### 2. 이슈 확인 및 선정
-- `GitHub MCP`를 사용하여 열려있는 이슈 목록을 확인합니다.
+- `GitHub CLI`를 사용하여 열려있는 이슈 목록을 확인합니다.
 - **선정 기준**:
   - `docs/backend-pert-chart.md` (백엔드) 또는 관련 로직 흐름도를 참조하여 선행 작업(종속성)이 완료되었는지 확인
   - 선행 작업이 완료되어 `develop` 브랜치에 반영된 이슈
@@ -330,7 +330,7 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 5. 브랜치에 푸시
 
 ### 5. Pull Request 생성
-- 작업이 완료되면 `GitHub MCP`를 사용하여 PR을 생성합니다.
+- 작업이 완료되면 `GitHub CLI`를 사용하여 PR을 생성합니다.
 - **Target**: `develop`
 - **내용**: 작업 요약, 테스트 결과, 관련 이슈 번호 (`Closes #이슈번호`)
 - **보고**: PR 생성 후 사용자에게 링크와 함께 보고합니다.

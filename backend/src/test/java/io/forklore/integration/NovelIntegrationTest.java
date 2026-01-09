@@ -1,7 +1,9 @@
 package io.forklore.integration;
 
+import io.forklore.domain.branch.BranchRepository;
 import io.forklore.domain.novel.AgeRating;
 import io.forklore.domain.novel.Genre;
+import io.forklore.domain.novel.NovelRepository;
 import io.forklore.domain.novel.NovelStatus;
 import io.forklore.domain.user.AuthProvider;
 import io.forklore.domain.user.User;
@@ -44,6 +46,12 @@ class NovelIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private NovelRepository novelRepository;
+
+    @Autowired
+    private BranchRepository branchRepository;
+
+    @Autowired
     private EntityManager em;
 
     private User author;
@@ -52,6 +60,8 @@ class NovelIntegrationTest {
     void setUp() {
         // 통합 테스트에서는 deleteAll 사용
         userRepository.deleteAll();
+        novelRepository.deleteAll();
+        branchRepository.deleteAll();
 
         author = User.builder()
                 .email("integration-author@example.com")
@@ -61,6 +71,8 @@ class NovelIntegrationTest {
                 .authProvider(AuthProvider.LOCAL)
                 .build();
         userRepository.save(author);
+        em.flush();
+        em.clear();
     }
 
     @Nested

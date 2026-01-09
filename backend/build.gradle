@@ -35,6 +35,8 @@ dependencies {
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
 	implementation 'com.auth0:java-jwt:4.5.0'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	// 환경 변수 관리 (.env 파일 지원 - Spring Boot 4)
+	developmentOnly 'me.paulschwarz:springboot4-dotenv:5.1.0'
 	// 마크다운 변환
 	implementation 'com.vladsch.flexmark:flexmark-all:0.64.8'
 	// HTML Sanitizer (XSS 방지)

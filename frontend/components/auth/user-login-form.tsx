@@ -107,7 +107,7 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
               </p>
             )}
           </div>
-          <Button disabled={isLoading} className="h-11 grad-primary hover:opacity-90 transition-opacity text-white font-semibold">
+          <Button type="submit" disabled={isLoading} className="h-11 grad-primary hover:opacity-90 transition-opacity text-white font-semibold">
             {isLoading && (
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
             )}

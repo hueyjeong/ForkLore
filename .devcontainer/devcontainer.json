@@ -29,7 +29,12 @@
                 "vmware.vscode-boot-dev-pack",
                 "dbaeumer.vscode-eslint",
                 "esbenp.prettier-vscode",
-                "ms-azuretools.vscode-docker"
+                "ms-azuretools.vscode-docker",
+                "anweber.vscode-httpyac",
+                "eamodio.gitlens",
+                "ms-ceintl.vscode-language-pack-ko",
+                "ms-playwright.playwright",
+                "vscjava.vscode-gradle"
             ]
         }
     },

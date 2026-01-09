@@ -15,6 +15,7 @@ import io.forklore.dto.response.NovelResponse;
 import io.forklore.global.common.ApiResponse;
 import io.forklore.repository.UserRepository;
 import io.forklore.security.jwt.JwtTokenProvider;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import org.springframework.web.client.RestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Transactional
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class NovelControllerTest {

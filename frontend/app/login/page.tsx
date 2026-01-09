@@ -1,8 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
 import { UserLoginForm } from "@/components/auth/user-login-form"
 
 export default function LoginPage() {
@@ -33,18 +31,6 @@ export default function LoginPage() {
 
       {/* Right Panel: Clean Auth Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-background relative selection:bg-primary/20">
-        <div className="absolute top-8 right-8">
-          <Link
-            href="/signup"
-            className={cn(
-              buttonVariants({ variant: "ghost" }),
-              "text-sm font-medium hover:bg-accent/50"
-            )}
-          >
-            회원가입
-          </Link>
-        </div>
-
         <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[400px]">
           <div className="flex flex-col space-y-3 text-center lg:text-left">
             <h1 className="text-3xl font-bold font-serif tracking-tight text-premium">
@@ -57,6 +43,16 @@ export default function LoginPage() {
           </div>
           
           <UserLoginForm />
+
+          <div className="text-center text-sm">
+            <span className="text-muted-foreground">계정이 없으신가요? </span>
+            <Link
+              href="/signup"
+              className="font-medium text-primary hover:underline underline-offset-4"
+            >
+              회원가입
+            </Link>
+          </div>
           
           <p className="px-8 text-center text-xs text-muted-foreground leading-relaxed">
             로그인 시 ForkLore의{" "}

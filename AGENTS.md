@@ -95,7 +95,13 @@ Novel (소설)
 │   │   ├── controller/
 │   │   ├── dto/
 │   │   ├── exception/
-│   │   └── security/
+│   │   ├── security/
+│   │   └── global/
+│   └── src/test/java/io/forklore/  # 테스트 코드 (도메인별 위치)
+│       ├── domain/            # Repository Test (@DataJpaTest)
+│       ├── service/           # Service Unit Test (Mockito)
+│       ├── controller/        # Controller Test
+│       └── e2e/               # E2E Test (WebTestClient)
 │   └── build.gradle
 ├── frontend/                   # Next.js 프론트엔드 (예정)
 │   ├── app/                   # App Router 라우트
@@ -164,6 +170,66 @@ pnpm build
 - **BCrypt** 비밀번호 암호화
 - **@PreAuthorize** 권한 검사
 
+### 7. 보안 - 민감 정보 관리 ⚠️ 필수
+> **AI 에이전트가 절대 위반해서는 안 되는 규칙입니다.**
+
+- **하드코딩 금지**: JWT Secret, OAuth Client ID/Secret, DB Password 등 민감 정보를 코드에 직접 작성 금지
+- **환경 변수 사용**: 모든 민감 설정은 `${VARIABLE_NAME}` 형식으로 환경 변수 참조
+- **.gitignore 필수**: `application-local.yml`, `application-dev.yml`, `application-prod.yml`, `.env` 등 환경별 설정 파일은 반드시 `.gitignore`에 추가
+- **커밋 전 확인**: `git diff --cached`로 민감 정보 포함 여부 확인
+- **히스토리 주의**: 한 번 커밋된 민감 정보는 `filter-branch` 등으로 완전 삭제 필요
+
+### 8. 테스트 전략 (Standardized) ⚠️ 필수
+> **프로젝트 표준 테스트 전략입니다. 반드시 준수해야 합니다.**
+
+**1. Service Layer (Unit Test)**
+- **규칙**: `@SpringBootTest` **사용 금지**. 순수 Mockito 테스트로 작성.
+- **도구**: `@ExtendWith(MockitoExtension.class)`, `@InjectMocks`, `@Mock`
+- **이유**: 빠른 실행 속도 및 테스트 격리 보장
+
+**2. Repository Layer (Slice Test)**
+- **규칙**: `@DataJpaTest` 사용.
+- **설정**: `@Import(JpaConfig.class)` (Auditing 활성화), `@ActiveProfiles("common")`
+- **이유**: 가벼운 컨텍스트 로드 및 자동 롤백
+
+**3. Controller Layer (Slice Test)**
+- **규칙**: `@WebMvcTest` 사용 권장 (단, Spring Security 의존성 해결 필요 시 `@SpringBootTest` 허용)
+
+**4. E2E Test**
+- **규칙**: `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `WebTestClient`
+- **설정**: `WebTestClient.bindToServer()` 사용
+
+**5. Deprecated Features**
+- `@MockBean` (대체: `@MockitoBean`)
+- `TestRestTemplate` (대체: `WebTestClient`)
+
+
+### 9. Context7 MCP 활용 ⚠️ 필수
+> **deprecated 코드 사용을 방지하기 위한 필수 절차입니다.**
+
+1. 새 기능 구현 전 `resolve-library-id`로 라이브러리 ID 조회
+2. `query-docs`로 최신 API 사용법 검색
+3. deprecated 경고가 있는 코드는 즉시 대체 구현 적용
+
+### 10. Git 운영 규칙 ⚠️ 필수
+- **허락 없이 베이스 브랜치 조작 금지**: `main`, `develop` 브랜치를 사용자 승인 없이 강제 푸시/덮어쓰기 금지
+- **작업 완료 시 반드시 PR**: 기능 완료 후 Push와 PR 생성을 빠뜨리지 않음
+
+### 11. 브라우저 CDP 연결 (Dev Container) ⚠️ 필수
+> **브라우저 테스트 시 127.0.0.1:9222 연결이 거부되면 반드시 아래 절차를 따르세요.**
+
+**1. 호스트에서 Chrome을 CDP 모드로 실행:**
+```bash
+google-chrome --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0
+```
+
+**2. 컨테이너 내부에서 socat으로 포트 포워딩:**
+```bash
+socat TCP-LISTEN:9222,bind=127.0.0.1,fork TCP:host.docker.internal:9222 &
+```
+
+**원리**: Dev Container 내부에서 `127.0.0.1:9222`에 접근하면 호스트의 Chrome CDP 포트로 연결됩니다.
+
 ---
 
 ## GitHub 템플릿 사용법
@@ -229,14 +295,63 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 
 ---
 
+`AI 에이전트 작업 절차 (Workflow)`를 참조하여 구현을 합니다.
+
+## AI 에이전트 작업 절차 (Workflow)
+
+**@docs/development-guidelines.md 필독**
+
+@mcp:context7 사용, TDD 준수, @docs 설계 준수
+
+프로젝트 작업을 수행할 때 AI 에이전트는 반드시 다음 절차를 준수해야 합니다.
+
+### 1. 최신 기술 스택 확인 (Context7) 및 설계 확인
+- **원칙**: 모든 코드는 현재 사용 중인 라이브러리/프레임워크의 **최신 버전 사용법**을 따르며 `docs` 폴더의 설계를 따릅니다.
+- **실행**: 구현 전 `Context7` 도구를 사용하여 최신 공식 문서와 예제를 확인합니다. (예: Next.js 16, Spring Boot 4.x)
+
+### 2. 이슈 확인 및 선정
+- `GitHub MCP`를 사용하여 열려있는 이슈 목록을 확인합니다.
+- **선정 기준**:
+  - `docs/backend-pert-chart.md` (백엔드) 또는 관련 로직 흐름도를 참조하여 선행 작업(종속성)이 완료되었는지 확인
+  - 선행 작업이 완료되어 `develop` 브랜치에 반영된 이슈
+  - 병렬 처리가 가능한 독립적인 이슈
+  - 우선순위(P0 > P1)가 높은 이슈
+
+### 3. 브랜치 전략
+- **Base Branch**: `develop`
+- **Naming**: `feat/#<이슈번호>-<간단요약-영어>`
+  - 예: `feat/#42-auth-login`, `fix/#15-user-entity`
+
+### 4. 작업 수행 (TDD)
+1. 브랜치 생성 (`create_branch`)
+2. 이슈 체크리스트 업데이트 (`update_issue`)
+3. **TDD 사이클** 수행 (Red → Green → Refactor)
+4. 완료 시 이슈 체크리스트 최종 완료 표시
+5. 브랜치에 푸시
+
+### 5. Pull Request 생성
+- 작업이 완료되면 `GitHub MCP`를 사용하여 PR을 생성합니다.
+- **Target**: `develop`
+- **내용**: 작업 요약, 테스트 결과, 관련 이슈 번호 (`Closes #이슈번호`)
+- **보고**: PR 생성 후 사용자에게 링크와 함께 보고합니다.
+
+### 6. 승인 및 반복
+- 사용자의 PR 검토 및 승인을 대기합니다.
+- 사용자의 지시에 따라 다음 "진행 가능한 이슈"를 선정하여 프로세스를 반복합니다.
+
+---
+
 ## 설계 문서 참조
 
 | 문서 | 설명 |
 |------|------|
 | `docs/PRD.md` | 제품 요구사항 정의 |
+| `docs/backlog.md` | 제품 백로그 (v2) |
 | `docs/database-schema.md` | DB 스키마 (v4) |
 | `docs/backend-architecture.md` | 백엔드 아키텍처 (v4) |
 | `docs/api-specification.md` | REST API 명세 (v2) |
+| `docs/ui-ux-specification.md` | UI/UX 명세서 |
+| `docs/wireframes.md` | 와이어프레임 |
 | `docs/design-system.md` | 디자인 시스템 |
 | `docs/backend-tasks.md` | 백엔드 태스크 목록 |
 | `docs/frontend-tasks.md` | 프론트엔드 태스크 목록 |

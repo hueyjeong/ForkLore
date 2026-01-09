@@ -1,2 +1,40 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Build & Dependencies
+build/
+out/
+.gradle/
+bin/
+target/
+.pnpm-store/
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# Docker & Container
 .devcontainer/docker-compose.override.yml
-.vscode
+.devcontainer/init.sh
+
+# AI Agent
+.agent/
+
+# Authentication & Secret (IMPORTANT)
+.env
+.env.local
+
+# Spring Boot Configuration (Sensitive files)
+**/src/main/resources/application-local.yml
+**/src/main/resources/application-dev.yml
+**/src/main/resources/application-prod.yml
+**/src/main/resources/application-test.yml
+**/src/main/resources/application-*.yml
+!**/src/main/resources/application-common.yml

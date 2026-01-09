@@ -7,6 +7,17 @@ test.describe('Authentication Flow', () => {
     const nickname = `User_${timestamp}`;
     const password = 'password123';
 
+    // Mock API
+    await page.route('**/api/auth/signup', async route => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: 1 }) });
+    });
+    await page.route('**/api/auth/login', async route => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { accessToken: 'mock-token', refreshToken: 'mock-refresh' } }) });
+    });
+    await page.route('**/api/users/me', async route => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { email, nickname } }) });
+    });
+
     // 1. Signup Flow
     console.log(`Starting Signup with email: ${email}`);
     await page.goto('/signup');

@@ -13,6 +13,9 @@ from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from drf_spectacular.utils import extend_schema
+
+from common.pagination import StandardPagination
 
 from .serializers import (
     SignUpSerializer,
@@ -113,3 +116,51 @@ class KakaoLoginView(SocialLoginView):
     adapter_class = KakaoOAuth2Adapter
     callback_url = "http://localhost:3000/auth/kakao/callback"
     client_class = OAuth2Client
+
+
+class ReadingHistoryView(generics.ListAPIView):
+    """GET /api/v1/users/me/reading-history - Get reading history"""
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
+
+    @extend_schema(
+        summary="읽은 기록 목록 조회",
+        description="내가 최근 읽은 회차 목록을 조회합니다.",
+        tags=["Reading"],
+    )
+    def get(self, request, *args, **kwargs):
+        from apps.interactions.services import ReadingService
+        from apps.interactions.serializers import ReadingLogSerializer
+
+        logs = ReadingService.get_recent_reads(user=request.user, limit=100)
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(logs, request)
+        serializer = ReadingLogSerializer(page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+
+class BookmarksView(generics.ListAPIView):
+    """GET /api/v1/users/me/bookmarks - Get bookmarks"""
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardPagination
+
+    @extend_schema(
+        summary="북마크 목록 조회",
+        description="내 북마크 목록을 조회합니다.",
+        tags=["Reading"],
+    )
+    def get(self, request, *args, **kwargs):
+        from apps.interactions.services import BookmarkService
+        from apps.interactions.serializers import BookmarkSerializer
+
+        bookmarks = BookmarkService.get_bookmarks(user=request.user)
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(bookmarks, request)
+        serializer = BookmarkSerializer(page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)

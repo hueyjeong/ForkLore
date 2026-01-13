@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
@@ -10,6 +11,22 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "email", "nickname", "profile_image_url", "bio", "role", "date_joined"]
         read_only_fields = ["id", "email", "role", "date_joined"]
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Custom JWT token serializer that includes user data in response."""
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        # Add user data to response
+        data["user"] = {
+            "id": self.user.id,
+            "email": self.user.email,
+            "nickname": self.user.nickname,
+            "role": self.user.role,
+            "profileImageUrl": self.user.profile_image_url,
+        }
+        return data
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -50,3 +67,9 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("기존 비밀번호가 올바르지 않습니다.")
         return value
+
+
+class LogoutSerializer(serializers.Serializer):
+    """Serializer for logout (blacklisting refresh token)."""
+
+    refresh = serializers.CharField(required=True, help_text="Refresh token to blacklist")

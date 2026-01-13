@@ -14,6 +14,9 @@ from .views import (
     ChapterLikeViewSet,
     ReportViewSet,
     AdminReportViewSet,
+    WalletChargeViewSet,
+    UserWalletViewSet,
+    AdminWalletAdjustmentViewSet,
 )
 
 
@@ -52,5 +55,27 @@ urlpatterns = [
         "chapters/<int:chapter_pk>/like/",
         ChapterLikeViewSet.as_view({"post": "create", "delete": "create"}),
         name="chapter-like",
+    ),
+    # Wallet routes
+    path(
+        "wallet/charge/",
+        WalletChargeViewSet.as_view({"post": "create"}),
+        name="wallet-charge",
+    ),
+    path(
+        "users/me/wallet/",
+        UserWalletViewSet.as_view({"get": "retrieve"}),
+        name="user-wallet",
+    ),
+    path(
+        "users/me/wallet/transactions/",
+        UserWalletViewSet.as_view({"get": "transactions"}),
+        name="user-wallet-transactions",
+    ),
+    # Admin wallet adjustment
+    path(
+        "admin/wallet/<int:user_pk>/adjustment/",
+        AdminWalletAdjustmentViewSet.as_view({"post": "create"}),
+        name="admin-wallet-adjustment",
     ),
 ]

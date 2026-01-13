@@ -1077,3 +1077,210 @@ class WalletService:
             return []
 
         return list(CoinTransaction.objects.filter(wallet=wallet).order_by("-created_at")[:limit])
+
+
+class AIUsageService:
+    """Service for tracking AI usage and enforcing daily limits."""
+
+    # Tier-based daily limits per action type
+    TIER_LIMITS = {
+        "FREE": 5,
+        "BASIC": 10,
+        "PREMIUM": 20,
+    }
+
+    def increment(
+        self,
+        user,
+        action_type: str,
+        token_count: int = 0,
+    ) -> "AIUsageLog":
+        """
+        Record an AI usage event.
+
+        Creates or updates the usage log for today.
+
+        Args:
+            user: User instance
+            action_type: AIActionType value
+            token_count: Optional token count to add
+
+        Returns:
+            Updated AIUsageLog instance
+        """
+        from apps.interactions.models import AIUsageLog
+        from datetime import date
+
+        today = date.today()
+
+        log, created = AIUsageLog.objects.update_or_create(
+            user=user,
+            usage_date=today,
+            action_type=action_type,
+            defaults={
+                "request_count": 1,
+                "token_count": token_count,
+            }
+            if not AIUsageLog.objects.filter(
+                user=user, usage_date=today, action_type=action_type
+            ).exists()
+            else {},
+        )
+
+        if not created:
+            # Increment existing counts
+            log.request_count += 1
+            log.token_count += token_count
+            log.save()
+
+        return log
+
+    def get_daily_usage(
+        self,
+        user,
+        action_type: str = None,
+    ) -> int:
+        """
+        Get today's usage count for a user.
+
+        Args:
+            user: User instance
+            action_type: Optional AIActionType to filter by.
+                        If None, returns total across all action types.
+
+        Returns:
+            Number of requests today
+        """
+        from apps.interactions.models import AIUsageLog
+        from datetime import date
+        from django.db.models import Sum
+
+        today = date.today()
+
+        queryset = AIUsageLog.objects.filter(user=user, usage_date=today)
+
+        if action_type:
+            queryset = queryset.filter(action_type=action_type)
+
+        result = queryset.aggregate(total=Sum("request_count"))
+        return result["total"] or 0
+
+    def can_use_ai(
+        self,
+        user,
+        action_type: str,
+    ) -> bool:
+        """
+        Check if user can make an AI request.
+
+        Compares current usage against tier-based daily limit.
+
+        Args:
+            user: User instance
+            action_type: AIActionType value
+
+        Returns:
+            True if under limit, False if at/over limit
+        """
+        current_usage = self.get_daily_usage(user, action_type)
+        limit = self.get_daily_limit(user)
+
+        return current_usage < limit
+
+    def get_user_tier(self, user) -> str:
+        """
+        Get user's current subscription tier.
+
+        Args:
+            user: User instance
+
+        Returns:
+            "FREE", "BASIC", or "PREMIUM"
+        """
+        from apps.interactions.models import Subscription, SubscriptionStatus
+        from django.utils import timezone
+
+        now = timezone.now()
+
+        # Find active subscription that hasn't expired
+        subscription = (
+            Subscription.objects.filter(
+                user=user,
+                expires_at__gt=now,
+            )
+            .exclude(
+                status=SubscriptionStatus.EXPIRED,
+            )
+            .first()
+        )
+
+        if subscription:
+            return subscription.plan_type
+
+        return "FREE"
+
+    def get_daily_limit(self, user) -> int:
+        """
+        Get user's daily AI usage limit.
+
+        Args:
+            user: User instance
+
+        Returns:
+            Daily limit based on tier
+        """
+        tier = self.get_user_tier(user)
+        return self.TIER_LIMITS.get(tier, self.TIER_LIMITS["FREE"])
+
+    def get_remaining_quota(
+        self,
+        user,
+        action_type: str,
+    ) -> int:
+        """
+        Get remaining quota for today.
+
+        Args:
+            user: User instance
+            action_type: AIActionType value
+
+        Returns:
+            Remaining requests available today
+        """
+        current_usage = self.get_daily_usage(user, action_type)
+        limit = self.get_daily_limit(user)
+
+        return max(0, limit - current_usage)
+
+    def get_usage_status(self, user) -> dict:
+        """
+        Get complete usage status for a user.
+
+        Args:
+            user: User instance
+
+        Returns:
+            Dict with tier, limits, and usage by action type
+        """
+        from apps.interactions.models import AIUsageLog, AIActionType
+        from datetime import date
+
+        today = date.today()
+        tier = self.get_user_tier(user)
+        limit = self.get_daily_limit(user)
+
+        # Get usage by action type
+        usage_by_action = {}
+        for action_type, label in AIActionType.choices:
+            count = self.get_daily_usage(user, action_type)
+            usage_by_action[action_type] = {
+                "used": count,
+                "remaining": max(0, limit - count),
+            }
+
+        return {
+            "tier": tier,
+            "daily_limit": limit,
+            "usage_by_action": usage_by_action,
+            "date": today.isoformat(),
+        }

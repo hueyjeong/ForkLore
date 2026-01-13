@@ -412,3 +412,67 @@ class WalletBalanceResponseSerializer(serializers.Serializer):
 
     balance = serializers.IntegerField(read_only=True)
     transaction = CoinTransactionSerializer(read_only=True)
+
+
+# =============================================================================
+# AI Usage Serializers
+# =============================================================================
+
+
+class AIUsageActionTypeField(serializers.ChoiceField):
+    """Custom field for AI action type validation."""
+
+    def __init__(self, **kwargs):
+        from apps.interactions.models import AIActionType
+
+        super().__init__(choices=AIActionType.choices, **kwargs)
+
+
+class AIUsageCheckLimitSerializer(serializers.Serializer):
+    """Serializer for checking AI usage limit."""
+
+    action_type = AIUsageActionTypeField()
+    enforce = serializers.BooleanField(default=False)
+
+
+class AIUsageCheckLimitResponseSerializer(serializers.Serializer):
+    """Response for check limit endpoint."""
+
+    allowed = serializers.BooleanField(read_only=True)
+    remaining = serializers.IntegerField(read_only=True)
+    daily_limit = serializers.IntegerField(read_only=True)
+    tier = serializers.CharField(read_only=True)
+
+
+class AIUsageRecordSerializer(serializers.Serializer):
+    """Serializer for recording AI usage."""
+
+    action_type = AIUsageActionTypeField()
+    token_count = serializers.IntegerField(required=False, default=0, min_value=0)
+
+
+class AIUsageRecordResponseSerializer(serializers.Serializer):
+    """Response for record usage endpoint."""
+
+    used = serializers.IntegerField(read_only=True)
+    remaining = serializers.IntegerField(read_only=True)
+    daily_limit = serializers.IntegerField(read_only=True)
+
+
+class AIUsageByActionSerializer(serializers.Serializer):
+    """Usage info for a single action type."""
+
+    used = serializers.IntegerField(read_only=True)
+    remaining = serializers.IntegerField(read_only=True)
+
+
+class AIUsageStatusSerializer(serializers.Serializer):
+    """Serializer for AI usage status response."""
+
+    tier = serializers.CharField(read_only=True)
+    daily_limit = serializers.IntegerField(read_only=True)
+    usage_by_action = serializers.DictField(
+        child=AIUsageByActionSerializer(),
+        read_only=True,
+    )
+    date = serializers.CharField(read_only=True)

@@ -255,3 +255,42 @@ class CoinTransaction(BaseModel):
             models.Index(fields=["transaction_type"]),
             models.Index(fields=["reference_type", "reference_id"]),
         ]
+
+
+# =============================================================================
+# AI Usage Tracking Models
+# =============================================================================
+
+
+class AIActionType(models.TextChoices):
+    """Types of AI actions for usage tracking."""
+
+    WIKI_SUGGEST = "WIKI_SUGGEST", "위키 제안"
+    CONSISTENCY_CHECK = "CONSISTENCY_CHECK", "일관성 검사"
+    ASK = "ASK", "질문"
+
+
+class AIUsageLog(BaseModel):
+    """
+    AI usage tracking per user/date/action.
+
+    Used for daily limit enforcement based on subscription tier.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_usage_logs"
+    )
+    usage_date = models.DateField("사용일")
+    action_type = models.CharField("액션 타입", max_length=30, choices=AIActionType.choices)
+    request_count = models.IntegerField("요청 횟수", default=0)
+    token_count = models.IntegerField("토큰 수", default=0)
+
+    class Meta:
+        db_table = "ai_usage_logs"
+        verbose_name = "AI 사용 로그"
+        verbose_name_plural = "AI 사용 로그들"
+        unique_together = ["user", "usage_date", "action_type"]
+        indexes = [
+            models.Index(fields=["usage_date", "user"]),
+            models.Index(fields=["user", "action_type", "usage_date"]),
+        ]

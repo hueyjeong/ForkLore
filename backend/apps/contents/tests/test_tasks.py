@@ -5,8 +5,9 @@ Tests:
 - publish_scheduled_chapters: Auto-publish scheduled chapters
 """
 
-import pytest
 from datetime import timedelta
+
+import pytest
 from django.utils import timezone
 from model_bakery import baker
 

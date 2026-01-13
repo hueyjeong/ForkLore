@@ -15,19 +15,19 @@ Tests:
 
 import pytest
 from django.urls import reverse
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from model_bakery import baker
 
 from apps.novels.models import (
-    Novel,
     Branch,
+    BranchLinkRequest,
     BranchType,
     BranchVisibility,
     BranchVote,
-    BranchLinkRequest,
     LinkRequestStatus,
+    Novel,
 )
 
 
@@ -58,8 +58,8 @@ class TestBranchList:
     def test_list_branches(self, api_client):
         """Should return branches for a novel."""
         novel = baker.make(Novel)
-        branch1 = baker.make(Branch, novel=novel, visibility=BranchVisibility.PUBLIC)
-        branch2 = baker.make(Branch, novel=novel, visibility=BranchVisibility.LINKED)
+        baker.make(Branch, novel=novel, visibility=BranchVisibility.PUBLIC)
+        baker.make(Branch, novel=novel, visibility=BranchVisibility.LINKED)
 
         url = reverse("novel-branches-list", kwargs={"novel_pk": novel.id})
         response = api_client.get(url)

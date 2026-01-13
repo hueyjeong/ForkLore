@@ -4,12 +4,10 @@ RED → GREEN → REFACTOR
 """
 
 import pytest
-from django.core.exceptions import ValidationError
 from model_bakery import baker
 
+from apps.interactions.models import Like
 from apps.interactions.services import CommentService, LikeService
-from apps.interactions.models import Comment, Like
-
 
 pytestmark = pytest.mark.django_db
 

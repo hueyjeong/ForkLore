@@ -8,13 +8,20 @@ Contains:
 """
 
 from datetime import timedelta
-from typing import Optional, Dict, Any
+from typing import Any
 
 from django.db.models import QuerySet
 from django.utils import timezone
 
-from apps.contents.models import Chapter, AccessType
-from apps.interactions.models import Subscription, Purchase, SubscriptionStatus, PlanType
+from apps.contents.models import AccessType, Chapter
+from apps.interactions.models import (
+    AIUsageLog,
+    PlanType,
+    Purchase,
+    Report,
+    Subscription,
+    SubscriptionStatus,
+)
 
 
 class AccessService:
@@ -151,7 +158,7 @@ class SubscriptionService:
         subscription.save()
         return True
 
-    def get_status(self, user) -> Optional[Dict[str, Any]]:
+    def get_status(self, user) -> dict[str, Any] | None:
         """
         Get user's subscription status.
 
@@ -249,8 +256,8 @@ class ReadingService:
         Returns:
             ReadingLog instance
         """
-        from apps.interactions.models import ReadingLog
         from apps.contents.models import Chapter
+        from apps.interactions.models import ReadingLog
 
         chapter = Chapter.objects.get(id=chapter_id)
         is_completed = progress >= 1.0
@@ -286,7 +293,7 @@ class ReadingService:
         )
 
     @staticmethod
-    def get_continue_reading(user, branch_id: int) -> Dict[str, Any]:
+    def get_continue_reading(user, branch_id: int) -> dict[str, Any]:
         """
         Get continue reading info for a specific branch.
 
@@ -302,8 +309,8 @@ class ReadingService:
         Returns:
             Dict with 'chapter' and 'progress' keys
         """
-        from apps.interactions.models import ReadingLog
         from apps.contents.models import Chapter
+        from apps.interactions.models import ReadingLog
 
         # Get all chapters in branch ordered by chapter_number
         chapters = Chapter.objects.filter(branch_id=branch_id).order_by("chapter_number")
@@ -366,8 +373,8 @@ class BookmarkService:
         Returns:
             Bookmark instance
         """
-        from apps.interactions.models import Bookmark
         from apps.contents.models import Chapter
+        from apps.interactions.models import Bookmark
 
         chapter = Chapter.objects.get(id=chapter_id)
 
@@ -449,8 +456,8 @@ class CommentService:
         Raises:
             ValueError: If selection_start >= selection_end
         """
-        from apps.interactions.models import Comment
         from apps.contents.models import Chapter
+        from apps.interactions.models import Comment
 
         # Validate selection range
         if selection_start is not None and selection_end is not None:
@@ -517,8 +524,9 @@ class CommentService:
         Raises:
             PermissionError: If user is not the owner
         """
-        from apps.interactions.models import Comment
         from django.utils import timezone
+
+        from apps.interactions.models import Comment
 
         comment = Comment.objects.get(id=comment_id)
 
@@ -613,7 +621,7 @@ class LikeService:
     """Service for managing likes."""
 
     @staticmethod
-    def toggle(user, target) -> Dict[str, Any]:
+    def toggle(user, target) -> dict[str, Any]:
         """
         Toggle like on a target (comment, chapter, etc.).
 
@@ -624,8 +632,9 @@ class LikeService:
         Returns:
             Dict with 'liked' (bool) and 'like_count' (int)
         """
-        from apps.interactions.models import Like
         from django.contrib.contenttypes.models import ContentType
+
+        from apps.interactions.models import Like
 
         content_type = ContentType.objects.get_for_model(target)
 
@@ -667,8 +676,9 @@ class LikeService:
         Returns:
             True if liked, False otherwise
         """
-        from apps.interactions.models import Like
         from django.contrib.contenttypes.models import ContentType
+
+        from apps.interactions.models import Like
 
         if not user or not user.is_authenticated:
             return False
@@ -701,8 +711,9 @@ class ReportService:
         Raises:
             ValueError: If user has already reported this target
         """
-        from apps.interactions.models import Report, ReportStatus
         from django.contrib.contenttypes.models import ContentType
+
+        from apps.interactions.models import Report, ReportStatus
 
         content_type = ContentType.objects.get_for_model(target)
 
@@ -857,8 +868,9 @@ class WalletService:
         Raises:
             ValueError: If amount is not positive
         """
-        from apps.interactions.models import Wallet, CoinTransaction, TransactionType
         from django.db import transaction
+
+        from apps.interactions.models import CoinTransaction, TransactionType, Wallet
 
         if amount <= 0:
             raise ValueError("충전 금액은 0보다 커야 합니다")
@@ -910,8 +922,9 @@ class WalletService:
             ValueError: If amount is not positive, wallet doesn't exist,
                        or insufficient balance
         """
-        from apps.interactions.models import Wallet, CoinTransaction, TransactionType
         from django.db import transaction
+
+        from apps.interactions.models import CoinTransaction, TransactionType, Wallet
 
         if amount <= 0:
             raise ValueError("사용 금액은 0보다 커야 합니다")
@@ -919,8 +932,8 @@ class WalletService:
         with transaction.atomic():
             try:
                 wallet = Wallet.objects.select_for_update().get(user=user)
-            except Wallet.DoesNotExist:
-                raise ValueError("지갑이 존재하지 않습니다")
+            except Wallet.DoesNotExist as e:
+                raise ValueError("지갑이 존재하지 않습니다") from e
 
             if wallet.balance < amount:
                 raise ValueError("잔액이 부족합니다")
@@ -966,8 +979,9 @@ class WalletService:
         Raises:
             ValueError: If amount is not positive or wallet doesn't exist
         """
-        from apps.interactions.models import Wallet, CoinTransaction, TransactionType
         from django.db import transaction
+
+        from apps.interactions.models import CoinTransaction, TransactionType, Wallet
 
         if amount <= 0:
             raise ValueError("환불 금액은 0보다 커야 합니다")
@@ -975,8 +989,8 @@ class WalletService:
         with transaction.atomic():
             try:
                 wallet = Wallet.objects.select_for_update().get(user=user)
-            except Wallet.DoesNotExist:
-                raise ValueError("지갑이 존재하지 않습니다")
+            except Wallet.DoesNotExist as e:
+                raise ValueError("지갑이 존재하지 않습니다") from e
 
             # Update balance
             wallet.balance += amount
@@ -1014,8 +1028,9 @@ class WalletService:
         Returns:
             Dict with 'wallet' and 'transaction' keys
         """
-        from apps.interactions.models import Wallet, CoinTransaction, TransactionType
         from django.db import transaction
+
+        from apps.interactions.models import CoinTransaction, TransactionType, Wallet
 
         with transaction.atomic():
             wallet, created = Wallet.objects.select_for_update().get_or_create(
@@ -1069,7 +1084,7 @@ class WalletService:
         Returns:
             List of CoinTransaction instances
         """
-        from apps.interactions.models import Wallet, CoinTransaction
+        from apps.interactions.models import CoinTransaction, Wallet
 
         try:
             wallet = Wallet.objects.get(user=user)
@@ -1108,8 +1123,9 @@ class AIUsageService:
         Returns:
             Updated AIUsageLog instance
         """
-        from apps.interactions.models import AIUsageLog
         from datetime import date
+
+        from apps.interactions.models import AIUsageLog
 
         today = date.today()
 
@@ -1151,9 +1167,11 @@ class AIUsageService:
         Returns:
             Number of requests today
         """
-        from apps.interactions.models import AIUsageLog
         from datetime import date
+
         from django.db.models import Sum
+
+        from apps.interactions.models import AIUsageLog
 
         today = date.today()
 
@@ -1197,8 +1215,9 @@ class AIUsageService:
         Returns:
             "FREE", "BASIC", or "PREMIUM"
         """
-        from apps.interactions.models import Subscription, SubscriptionStatus
         from django.utils import timezone
+
+        from apps.interactions.models import Subscription, SubscriptionStatus
 
         now = timezone.now()
 
@@ -1262,8 +1281,9 @@ class AIUsageService:
         Returns:
             Dict with tier, limits, and usage by action type
         """
-        from apps.interactions.models import AIUsageLog, AIActionType
         from datetime import date
+
+        from apps.interactions.models import AIActionType
 
         today = date.today()
         tier = self.get_user_tier(user)
@@ -1271,7 +1291,7 @@ class AIUsageService:
 
         # Get usage by action type
         usage_by_action = {}
-        for action_type, label in AIActionType.choices:
+        for action_type, _label in AIActionType.choices:
             count = self.get_daily_usage(user, action_type)
             usage_by_action[action_type] = {
                 "used": count,

@@ -4,11 +4,11 @@ Background tasks for computationally intensive AI operations.
 """
 
 import logging
+
 from celery import shared_task
 
 from apps.ai.services import ChunkingService
 from apps.contents.models import Chapter
-
 
 logger = logging.getLogger(__name__)
 

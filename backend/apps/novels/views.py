@@ -8,28 +8,29 @@ Contains ViewSets for:
 """
 
 from django.db import IntegrityError
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from rest_framework.response import Response
 
 from common.pagination import StandardPagination
-from .models import Novel, Branch, BranchLinkRequest, BranchVisibility, LinkRequestStatus
-from .services import NovelService, BranchService, BranchLinkService
+
+from .models import Branch, BranchLinkRequest, LinkRequestStatus, Novel
 from .serializers import (
+    BranchCreateSerializer,
+    BranchDetailSerializer,
+    BranchLinkRequestCreateSerializer,
+    BranchLinkRequestReviewSerializer,
+    BranchLinkRequestSerializer,
+    BranchListSerializer,
+    BranchVisibilityUpdateSerializer,
     NovelCreateSerializer,
     NovelDetailSerializer,
     NovelListSerializer,
     NovelUpdateSerializer,
-    BranchCreateSerializer,
-    BranchDetailSerializer,
-    BranchListSerializer,
-    BranchVisibilityUpdateSerializer,
-    BranchLinkRequestCreateSerializer,
-    BranchLinkRequestReviewSerializer,
-    BranchLinkRequestSerializer,
 )
+from .services import BranchLinkService, BranchService, NovelService
 
 
 @extend_schema_view(
@@ -403,11 +404,11 @@ class BranchDetailViewSet(viewsets.ViewSet):
     )
     def continue_reading(self, request, pk=None):
         """Get continue reading info for this branch."""
-        from apps.interactions.services import ReadingService
         from apps.interactions.serializers import ContinueReadingSerializer
+        from apps.interactions.services import ReadingService
 
         try:
-            branch = Branch.objects.get(pk=pk)
+            Branch.objects.get(pk=pk)
         except Branch.DoesNotExist:
             return Response(
                 {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},

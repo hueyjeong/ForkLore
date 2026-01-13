@@ -5,12 +5,9 @@ TDD RED Phase: Tests written before implementation.
 """
 
 import pytest
-from decimal import Decimal
-from django.db import transaction
 from model_bakery import baker
 
 from apps.interactions.models import (
-    Wallet,
     CoinTransaction,
     TransactionType,
 )
@@ -266,7 +263,7 @@ class TestWalletServiceGetTransactions:
 
     def test_get_transactions_with_limit(self, wallet_service, user):
         """Should limit transaction list."""
-        for i in range(10):
+        for _i in range(10):
             wallet_service.charge(user=user, amount=100)
 
         transactions = wallet_service.get_transactions(user=user, limit=5)

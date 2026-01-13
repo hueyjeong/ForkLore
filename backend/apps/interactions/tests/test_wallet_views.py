@@ -10,12 +10,11 @@ Tests:
 """
 
 import pytest
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from model_bakery import baker
 
-from apps.interactions.models import Wallet, CoinTransaction, TransactionType
 from apps.interactions.services import WalletService
 from apps.users.models import User
 
@@ -156,7 +155,7 @@ class TestWalletTransactions:
 
     def test_get_transactions_list(self, auth_client, user, wallet_service):
         """Should return transaction list."""
-        for i in range(5):
+        for _i in range(5):
             wallet_service.charge(user=user, amount=100)
 
         url = "/api/v1/users/me/wallet/transactions/"
@@ -178,7 +177,7 @@ class TestWalletTransactions:
 
     def test_get_transactions_with_pagination(self, auth_client, user, wallet_service):
         """Should paginate transaction list."""
-        for i in range(25):
+        for _i in range(25):
             wallet_service.charge(user=user, amount=10)
 
         url = "/api/v1/users/me/wallet/transactions/"

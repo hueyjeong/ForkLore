@@ -7,21 +7,20 @@ Contains:
 """
 
 from django.db import transaction
-from django.db.models import QuerySet, F
-
+from django.db.models import F, QuerySet
 from django.utils import timezone
 
 from .models import (
-    Novel,
+    AgeRating,
     Branch,
+    BranchLinkRequest,
     BranchType,
     BranchVisibility,
-    CanonStatus,
     BranchVote,
-    BranchLinkRequest,
-    LinkRequestStatus,
+    CanonStatus,
     Genre,
-    AgeRating,
+    LinkRequestStatus,
+    Novel,
     NovelStatus,
 )
 

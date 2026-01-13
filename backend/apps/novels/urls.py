@@ -12,11 +12,11 @@ Endpoints:
 - /link-requests/{id}/ - Review link request
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 
-from .views import NovelViewSet, BranchViewSet, BranchDetailViewSet, LinkRequestViewSet
+from .views import BranchDetailViewSet, BranchViewSet, LinkRequestViewSet, NovelViewSet
 
 # Main router for novels
 router = DefaultRouter()

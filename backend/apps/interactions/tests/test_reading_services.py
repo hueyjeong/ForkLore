@@ -4,12 +4,10 @@ RED → GREEN → REFACTOR
 """
 
 import pytest
-from django.utils import timezone
 from model_bakery import baker
 
-from apps.interactions.services import ReadingService, BookmarkService
-from apps.interactions.models import ReadingLog, Bookmark
-
+from apps.interactions.models import Bookmark, ReadingLog
+from apps.interactions.services import BookmarkService, ReadingService
 
 pytestmark = pytest.mark.django_db
 
@@ -79,7 +77,7 @@ class TestReadingServiceGetRecentReads:
         user = baker.make("users.User")
         chapters = baker.make("contents.Chapter", _quantity=5)
 
-        for i, chapter in enumerate(chapters):
+        for _i, chapter in enumerate(chapters):
             ReadingService.record_reading(
                 user=user,
                 chapter_id=chapter.id,
@@ -128,7 +126,7 @@ class TestReadingServiceGetContinueReading:
         branch = baker.make("novels.Branch")
         chapter1 = baker.make("contents.Chapter", branch=branch, chapter_number=1)
         chapter2 = baker.make("contents.Chapter", branch=branch, chapter_number=2)
-        chapter3 = baker.make("contents.Chapter", branch=branch, chapter_number=3)
+        baker.make("contents.Chapter", branch=branch, chapter_number=3)
 
         ReadingService.record_reading(user=user, chapter_id=chapter1.id, progress=1.0)
         ReadingService.record_reading(user=user, chapter_id=chapter2.id, progress=0.5)

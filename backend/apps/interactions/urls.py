@@ -2,25 +2,24 @@
 URL routing for interactions app.
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    SubscriptionViewSet,
-    PurchaseViewSet,
-    ChapterPurchaseViewSet,
-    ChapterCommentViewSet,
-    CommentDetailViewSet,
-    ChapterLikeViewSet,
-    ReportViewSet,
     AdminReportViewSet,
-    WalletChargeViewSet,
-    UserWalletViewSet,
     AdminWalletAdjustmentViewSet,
-    UserAIUsageViewSet,
     AIUsageViewSet,
+    ChapterCommentViewSet,
+    ChapterLikeViewSet,
+    ChapterPurchaseViewSet,
+    CommentDetailViewSet,
+    PurchaseViewSet,
+    ReportViewSet,
+    SubscriptionViewSet,
+    UserAIUsageViewSet,
+    UserWalletViewSet,
+    WalletChargeViewSet,
 )
-
 
 # Main router for subscriptions and purchases
 router = DefaultRouter()

@@ -11,18 +11,17 @@ Contains serializers for:
 from rest_framework import serializers
 
 from .models import (
+    AccessType,
     Chapter,
     ChapterStatus,
-    AccessType,
+    Map,
+    MapLayer,
+    MapObject,
+    MapSnapshot,
     WikiEntry,
     WikiSnapshot,
     WikiTagDefinition,
-    Map,
-    MapSnapshot,
-    MapLayer,
-    MapObject,
 )
-
 
 # =============================================================================
 # Chapter Serializers

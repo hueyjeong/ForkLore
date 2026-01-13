@@ -6,61 +6,100 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('novels', '0001_initial'),
+        ("novels", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='branch',
-            name='author',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='branches', to=settings.AUTH_USER_MODEL),
+            model_name="branch",
+            name="author",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="branches",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='branch',
-            name='parent_branch',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='child_branches', to='novels.branch'),
+            model_name="branch",
+            name="parent_branch",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="child_branches",
+                to="novels.branch",
+            ),
         ),
         migrations.AddField(
-            model_name='branchlinkrequest',
-            name='branch',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='link_requests', to='novels.branch'),
+            model_name="branchlinkrequest",
+            name="branch",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="link_requests",
+                to="novels.branch",
+            ),
         ),
         migrations.AddField(
-            model_name='branchlinkrequest',
-            name='reviewer',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reviewed_link_requests', to=settings.AUTH_USER_MODEL),
+            model_name="branchlinkrequest",
+            name="reviewer",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="reviewed_link_requests",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='branchvote',
-            name='branch',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='votes', to='novels.branch'),
+            model_name="branchvote",
+            name="branch",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="votes",
+                to="novels.branch",
+            ),
         ),
         migrations.AddField(
-            model_name='branchvote',
-            name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='branch_votes', to=settings.AUTH_USER_MODEL),
+            model_name="branchvote",
+            name="user",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="branch_votes",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='novel',
-            name='author',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='novels', to=settings.AUTH_USER_MODEL),
+            model_name="novel",
+            name="author",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="novels",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='branch',
-            name='novel',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='branches', to='novels.novel'),
+            model_name="branch",
+            name="novel",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="branches",
+                to="novels.novel",
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='branchvote',
-            unique_together={('user', 'branch')},
+            name="branchvote",
+            unique_together={("user", "branch")},
         ),
         migrations.AddConstraint(
-            model_name='branch',
-            constraint=models.UniqueConstraint(condition=models.Q(('is_main', True)), fields=('novel',), name='unique_main_branch_per_novel'),
+            model_name="branch",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("is_main", True)),
+                fields=("novel",),
+                name="unique_main_branch_per_novel",
+            ),
         ),
     ]

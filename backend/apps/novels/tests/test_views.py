@@ -4,11 +4,11 @@ Integration tests for Novel API endpoints.
 
 import pytest
 from django.urls import reverse
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
-from model_bakery import baker
 
-from apps.novels.models import Novel, Branch, Genre, AgeRating, NovelStatus
+from apps.novels.models import AgeRating, Genre, Novel
 
 
 @pytest.fixture

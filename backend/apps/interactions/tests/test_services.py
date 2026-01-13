@@ -7,17 +7,17 @@ Tests:
 - PurchaseService: purchase, get_purchase_list
 """
 
-import pytest
 from datetime import timedelta
+
+import pytest
 from django.utils import timezone
 from model_bakery import baker
 
-from apps.contents.models import Chapter, ChapterStatus, AccessType
-from apps.interactions.models import Subscription, Purchase, SubscriptionStatus, PlanType
-from apps.interactions.services import AccessService, SubscriptionService, PurchaseService
-from apps.novels.models import Novel, Branch
+from apps.contents.models import AccessType, Chapter, ChapterStatus
+from apps.interactions.models import PlanType, Purchase, Subscription, SubscriptionStatus
+from apps.interactions.services import AccessService, PurchaseService, SubscriptionService
+from apps.novels.models import Branch
 from apps.users.models import User
-
 
 # =============================================================================
 # AccessService Tests

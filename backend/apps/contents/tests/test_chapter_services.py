@@ -10,14 +10,15 @@ Tests:
 - list(): List chapters for a branch
 """
 
-import pytest
 from datetime import timedelta
+
+import pytest
 from django.utils import timezone
 from model_bakery import baker
 
-from apps.contents.models import Chapter, ChapterStatus, AccessType
+from apps.contents.models import AccessType, Chapter, ChapterStatus
 from apps.contents.services import ChapterService
-from apps.novels.models import Novel, Branch
+from apps.novels.models import Branch
 
 
 @pytest.mark.django_db

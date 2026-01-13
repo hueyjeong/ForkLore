@@ -9,15 +9,14 @@ Tests:
 """
 
 import pytest
-from django.utils import timezone
 from model_bakery import baker
 
 from apps.novels.models import (
-    Novel,
     Branch,
     BranchLinkRequest,
     BranchVisibility,
     LinkRequestStatus,
+    Novel,
 )
 from apps.novels.services import BranchLinkService
 

@@ -8,10 +8,9 @@ RED-GREEN-REFACTOR:
 """
 
 import pytest
-from django.db import IntegrityError
 from model_bakery import baker
 
-from apps.novels.models import Novel, Branch, BranchType, Genre, AgeRating, NovelStatus
+from apps.novels.models import AgeRating, Branch, BranchType, Genre, Novel, NovelStatus
 from apps.novels.services import NovelService
 
 
@@ -120,7 +119,7 @@ class TestNovelServiceList:
     def test_list_novels_filter_by_status(self, novel_service, author):
         """상태 필터링"""
         ongoing = baker.make("novels.Novel", author=author, status=NovelStatus.ONGOING)
-        completed = baker.make("novels.Novel", author=author, status=NovelStatus.COMPLETED)
+        baker.make("novels.Novel", author=author, status=NovelStatus.COMPLETED)
 
         novels = novel_service.list(filters={"status": NovelStatus.ONGOING})
 

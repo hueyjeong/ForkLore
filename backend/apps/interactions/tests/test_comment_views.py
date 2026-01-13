@@ -4,12 +4,11 @@ RED → GREEN → REFACTOR
 """
 
 import pytest
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
-from model_bakery import baker
 
-from apps.interactions.models import Comment, Like
-
+from apps.interactions.models import Comment
 
 pytestmark = pytest.mark.django_db
 

@@ -7,9 +7,8 @@ import pytest
 from django.core.exceptions import PermissionDenied
 from model_bakery import baker
 
-from apps.contents.services import WikiService
 from apps.contents.models import WikiEntry, WikiTagDefinition
-
+from apps.contents.services import WikiService
 
 pytestmark = pytest.mark.django_db
 
@@ -297,9 +296,7 @@ class TestWikiSnapshotService:
         """정확히 일치하는 회차의 스냅샷 반환"""
         wiki = baker.make("contents.WikiEntry")
         baker.make("contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=1, content="초기")
-        snapshot5 = baker.make(
-            "contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=5, content="회차5"
-        )
+        baker.make("contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=5, content="회차5")
         baker.make(
             "contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=10, content="회차10"
         )
@@ -313,9 +310,7 @@ class TestWikiSnapshotService:
         """해당 회차 이하 중 가장 최신 스냅샷 반환"""
         wiki = baker.make("contents.WikiEntry")
         baker.make("contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=1, content="초기")
-        snapshot5 = baker.make(
-            "contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=5, content="회차5"
-        )
+        baker.make("contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=5, content="회차5")
         baker.make(
             "contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=10, content="회차10"
         )
@@ -385,7 +380,7 @@ class TestWikiServiceFork:
             image_url="https://example.com/1.jpg",
             first_appearance=1,
         )
-        wiki2 = baker.make(
+        baker.make(
             "contents.WikiEntry",
             branch=source_branch,
             name="캐릭터2",

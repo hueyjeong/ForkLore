@@ -5,7 +5,7 @@ TDD Tests for Novel Serializers.
 import pytest
 from model_bakery import baker
 
-from apps.novels.models import Novel, Branch, Genre, AgeRating, NovelStatus
+from apps.novels.models import AgeRating, Genre
 from apps.novels.serializers import (
     NovelCreateSerializer,
     NovelDetailSerializer,

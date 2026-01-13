@@ -3,27 +3,26 @@ Views for authentication and user management.
 Uses service layer for business logic.
 """
 
-from rest_framework import generics, status
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from django.contrib.auth import get_user_model
-
-from dj_rest_auth.registration.views import SocialLoginView
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from dj_rest_auth.registration.views import SocialLoginView
+from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
+from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from common.pagination import StandardPagination
 
 from .serializers import (
-    SignUpSerializer,
-    UserSerializer,
-    UpdateProfileSerializer,
     ChangePasswordSerializer,
     CustomTokenObtainPairSerializer,
     LogoutSerializer,
+    SignUpSerializer,
+    UpdateProfileSerializer,
+    UserSerializer,
 )
 from .services import AuthService
 
@@ -40,7 +39,7 @@ class SignUpView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
+        serializer.save()
         return Response(
             {"message": "회원가입이 완료되었습니다."},
             status=status.HTTP_201_CREATED,
@@ -130,8 +129,8 @@ class ReadingHistoryView(generics.ListAPIView):
         tags=["Reading"],
     )
     def get(self, request, *args, **kwargs):
-        from apps.interactions.services import ReadingService
         from apps.interactions.serializers import ReadingLogSerializer
+        from apps.interactions.services import ReadingService
 
         logs = ReadingService.get_recent_reads(user=request.user, limit=100)
 
@@ -154,8 +153,8 @@ class BookmarksView(generics.ListAPIView):
         tags=["Reading"],
     )
     def get(self, request, *args, **kwargs):
-        from apps.interactions.services import BookmarkService
         from apps.interactions.serializers import BookmarkSerializer
+        from apps.interactions.services import BookmarkService
 
         bookmarks = BookmarkService.get_bookmarks(user=request.user)
 

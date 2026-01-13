@@ -4,12 +4,11 @@ RED → GREEN → REFACTOR
 """
 
 import pytest
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
-from model_bakery import baker
 
-from apps.contents.models import Map, MapSnapshot, MapLayer, MapObject
-
+from apps.contents.models import Map, MapObject
 
 pytestmark = pytest.mark.django_db
 
@@ -76,7 +75,7 @@ class TestMapViewSet:
     def test_retrieve_map_with_context(self):
         """문맥 인식 지도 조회"""
         map_obj = baker.make("contents.Map", branch=self.branch, name="지도")
-        snapshot1 = baker.make("contents.MapSnapshot", map=map_obj, valid_from_chapter=1)
+        baker.make("contents.MapSnapshot", map=map_obj, valid_from_chapter=1)
         baker.make("contents.MapSnapshot", map=map_obj, valid_from_chapter=5)
 
         url = f"/api/v1/maps/{map_obj.id}/?currentChapter=3"

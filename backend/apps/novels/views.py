@@ -8,28 +8,30 @@ Contains ViewSets for:
 """
 
 from django.db import IntegrityError
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 from common.pagination import StandardPagination
-from .models import Novel, Branch, BranchLinkRequest, BranchVisibility, LinkRequestStatus
-from .services import NovelService, BranchService, BranchLinkService
+
+from .models import Branch, BranchLinkRequest, LinkRequestStatus, Novel
 from .serializers import (
+    BranchCreateSerializer,
+    BranchDetailSerializer,
+    BranchLinkRequestCreateSerializer,
+    BranchLinkRequestReviewSerializer,
+    BranchLinkRequestSerializer,
+    BranchListSerializer,
+    BranchVisibilityUpdateSerializer,
     NovelCreateSerializer,
     NovelDetailSerializer,
     NovelListSerializer,
     NovelUpdateSerializer,
-    BranchCreateSerializer,
-    BranchDetailSerializer,
-    BranchListSerializer,
-    BranchVisibilityUpdateSerializer,
-    BranchLinkRequestCreateSerializer,
-    BranchLinkRequestReviewSerializer,
-    BranchLinkRequestSerializer,
 )
+from .services import BranchLinkService, BranchService, NovelService
 
 
 @extend_schema_view(
@@ -44,11 +46,11 @@ class NovelViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)
         self.service = NovelService()
 
-    def list(self, request):
+    def list(self, request: Request) -> Response:
         """List novels with optional filtering and sorting."""
         filters = {}
         if "genre" in request.query_params:
@@ -81,7 +83,7 @@ class NovelViewSet(viewsets.ViewSet):
         serializer = NovelListSerializer(novels, many=True)
         return Response({"success": True, "message": None, "data": {"results": serializer.data}})
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request: Request, pk: int | None = None) -> Response:
         """Retrieve a single novel."""
         try:
             novel = self.service.retrieve(novel_id=pk)
@@ -93,7 +95,7 @@ class NovelViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-    def create(self, request):
+    def create(self, request: Request) -> Response:
         """Create a new novel."""
         serializer = NovelCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -114,7 +116,7 @@ class NovelViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-    def partial_update(self, request, pk=None):
+    def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a novel."""
         serializer = NovelUpdateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -141,7 +143,7 @@ class NovelViewSet(viewsets.ViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-    def destroy(self, request, pk=None):
+    def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a novel."""
         try:
             self.service.delete(novel_id=pk, author=request.user)
@@ -173,12 +175,12 @@ class BranchViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)
         self.service = BranchService()
         self.link_service = BranchLinkService()
 
-    def list(self, request, novel_pk=None):
+    def list(self, request: Request, novel_pk: int | None = None) -> Response:
         """List branches for a novel."""
         visibility = request.query_params.get("visibility")
         sort = request.query_params.get("sort", "latest")
@@ -188,7 +190,7 @@ class BranchViewSet(viewsets.ViewSet):
 
         return Response({"success": True, "message": None, "data": {"results": serializer.data}})
 
-    def create(self, request, novel_pk=None):
+    def create(self, request: Request, novel_pk: int | None = None) -> Response:
         """Fork a new branch."""
         serializer = BranchCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -232,7 +234,7 @@ class BranchViewSet(viewsets.ViewSet):
             )
 
     @action(detail=False, methods=["get"], url_path="main")
-    def main(self, request, novel_pk=None):
+    def main(self, request: Request, novel_pk: int | None = None) -> Response:
         """Get main branch of a novel."""
         try:
             branch = self.service.get_main_branch(novel_id=novel_pk)
@@ -245,7 +247,9 @@ class BranchViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-    def retrieve(self, request, pk=None, novel_pk=None):
+    def retrieve(
+        self, request: Request, pk: int | None = None, novel_pk: int | None = None
+    ) -> Response:
         """Retrieve a single branch."""
         try:
             branch = self.service.retrieve(branch_id=pk)
@@ -264,12 +268,12 @@ class BranchDetailViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)
         self.service = BranchService()
         self.link_service = BranchLinkService()
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request: Request, pk: int | None = None) -> Response:
         """Retrieve a single branch."""
         try:
             branch = self.service.retrieve(branch_id=pk)
@@ -285,7 +289,7 @@ class BranchDetailViewSet(viewsets.ViewSet):
     @action(
         detail=True, methods=["patch"], url_path="visibility", permission_classes=[IsAuthenticated]
     )
-    def visibility(self, request, pk=None):
+    def visibility(self, request: Request, pk: int | None = None) -> Response:
         """Update branch visibility."""
         serializer = BranchVisibilityUpdateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -325,7 +329,7 @@ class BranchDetailViewSet(viewsets.ViewSet):
         url_path="vote",
         permission_classes=[IsAuthenticated],
     )
-    def vote(self, request, pk=None):
+    def vote(self, request: Request, pk: int | None = None) -> Response:
         """Add or remove a vote."""
         try:
             if request.method == "POST":
@@ -356,7 +360,7 @@ class BranchDetailViewSet(viewsets.ViewSet):
     @action(
         detail=True, methods=["post"], url_path="link-request", permission_classes=[IsAuthenticated]
     )
-    def link_request(self, request, pk=None):
+    def link_request(self, request: Request, pk: int | None = None) -> Response:
         """Create a link request."""
         serializer = BranchLinkRequestCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -395,17 +399,40 @@ class BranchDetailViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="continue-reading",
+        permission_classes=[IsAuthenticated],
+    )
+    def continue_reading(self, request: Request, pk: int | None = None) -> Response:
+        """Get continue reading info for this branch."""
+        from apps.interactions.serializers import ContinueReadingSerializer
+        from apps.interactions.services import ReadingService
+
+        try:
+            Branch.objects.get(pk=pk)
+        except Branch.DoesNotExist:
+            return Response(
+                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        result = ReadingService.get_continue_reading(user=request.user, branch_id=pk)
+        serializer = ContinueReadingSerializer(result)
+        return Response(serializer.data)
+
 
 class LinkRequestViewSet(viewsets.ViewSet):
     """ViewSet for BranchLinkRequest operations."""
 
     permission_classes = [IsAuthenticated]
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: object) -> None:
         super().__init__(**kwargs)
         self.service = BranchLinkService()
 
-    def partial_update(self, request, pk=None):
+    def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Review (approve/reject) a link request."""
         serializer = BranchLinkRequestReviewSerializer(data=request.data)
         if not serializer.is_valid():

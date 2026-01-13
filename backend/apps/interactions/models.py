@@ -1,5 +1,6 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
+
 from common.models import BaseModel, SoftDeleteModel
 
 
@@ -100,8 +101,197 @@ class Comment(SoftDeleteModel):
     is_pinned = models.BooleanField("고정 여부", default=False)
     like_count = models.IntegerField("좋아요 수", default=0)
 
+    # Paragraph comment fields
+    paragraph_index = models.IntegerField("문단 인덱스", null=True, blank=True)
+    selection_start = models.IntegerField("선택 시작", null=True, blank=True)
+    selection_end = models.IntegerField("선택 끝", null=True, blank=True)
+    quoted_text = models.TextField("인용 텍스트", blank=True)
+
     class Meta:
         db_table = "comments"
         verbose_name = "댓글"
         verbose_name_plural = "댓글들"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["chapter", "paragraph_index"]),
+        ]
+
+    def clean(self) -> None:
+        from django.core.exceptions import ValidationError
+
+        if self.selection_start is not None and self.selection_end is not None:
+            if self.selection_start >= self.selection_end:
+                raise ValidationError("selection_start must be less than selection_end")
+
+
+class Like(BaseModel):
+    """Like model with GenericForeignKey for polymorphic likes."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="likes"
+    )
+    # Generic relation fields
+    content_type = models.ForeignKey("contenttypes.ContentType", on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+
+    class Meta:
+        db_table = "likes"
+        verbose_name = "좋아요"
+        verbose_name_plural = "좋아요들"
+        unique_together = ["user", "content_type", "object_id"]
+        indexes = [
+            models.Index(fields=["content_type", "object_id"]),
+        ]
+
+
+class ReportReason(models.TextChoices):
+    """Reasons for reporting content."""
+
+    SPAM = "SPAM", "스팸"
+    ABUSE = "ABUSE", "욕설/비방"
+    SPOILER = "SPOILER", "스포일러"
+    COPYRIGHT = "COPYRIGHT", "저작권 침해"
+    OTHER = "OTHER", "기타"
+
+
+class ReportStatus(models.TextChoices):
+    """Status of a report."""
+
+    PENDING = "PENDING", "대기중"
+    RESOLVED = "RESOLVED", "처리완료"
+    REJECTED = "REJECTED", "반려"
+
+
+class Report(BaseModel):
+    """Report model with GenericForeignKey for polymorphic reports."""
+
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reports_submitted"
+    )
+    # Generic relation fields (polymorphic target)
+    content_type = models.ForeignKey("contenttypes.ContentType", on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+
+    reason = models.CharField("신고 사유", max_length=20, choices=ReportReason.choices)
+    description = models.TextField("상세 설명", blank=True)
+    status = models.CharField(
+        "상태", max_length=20, choices=ReportStatus.choices, default=ReportStatus.PENDING
+    )
+
+    # Resolution fields
+    resolver = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reports_resolved",
+    )
+    resolved_at = models.DateTimeField("처리일", null=True, blank=True)
+    resolution_note = models.TextField("처리 메모", blank=True)
+
+    class Meta:
+        db_table = "reports"
+        verbose_name = "신고"
+        verbose_name_plural = "신고들"
+        unique_together = ["reporter", "content_type", "object_id"]
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["content_type", "object_id"]),
+            models.Index(fields=["status"]),
+        ]
+
+
+# =============================================================================
+# Wallet / Coin Transaction Models
+# =============================================================================
+
+
+class Wallet(BaseModel):
+    """User wallet for storing coin balance."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet"
+    )
+    balance = models.IntegerField("잔액", default=0)
+
+    class Meta:
+        db_table = "wallets"
+        verbose_name = "지갑"
+        verbose_name_plural = "지갑들"
+
+
+class TransactionType(models.TextChoices):
+    """Types of coin transactions."""
+
+    CHARGE = "CHARGE", "충전"
+    SPEND = "SPEND", "사용"
+    REFUND = "REFUND", "환불"
+    ADJUSTMENT = "ADJUSTMENT", "정정"
+
+
+class CoinTransaction(BaseModel):
+    """
+    Immutable coin transaction ledger.
+
+    INSERT ONLY - UPDATE/DELETE should be prevented at service layer.
+    """
+
+    wallet = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="transactions")
+    transaction_type = models.CharField("거래 유형", max_length=20, choices=TransactionType.choices)
+    amount = models.IntegerField("금액")  # Can be negative for adjustments
+    balance_after = models.IntegerField("거래 후 잔액")
+    description = models.TextField("설명", blank=True)
+
+    # Reference to related entity (e.g., purchase, chapter)
+    reference_type = models.CharField("참조 타입", max_length=50, blank=True)
+    reference_id = models.PositiveIntegerField("참조 ID", null=True, blank=True)
+
+    class Meta:
+        db_table = "coin_transactions"
+        verbose_name = "코인 거래"
+        verbose_name_plural = "코인 거래들"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["wallet", "-created_at"]),
+            models.Index(fields=["transaction_type"]),
+            models.Index(fields=["reference_type", "reference_id"]),
+        ]
+
+
+# =============================================================================
+# AI Usage Tracking Models
+# =============================================================================
+
+
+class AIActionType(models.TextChoices):
+    """Types of AI actions for usage tracking."""
+
+    WIKI_SUGGEST = "WIKI_SUGGEST", "위키 제안"
+    CONSISTENCY_CHECK = "CONSISTENCY_CHECK", "일관성 검사"
+    ASK = "ASK", "질문"
+
+
+class AIUsageLog(BaseModel):
+    """
+    AI usage tracking per user/date/action.
+
+    Used for daily limit enforcement based on subscription tier.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ai_usage_logs"
+    )
+    usage_date = models.DateField("사용일")
+    action_type = models.CharField("액션 타입", max_length=30, choices=AIActionType.choices)
+    request_count = models.IntegerField("요청 횟수", default=0)
+    token_count = models.IntegerField("토큰 수", default=0)
+
+    class Meta:
+        db_table = "ai_usage_logs"
+        verbose_name = "AI 사용 로그"
+        verbose_name_plural = "AI 사용 로그들"
+        unique_together = ["user", "usage_date", "action_type"]
+        indexes = [
+            models.Index(fields=["usage_date", "user"]),
+            models.Index(fields=["user", "action_type", "usage_date"]),
+        ]

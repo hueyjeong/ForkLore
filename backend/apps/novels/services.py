@@ -7,21 +7,22 @@ Contains:
 """
 
 from django.db import transaction
-from django.db.models import QuerySet, F
-
+from django.db.models import F, QuerySet
 from django.utils import timezone
 
+from apps.users.models import User
+
 from .models import (
-    Novel,
+    AgeRating,
     Branch,
+    BranchLinkRequest,
     BranchType,
     BranchVisibility,
-    CanonStatus,
     BranchVote,
-    BranchLinkRequest,
-    LinkRequestStatus,
+    CanonStatus,
     Genre,
-    AgeRating,
+    LinkRequestStatus,
+    Novel,
     NovelStatus,
 )
 
@@ -30,7 +31,7 @@ class NovelService:
     """Service class for Novel-related business logic."""
 
     @transaction.atomic
-    def create(self, author, data: dict) -> Novel:
+    def create(self, author: User, data: dict) -> Novel:
         """
         Create a new novel with automatic main branch creation.
 
@@ -124,7 +125,7 @@ class NovelService:
         return Novel.objects.get(id=novel_id, deleted_at__isnull=True)
 
     @transaction.atomic
-    def update(self, novel_id: int, author, data: dict) -> Novel:
+    def update(self, novel_id: int, author: User, data: dict) -> Novel:
         """
         Update an existing novel.
 
@@ -164,7 +165,7 @@ class NovelService:
         return novel
 
     @transaction.atomic
-    def delete(self, novel_id: int, author) -> None:
+    def delete(self, novel_id: int, author: User) -> None:
         """
         Soft-delete a novel.
 
@@ -254,7 +255,7 @@ class BranchService:
         self,
         novel_id: int,
         parent_branch_id: int,
-        author,
+        author: User,
         data: dict,
     ) -> Branch:
         """
@@ -306,7 +307,7 @@ class BranchService:
     def update_visibility(
         self,
         branch_id: int,
-        author,
+        author: User,
         visibility: str,
     ) -> Branch:
         """
@@ -350,7 +351,7 @@ class BranchService:
         return branch
 
     @transaction.atomic
-    def vote(self, branch_id: int, user) -> bool:
+    def vote(self, branch_id: int, user: User) -> bool:
         """
         Add a vote to a branch.
 
@@ -373,7 +374,7 @@ class BranchService:
         return True
 
     @transaction.atomic
-    def unvote(self, branch_id: int, user) -> bool:
+    def unvote(self, branch_id: int, user: User) -> bool:
         """
         Remove a vote from a branch.
 
@@ -401,7 +402,7 @@ class BranchLinkService:
     def request_link(
         self,
         branch_id: int,
-        requester,
+        requester: User,
         message: str = "",
     ) -> BranchLinkRequest:
         """
@@ -446,7 +447,7 @@ class BranchLinkService:
     def approve_link(
         self,
         request_id: int,
-        reviewer,
+        reviewer: User,
         comment: str = "",
     ) -> BranchLinkRequest:
         """
@@ -495,7 +496,7 @@ class BranchLinkService:
     def reject_link(
         self,
         request_id: int,
-        reviewer,
+        reviewer: User,
         comment: str = "",
     ) -> BranchLinkRequest:
         """

@@ -15,12 +15,12 @@ class SoftDeleteModel(BaseModel):
     class Meta:
         abstract = True
 
-    def soft_delete(self):
+    def soft_delete(self) -> None:
         from django.utils import timezone
 
         self.deleted_at = timezone.now()
         self.save(update_fields=["deleted_at"])
 
     @property
-    def is_deleted(self):
+    def is_deleted(self) -> bool:
         return self.deleted_at is not None

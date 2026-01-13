@@ -2,32 +2,36 @@
 Integration tests for Novel API endpoints.
 """
 
+from typing import Any
+
 import pytest
 from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APIClient
 from model_bakery import baker
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.test import APIClient
 
-from apps.novels.models import Novel, Branch, Genre, AgeRating, NovelStatus
+from apps.novels.models import AgeRating, Genre, Novel
+from apps.users.models import User
 
 
 @pytest.fixture
-def api_client():
+def api_client() -> APIClient:
     return APIClient()
 
 
 @pytest.fixture
-def author(db):
+def author(db: Any) -> User:
     return baker.make("users.User", email="author@test.com", nickname="author", role="AUTHOR")
 
 
 @pytest.fixture
-def other_author(db):
+def other_author(db: Any) -> User:
     return baker.make("users.User", email="other@test.com", nickname="other", role="AUTHOR")
 
 
 @pytest.fixture
-def authenticated_client(api_client, author):
+def authenticated_client(api_client: APIClient, author: User) -> APIClient:
     from rest_framework_simplejwt.tokens import RefreshToken
 
     refresh = RefreshToken.for_user(author)
@@ -36,7 +40,7 @@ def authenticated_client(api_client, author):
 
 
 @pytest.fixture
-def other_authenticated_client(api_client, other_author):
+def other_authenticated_client(api_client: APIClient, other_author: User) -> APIClient:
     from rest_framework_simplejwt.tokens import RefreshToken
 
     refresh = RefreshToken.for_user(other_author)
@@ -45,7 +49,7 @@ def other_authenticated_client(api_client, other_author):
 
 
 @pytest.fixture
-def novel(db, author):
+def novel(db: Any, author: User) -> Novel:
     novel = baker.make("novels.Novel", author=author, title="테스트 소설", genre=Genre.FANTASY)
     baker.make(
         "novels.Branch",
@@ -58,7 +62,7 @@ def novel(db, author):
     return novel
 
 
-def get_json(response):
+def get_json(response: Response) -> Any:
     """Helper to get JSON data from response."""
     return response.json()
 
@@ -66,7 +70,7 @@ def get_json(response):
 class TestNovelCreate:
     """POST /api/v1/novels - 소설 생성"""
 
-    def test_create_novel_success(self, authenticated_client, author):
+    def test_create_novel_success(self, authenticated_client: APIClient, author: User) -> None:
         """인증된 작가가 소설 생성"""
         url = reverse("novel-list")
         data = {
@@ -87,7 +91,7 @@ class TestNovelCreate:
         novel = Novel.objects.get(id=json_data["data"]["id"])
         assert novel.branches.filter(is_main=True).exists()
 
-    def test_create_novel_unauthenticated(self, api_client):
+    def test_create_novel_unauthenticated(self, api_client: APIClient) -> None:
         """미인증 사용자는 생성 불가"""
         url = reverse("novel-list")
         data = {"title": "테스트", "genre": Genre.FANTASY}
@@ -96,7 +100,7 @@ class TestNovelCreate:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_create_novel_missing_required_fields(self, authenticated_client):
+    def test_create_novel_missing_required_fields(self, authenticated_client: APIClient) -> None:
         """필수 필드 누락 시 400 에러"""
         url = reverse("novel-list")
         data = {"description": "설명만"}
@@ -109,7 +113,7 @@ class TestNovelCreate:
 class TestNovelList:
     """GET /api/v1/novels - 소설 목록"""
 
-    def test_list_novels(self, api_client, novel):
+    def test_list_novels(self, api_client: APIClient, novel: Novel) -> None:
         """소설 목록 조회 (인증 불필요)"""
         url = reverse("novel-list")
 
@@ -120,7 +124,7 @@ class TestNovelList:
         assert json_data["success"] is True
         assert len(json_data["data"]["results"]) >= 1
 
-    def test_list_novels_filter_by_genre(self, api_client, author):
+    def test_list_novels_filter_by_genre(self, api_client: APIClient, author: User) -> None:
         """장르 필터링"""
         baker.make("novels.Novel", author=author, genre=Genre.FANTASY)
         baker.make("novels.Novel", author=author, genre=Genre.ROMANCE)
@@ -132,7 +136,7 @@ class TestNovelList:
         for novel in json_data["data"]["results"]:
             assert novel["genre"] == Genre.FANTASY
 
-    def test_list_novels_pagination(self, api_client, author):
+    def test_list_novels_pagination(self, api_client: APIClient, author: User) -> None:
         """페이지네이션"""
         for i in range(25):
             baker.make("novels.Novel", author=author, title=f"소설 {i}")
@@ -144,7 +148,7 @@ class TestNovelList:
         assert len(json_data["data"]["results"]) == 10
         assert json_data["data"]["count"] >= 25
 
-    def test_list_novels_sort_by_popular(self, api_client, author):
+    def test_list_novels_sort_by_popular(self, api_client: APIClient, author: User) -> None:
         """인기순 정렬"""
         baker.make("novels.Novel", author=author, total_view_count=100)
         baker.make("novels.Novel", author=author, total_view_count=500)
@@ -160,7 +164,7 @@ class TestNovelList:
 class TestNovelRetrieve:
     """GET /api/v1/novels/{id} - 소설 상세"""
 
-    def test_retrieve_novel(self, api_client, novel):
+    def test_retrieve_novel(self, api_client: APIClient, novel: Novel) -> None:
         """소설 상세 조회"""
         url = reverse("novel-detail", kwargs={"pk": novel.id})
 
@@ -173,7 +177,7 @@ class TestNovelRetrieve:
         assert json_data["data"]["title"] == novel.title
         assert "author" in json_data["data"]
 
-    def test_retrieve_nonexistent_novel(self, api_client, db):
+    def test_retrieve_nonexistent_novel(self, api_client: APIClient, db: Any) -> None:
         """존재하지 않는 소설 조회"""
         url = reverse("novel-detail", kwargs={"pk": 99999})
 
@@ -181,7 +185,7 @@ class TestNovelRetrieve:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_retrieve_deleted_novel(self, api_client, novel):
+    def test_retrieve_deleted_novel(self, api_client: APIClient, novel: Novel) -> None:
         """삭제된 소설 조회 시 404"""
         novel.soft_delete()
         url = reverse("novel-detail", kwargs={"pk": novel.id})
@@ -194,7 +198,9 @@ class TestNovelRetrieve:
 class TestNovelUpdate:
     """PATCH /api/v1/novels/{id} - 소설 수정"""
 
-    def test_update_novel_success(self, authenticated_client, novel, author):
+    def test_update_novel_success(
+        self, authenticated_client: APIClient, novel: Novel, author: User
+    ) -> None:
         """소설 작가가 수정"""
         url = reverse("novel-detail", kwargs={"pk": novel.id})
         data = {"title": "수정된 제목"}
@@ -205,7 +211,9 @@ class TestNovelUpdate:
         json_data = get_json(response)
         assert json_data["data"]["title"] == "수정된 제목"
 
-    def test_update_novel_not_owner(self, other_authenticated_client, novel):
+    def test_update_novel_not_owner(
+        self, other_authenticated_client: APIClient, novel: Novel
+    ) -> None:
         """다른 작가는 수정 불가"""
         url = reverse("novel-detail", kwargs={"pk": novel.id})
         data = {"title": "해킹 시도"}
@@ -214,7 +222,7 @@ class TestNovelUpdate:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_update_novel_unauthenticated(self, api_client, novel):
+    def test_update_novel_unauthenticated(self, api_client: APIClient, novel: Novel) -> None:
         """미인증 사용자는 수정 불가"""
         url = reverse("novel-detail", kwargs={"pk": novel.id})
         data = {"title": "해킹 시도"}
@@ -227,7 +235,9 @@ class TestNovelUpdate:
 class TestNovelDelete:
     """DELETE /api/v1/novels/{id} - 소설 삭제"""
 
-    def test_delete_novel_success(self, authenticated_client, novel, author):
+    def test_delete_novel_success(
+        self, authenticated_client: APIClient, novel: Novel, author: User
+    ) -> None:
         """소설 작가가 삭제 (소프트)"""
         url = reverse("novel-detail", kwargs={"pk": novel.id})
 
@@ -239,7 +249,9 @@ class TestNovelDelete:
         novel.refresh_from_db()
         assert novel.is_deleted is True
 
-    def test_delete_novel_not_owner(self, other_authenticated_client, novel):
+    def test_delete_novel_not_owner(
+        self, other_authenticated_client: APIClient, novel: Novel
+    ) -> None:
         """다른 작가는 삭제 불가"""
         url = reverse("novel-detail", kwargs={"pk": novel.id})
 
@@ -247,7 +259,7 @@ class TestNovelDelete:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_delete_novel_unauthenticated(self, api_client, novel):
+    def test_delete_novel_unauthenticated(self, api_client: APIClient, novel: Novel) -> None:
         """미인증 사용자는 삭제 불가"""
         url = reverse("novel-detail", kwargs={"pk": novel.id})
 

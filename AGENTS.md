@@ -1,327 +1,190 @@
-# ForkLore 프로젝트 - AI 에이전트 가이드
+# ForkLore - AI Agent Guide
 
-## 프로젝트 개요
+Interactive web novel platform. Django 5.1 + Next.js 16. **TDD required.**
 
-**ForkLore**는 인터랙티브 웹소설 플랫폼입니다.
+## Quick Commands
 
-- **버전**: `0.0.1`
-
----
-
-## 기술 스택
-
-### 백엔드 (Backend)
-| 카테고리 | 기술 | 버전 |
-|----------|------|------|
-| **언어** | Python | 3.12+ |
-| **프레임워크** | Django | 5.1+ |
-| **API** | Django REST Framework | 3.15+ |
-| **패키지 관리** | Poetry | latest |
-| **인증** | SimpleJWT + dj-rest-auth | - |
-| **API 문서** | drf-spectacular | 0.27+ |
-| **데이터베이스** | PostgreSQL + pgvector | 18 |
-| **비동기 태스크** | Celery + Redis | - |
-| **AI** | Gemini API | text-embedding-001 (3072차원) |
-
-### 프론트엔드 (Frontend)
-| 카테고리 | 기술 | 버전/스타일 |
-|----------|------|-------------|
-| **프레임워크** | Next.js (App Router) | 16 |
-| **언어** | TypeScript | 5.x |
-| **패키지 매니저** | pnpm | - |
-| **CSS** | Tailwind CSS | 4.x |
-| **컴포넌트** | shadcn/ui | New York 스타일 |
-| **색상 시스템** | OKLCH | - |
-| **아이콘** | Lucide Icons | - |
-| **폰트** | Geist Sans/Mono | - |
-| **서버 상태** | TanStack Query | v5 |
-| **클라이언트 상태** | Zustand | - |
-| **폼** | React Hook Form + Zod | - |
-| **에디터** | Tiptap | - |
-| **지도** | Leaflet + React Leaflet | - |
-| **인증** | NextAuth.js | v5 |
-| **테스트** | Vitest + Playwright | - |
-
-### 인프라
-| 카테고리 | 기술 |
-|----------|------|
-| **컨테이너** | Docker Compose (루트 디렉토리) |
-| **CI/CD** | GitHub Actions (예정) |
-
----
-
-## 핵심 도메인 모델 (v4)
-
-```
-Novel (소설)
-  └── Branch (브랜치)
-        ├── is_main=true: 메인 스토리
-        ├── is_main=false: 외전/팬픽/IF
-        │
-        ├── Chapter (회차)
-        │     ├── content: 마크다운 원본
-        │     ├── content_html: 렌더링 캐시
-        │     └── access_type: FREE | SUBSCRIPTION
-        │
-        ├── WikiEntry (위키)
-        │     └── WikiSnapshot (회차별 스냅샷)
-        │
-        └── Map (지도)
-              └── MapSnapshot (회차별 스냅샷)
-```
-
-### 브랜치 시스템
-- **branch_type**: SIDE_STORY, FAN_FIC, IF_STORY
-- **visibility**: PRIVATE, PUBLIC, LINKED
-- **canon_status**: NON_CANON, CANDIDATE, MERGED
-
-### 구독 시스템
-- **FREE**: 무료 열람
-- **SUBSCRIPTION**: 구독 중 or 소장 시 열람
-
----
-
-## 프로젝트 구조
-
-```
-/ForkLore/
-├── docker-compose.yml           # 루트 Docker Compose
-├── backend/                     # Django 백엔드
-│   ├── Dockerfile
-│   ├── pyproject.toml           # Poetry 의존성
-│   ├── manage.py
-│   ├── config/                  # 프로젝트 설정
-│   │   ├── settings/
-│   │   │   ├── base.py
-│   │   │   ├── local.py
-│   │   │   ├── production.py
-│   │   │   └── test.py
-│   │   ├── urls.py
-│   │   ├── wsgi.py
-│   │   └── celery.py
-│   ├── apps/                    # Django 앱
-│   │   ├── users/               # 사용자 및 인증
-│   │   ├── novels/              # 소설, 브랜치
-│   │   ├── contents/            # 회차, 위키, 지도
-│   │   ├── interactions/        # 댓글, 좋아요, 구독
-│   │   └── ai/                  # AI 연동
-│   ├── common/                  # 공통 모듈
-│   └── tests/                   # 통합 테스트
-├── frontend/                    # Next.js 프론트엔드
-│   ├── app/                     # App Router 라우트
-│   ├── components/              # UI 컴포넌트
-│   ├── lib/                     # 유틸, API 클라이언트
-│   ├── hooks/                   # 커스텀 훅
-│   ├── stores/                  # Zustand 스토어
-│   └── types/                   # TypeScript 타입
-├── docs/                        # 설계 문서
-└── AGENTS.md
-```
-
----
-
-## 개발 규칙
-
-### 1. TDD (Test-Driven Development) ⚠️ 필수
-
-> **AI 에이전트가 코드를 작성할 때 반드시 TDD 원칙을 따라야 합니다.**
-
-```
-1. RED    → 실패하는 테스트 먼저 작성
-2. GREEN  → 테스트를 통과하는 최소 코드 작성
-3. REFACTOR → 코드 정리 (테스트는 통과 유지)
-```
-
-**필수 사항:**
-- 기능 구현 전 **테스트 먼저 작성**
-- 테스트 없이 프로덕션 코드 작성 금지
-- 테스트 커버리지 **70% 이상** 유지
-
-### 2. 백엔드 명령어 (Django)
+### Backend (Django)
 ```bash
-# 로컬 개발 (Poetry 설치 필요)
 cd backend
+
+# Setup
 poetry install
 poetry run python manage.py migrate
-poetry run python manage.py runserver
 
-# 테스트
-poetry run pytest
+# Run single test
+poetry run pytest apps/novels/tests/test_services.py::TestNovelService::test_create -v
+
+# Run test file
+poetry run pytest apps/novels/tests/test_services.py -v
+
+# Run app tests with coverage
+poetry run pytest apps/novels/tests/ -v --cov=apps/novels --cov-report=term-missing
+
+# All tests
 poetry run pytest --cov=apps
 
-# Docker 환경
+# Lint
+poetry run ruff check apps/
+poetry run ruff format apps/
+
+# Server
+poetry run python manage.py runserver
+```
+
+### Frontend (Next.js)
+```bash
+cd frontend
+pnpm install
+pnpm dev                           # Dev server
+pnpm test                          # Run vitest
+pnpm test -- auth.test.tsx         # Single test file
+pnpm lint                          # ESLint
+pnpm build                         # Production build
+```
+
+### Docker
+```bash
 docker compose up -d
 docker compose exec backend poetry run python manage.py migrate
 ```
 
-### 3. 프론트엔드 명령어
-```bash
-pnpm install
-pnpm dev
-pnpm test
-pnpm build
+## Code Style
+
+### Python (Backend)
+```python
+# Imports: stdlib → django → third-party → local (ruff handles this)
+from django.db import transaction
+from rest_framework import status
+from apps.novels.models import Novel
+
+# Type hints required
+def create(self, author: User, data: dict) -> Novel:
+
+# Docstrings: Google style
+def method(self, arg: str) -> bool:
+    """Short description.
+
+    Args:
+        arg: Description
+
+    Returns:
+        Description
+
+    Raises:
+        ValueError: When invalid
+    """
+
+# Service pattern: Business logic in services, not views
+class NovelService:
+    @transaction.atomic
+    def create(self, author, data: dict) -> Novel:
+        ...
+
+# Error messages in Korean for user-facing errors
+raise ValueError("제목은 필수입니다.")
+
+# Line length: 100 (ruff configured)
 ```
 
-### 4. 데이터베이스
-- **Host**: `db` (Docker Compose) 또는 `localhost` (로컬)
-- **Port**: `5432`
-- **Database**: `app_db`
-- **Extension**: pgvector
+### TypeScript (Frontend)
+```typescript
+// Named exports preferred
+export interface LoginRequest { ... }
+export function useAuth() { ... }
 
-### 5. API 문서화
-- **Swagger UI**: `/api/docs/`
-- **ReDoc**: `/api/redoc/`
-- **OpenAPI Schema**: `/api/schema/`
+// Types in separate files: types/*.types.ts
+// API calls: lib/api/*.api.ts
+// Stores: stores/*.ts (Zustand)
 
-### 6. 보안
-- **JWT 인증** (Access + Refresh Token via SimpleJWT)
-- **Argon2** 비밀번호 암호화 (Django 기본)
-- **permission_classes** 권한 검사
+// camelCase for variables/functions, PascalCase for types/components
+const userData: UserResponse = await fetchUser();
+```
 
-### 7. 보안 - 민감 정보 관리 ⚠️ 필수
-> **AI 에이전트가 절대 위반해서는 안 되는 규칙입니다.**
+## Project Structure
 
-- **하드코딩 금지**: SECRET_KEY, OAuth Client ID/Secret, DB Password 등 민감 정보를 코드에 직접 작성 금지
-- **환경 변수 사용**: `django-environ`을 통해 `env('VARIABLE_NAME')` 형식으로 환경 변수 참조
-- **.gitignore 필수**: `.env`, `.env.local` 등 환경 파일은 반드시 `.gitignore`에 추가
-- **커밋 전 확인**: `git diff --cached`로 민감 정보 포함 여부 확인
+```
+backend/
+├── apps/
+│   ├── users/       # Auth, profiles
+│   ├── novels/      # Novel, Branch
+│   ├── contents/    # Chapter, Wiki, Map
+│   ├── interactions/# Comments, Subscriptions, Wallet
+│   └── ai/          # Embeddings, RAG
+├── common/          # Base models, utils
+└── config/settings/ # base.py, local.py, test.py
 
-### 8. 테스트 전략 (Standardized) ⚠️ 필수
-> **프로젝트 표준 테스트 전략입니다. 반드시 준수해야 합니다.**
+frontend/
+├── app/             # Next.js App Router
+├── components/      # UI (shadcn/ui)
+├── lib/             # Utils, API client
+├── stores/          # Zustand stores
+└── types/           # TypeScript types
+```
 
-**1. Service/Domain (Unit Test)**
-- **도구**: `pytest` + `model_bakery` (또는 `factory_boy`)
-- **규칙**: DB 의존성 최소화, Mock 활용
+## Testing (TDD Required)
 
-**2. Serializer (Unit Test)**
-- **도구**: `pytest`
-- **규칙**: 입력 검증, 출력 형식 검증
+**Workflow: RED → GREEN → REFACTOR**
 
-**3. ViewSet/APIView (Integration Test)**
-- **도구**: `pytest-django` + `APIClient`
-- **규칙**: 실제 HTTP 요청/응답 테스트
+```python
+# 1. Unit tests for services (mock external deps)
+@patch("apps.ai.services.genai")
+def test_embed_text(self, mock_genai):
+    mock_genai.embed_content.return_value = {"embedding": [0.1] * 3072}
+    ...
 
-**4. E2E Test**
-- **도구**: `pytest` + `APIClient`
-- **규칙**: 전체 플로우 테스트
+# 2. Integration tests for views (real HTTP)
+def test_create_novel(self):
+    response = self.client.post("/api/v1/novels/", data, format="json")
+    assert response.status_code == 201
 
-### 9. Context7 MCP 활용 ⚠️ 필수
-> **deprecated 코드 사용을 방지하기 위한 필수 절차입니다.**
+# Test fixtures: model_bakery
+branch = baker.make("novels.Branch", author=user)
+chapter = baker.make("contents.Chapter", branch=branch, content="test")
+```
 
-1. 새 기능 구현 전 `resolve-library-id`로 라이브러리 ID 조회
-2. `query-docs`로 최신 API 사용법 검색
-3. deprecated 경고가 있는 코드는 즉시 대체 구현 적용
+**Coverage requirement: 70%+**
 
-### 10. Git 운영 규칙 ⚠️ 필수
-- **허락 없이 베이스 브랜치 조작 금지**: `main`, `develop` 브랜치를 사용자 승인 없이 강제 푸시/덮어쓰기 금지
-- **작업 완료 시 반드시 PR**: 기능 완료 후 Push와 PR 생성을 빠뜨리지 않음
+## Key Rules
 
----
+1. **TDD**: Write tests BEFORE implementation
+2. **No secrets in code**: Use `env('VAR_NAME')` via django-environ
+3. **No type suppression**: Never use `as any`, `@ts-ignore`, `@ts-expect-error`
+4. **Branch naming**: `feat/#123-feature-name`, `fix/#123-bug-name`
+5. **Base branch**: `develop` (never force-push to `main`/`develop`)
+6. **PR required**: Always create PR after push, include `Closes #123`
 
-## GitHub 템플릿 사용법
+## API Patterns
 
-### Issue 템플릿
+```python
+# ViewSet with nested routes
+class BranchViewSet(GenericViewSet):
+    @action(detail=False, methods=["post"], url_path="wiki-suggestions")
+    def wiki_suggestions(self, request, **kwargs):
+        branch_pk = kwargs.get("branch_pk")  # From nested router
+        ...
 
-프로젝트에는 백엔드와 프론트엔드를 위한 Issue 템플릿이 준비되어 있습니다:
+# Service instantiation (not static)
+service = NovelService()
+result = service.create(user, data)
 
-#### 백엔드
-- **🔧 기능 개발**: `.github/ISSUE_TEMPLATE/backend-feature.md`
-- **🐛 버그 수정**: `.github/ISSUE_TEMPLATE/backend-bug.md`
+# Response format
+return Response({"data": result}, status=status.HTTP_200_OK)
+```
 
-#### 프론트엔드
-- **🎨 기능 개발**: `.github/ISSUE_TEMPLATE/frontend-feature.md`
-- **🎨 버그 수정**: `.github/ISSUE_TEMPLATE/frontend-bug.md`
+## Tech Stack Reference
 
-**사용 방법**: GitHub Issues → New Issue → 템플릿 선택
+| Layer | Tech |
+|-------|------|
+| Backend | Python 3.12, Django 5.1, DRF 3.15, Celery |
+| Frontend | Next.js 16, React 19, TypeScript 5, Tailwind 4 |
+| Database | PostgreSQL 18 + pgvector |
+| AI | Gemini API (text-embedding-004, gemini-1.5-flash) |
+| Auth | SimpleJWT + NextAuth.js v5 |
 
-### Pull Request 템플릿
+## Design Docs
 
-#### 백엔드 PR 체크리스트
-- ✅ TDD 원칙 준수 (RED-GREEN-REFACTOR)
-- ✅ 테스트 커버리지 70% 이상
-- ✅ drf-spectacular 스키마 업데이트
-- ✅ 보안 체크 (SQL Injection, XSS 등)
-- ✅ 성능 체크 (N+1 쿼리 등)
-
-#### 프론트엔드 PR 체크리스트
-- ✅ 디자인 시스템 준수 (shadcn/ui, Tailwind CSS)
-- ✅ 반응형 디자인 (모바일/태블릿/데스크톱)
-- ✅ 접근성 (a11y) 확인
-- ✅ 브라우저 호환성 확인
-- ✅ 성능 최적화 체크
-
----
-
-## AI 에이전트 작업 절차 (Workflow)
-
-**@docs/development-guidelines.md 필독**
-
-@mcp:context7 사용, TDD 준수, @docs 설계 준수
-
-프로젝트 작업을 수행할 때 AI 에이전트는 반드시 다음 절차를 준수해야 합니다.
-
-### 1. 최신 기술 스택 확인 (Context7) 및 설계 확인
-- **원칙**: 모든 코드는 현재 사용 중인 라이브러리/프레임워크의 **최신 버전 사용법**을 따르며 `docs` 폴더의 설계를 따릅니다.
-- **실행**: 구현 전 `Context7` 도구를 사용하여 최신 공식 문서와 예제를 확인합니다. (예: Django 5.1, DRF 3.15, Next.js 16)
-
-### 2. 이슈 확인 및 선정
-- `GitHub CLI`를 사용하여 열려있는 이슈 목록을 확인합니다.
-- **선정 기준**:
-  - `docs/backend-tasks.md` 또는 관련 태스크 문서를 참조하여 선행 작업(종속성)이 완료되었는지 확인
-  - 선행 작업이 완료되어 `develop` 브랜치에 반영된 이슈
-  - 병렬 처리가 가능한 독립적인 이슈
-  - 우선순위(P0 > P1)가 높은 이슈
-
-### 3. 브랜치 전략
-- **Base Branch**: `develop`
-- **Naming**: `feat/#<이슈번호>-<간단요약-영어>`
-  - 예: `feat/#42-auth-login`, `fix/#15-user-model`
-
-### 4. 작업 수행 (TDD)
-1. 브랜치 생성 (`create_branch`)
-2. 이슈 체크리스트 업데이트 (`update_issue`)
-3. **TDD 사이클** 수행 (Red → Green → Refactor)
-4. 완료 시 이슈 체크리스트 최종 완료 표시
-5. 브랜치에 푸시
-
-### 5. Pull Request 생성
-- 작업이 완료되면 `GitHub CLI`를 사용하여 PR을 생성합니다.
-- **Target**: `develop`
-- **내용**: 작업 요약, 테스트 결과, 관련 이슈 번호 (`Closes #이슈번호`)
-- **보고**: PR 생성 후 사용자에게 링크와 함께 보고합니다.
-
-### 6. 승인 및 반복
-- 사용자의 PR 검토 및 승인을 대기합니다.
-- 사용자의 지시에 따라 다음 "진행 가능한 이슈"를 선정하여 프로세스를 반복합니다.
-
----
-
-## 설계 문서 참조
-
-| 문서 | 설명 |
-|------|------|
-| `docs/PRD.md` | 제품 요구사항 정의 |
-| `docs/backlog.md` | 제품 백로그 (v2) |
-| `docs/database-schema.md` | DB 스키마 (v4) |
-| `docs/backend-architecture.md` | 백엔드 아키텍처 (v5 - Django) |
-| `docs/api-specification.md` | REST API 명세 (v2) |
-| `docs/ui-ux-specification.md` | UI/UX 명세서 |
-| `docs/wireframes.md` | 와이어프레임 |
-| `docs/design-system.md` | 디자인 시스템 |
-| `docs/backend-tasks.md` | 백엔드 태스크 목록 (v3 - Django) |
-| `docs/frontend-tasks.md` | 프론트엔드 태스크 목록 |
-
----
-
-## 버전 히스토리
-- **v0.0.2**: Django 전환
-  - Django 5.1+ / Python 3.12+
-  - Django REST Framework 3.15+
-  - Poetry 패키지 관리
-  - 루트 Docker Compose 설정
-  
-- **v0.0.1**: 초기 프로젝트 구조 및 설계 문서 완성
-  - Next.js 16 / TypeScript / TanStack Query / Zustand
-  - PostgreSQL 18 + pgvector
-  - Gemini Embedding 001 (3072차원)
-  - 브랜치 통합 스키마 (v4)
+- `docs/PRD.md` - Product requirements
+- `docs/database-schema.md` - DB schema (v4)
+- `docs/api-specification.md` - REST API spec
+- `docs/backend-tasks.md` - Task tracking

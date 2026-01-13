@@ -9,17 +9,17 @@ Tests:
 - vote() / unvote(): Add/remove votes
 """
 
+
 import pytest
 from django.db import IntegrityError
 from model_bakery import baker
 
 from apps.novels.models import (
-    Novel,
     Branch,
     BranchType,
     BranchVisibility,
-    CanonStatus,
     BranchVote,
+    Novel,
 )
 from apps.novels.services import BranchService
 
@@ -28,7 +28,7 @@ from apps.novels.services import BranchService
 class TestBranchServiceList:
     """Tests for BranchService.list()"""
 
-    def test_list_branches_for_novel(self):
+    def test_list_branches_for_novel(self) -> None:
         """Should return all non-deleted branches for a novel."""
         service = BranchService()
         novel = baker.make(Novel)
@@ -45,7 +45,7 @@ class TestBranchServiceList:
         assert branch1 in result
         assert branch2 in result
 
-    def test_list_branches_excludes_deleted(self):
+    def test_list_branches_excludes_deleted(self) -> None:
         """Should exclude soft-deleted branches."""
         service = BranchService()
         novel = baker.make(Novel)
@@ -58,7 +58,7 @@ class TestBranchServiceList:
         assert result.count() == 1
         assert active_branch in result
 
-    def test_list_branches_filter_by_visibility(self):
+    def test_list_branches_filter_by_visibility(self) -> None:
         """Should filter branches by visibility."""
         service = BranchService()
         novel = baker.make(Novel)
@@ -71,7 +71,7 @@ class TestBranchServiceList:
         assert result.count() == 1
         assert linked_branch in result
 
-    def test_list_branches_sort_by_votes(self):
+    def test_list_branches_sort_by_votes(self) -> None:
         """Should sort branches by vote_count descending."""
         service = BranchService()
         novel = baker.make(Novel)
@@ -86,7 +86,7 @@ class TestBranchServiceList:
         assert result_list[1] == mid_votes
         assert result_list[2] == low_votes
 
-    def test_list_branches_sort_by_latest(self):
+    def test_list_branches_sort_by_latest(self) -> None:
         """Should sort branches by created_at descending (default)."""
         service = BranchService()
         novel = baker.make(Novel)
@@ -106,7 +106,7 @@ class TestBranchServiceList:
 class TestBranchServiceRetrieve:
     """Tests for BranchService.retrieve()"""
 
-    def test_retrieve_branch_success(self):
+    def test_retrieve_branch_success(self) -> None:
         """Should return branch by ID."""
         service = BranchService()
         branch = baker.make(Branch)
@@ -115,7 +115,7 @@ class TestBranchServiceRetrieve:
 
         assert result == branch
 
-    def test_retrieve_deleted_branch_raises_error(self):
+    def test_retrieve_deleted_branch_raises_error(self) -> None:
         """Should raise DoesNotExist for deleted branch."""
         service = BranchService()
         branch = baker.make(Branch)
@@ -124,7 +124,7 @@ class TestBranchServiceRetrieve:
         with pytest.raises(Branch.DoesNotExist):
             service.retrieve(branch_id=branch.id)
 
-    def test_retrieve_nonexistent_branch_raises_error(self):
+    def test_retrieve_nonexistent_branch_raises_error(self) -> None:
         """Should raise DoesNotExist for invalid ID."""
         service = BranchService()
 
@@ -136,7 +136,7 @@ class TestBranchServiceRetrieve:
 class TestBranchServiceGetMainBranch:
     """Tests for BranchService.get_main_branch()"""
 
-    def test_get_main_branch_success(self):
+    def test_get_main_branch_success(self) -> None:
         """Should return the main branch of a novel."""
         service = BranchService()
         novel = baker.make(Novel)
@@ -147,7 +147,7 @@ class TestBranchServiceGetMainBranch:
 
         assert result == main_branch
 
-    def test_get_main_branch_not_found(self):
+    def test_get_main_branch_not_found(self) -> None:
         """Should raise DoesNotExist if no main branch."""
         service = BranchService()
         novel = baker.make(Novel)
@@ -160,7 +160,7 @@ class TestBranchServiceGetMainBranch:
 class TestBranchServiceFork:
     """Tests for BranchService.fork()"""
 
-    def test_fork_branch_success(self):
+    def test_fork_branch_success(self) -> None:
         """Should create a forked branch from parent."""
         service = BranchService()
         user = baker.make("users.User")
@@ -190,7 +190,7 @@ class TestBranchServiceFork:
         assert result.is_main is False
         assert result.visibility == BranchVisibility.PRIVATE
 
-    def test_fork_branch_increments_novel_branch_count(self):
+    def test_fork_branch_increments_novel_branch_count(self) -> None:
         """Should increment novel's branch_count when forking."""
         service = BranchService()
         user = baker.make("users.User")
@@ -207,7 +207,7 @@ class TestBranchServiceFork:
         novel.refresh_from_db()
         assert novel.branch_count == 2
 
-    def test_fork_branch_not_allowed_raises_error(self):
+    def test_fork_branch_not_allowed_raises_error(self) -> None:
         """Should raise error if novel doesn't allow branching."""
         service = BranchService()
         user = baker.make("users.User")
@@ -224,7 +224,7 @@ class TestBranchServiceFork:
 
         assert "브랜치 생성이 허용되지 않습니다" in str(exc_info.value)
 
-    def test_fork_requires_name(self):
+    def test_fork_requires_name(self) -> None:
         """Should raise error if name is missing."""
         service = BranchService()
         user = baker.make("users.User")
@@ -246,7 +246,7 @@ class TestBranchServiceFork:
 class TestBranchServiceUpdateVisibility:
     """Tests for BranchService.update_visibility()"""
 
-    def test_update_visibility_success(self):
+    def test_update_visibility_success(self) -> None:
         """Should update branch visibility."""
         service = BranchService()
         user = baker.make("users.User")
@@ -260,7 +260,7 @@ class TestBranchServiceUpdateVisibility:
 
         assert result.visibility == BranchVisibility.PUBLIC
 
-    def test_update_visibility_not_owner_raises_error(self):
+    def test_update_visibility_not_owner_raises_error(self) -> None:
         """Should raise PermissionError if not the owner."""
         service = BranchService()
         owner = baker.make("users.User")
@@ -276,7 +276,7 @@ class TestBranchServiceUpdateVisibility:
 
         assert "권한이 없습니다" in str(exc_info.value)
 
-    def test_update_visibility_main_branch_raises_error(self):
+    def test_update_visibility_main_branch_raises_error(self) -> None:
         """Should raise error when trying to change main branch visibility."""
         service = BranchService()
         user = baker.make("users.User")
@@ -296,7 +296,7 @@ class TestBranchServiceUpdateVisibility:
 class TestBranchServiceVote:
     """Tests for BranchService.vote() and unvote()"""
 
-    def test_vote_success(self):
+    def test_vote_success(self) -> None:
         """Should create a vote for a branch."""
         service = BranchService()
         user = baker.make("users.User")
@@ -309,7 +309,7 @@ class TestBranchServiceVote:
         branch.refresh_from_db()
         assert branch.vote_count == 1
 
-    def test_vote_duplicate_raises_error(self):
+    def test_vote_duplicate_raises_error(self) -> None:
         """Should raise error for duplicate vote."""
         service = BranchService()
         user = baker.make("users.User")
@@ -319,7 +319,7 @@ class TestBranchServiceVote:
         with pytest.raises(IntegrityError):
             service.vote(branch_id=branch.id, user=user)
 
-    def test_unvote_success(self):
+    def test_unvote_success(self) -> None:
         """Should remove a vote from a branch."""
         service = BranchService()
         user = baker.make("users.User")
@@ -333,7 +333,7 @@ class TestBranchServiceVote:
         branch.refresh_from_db()
         assert branch.vote_count == 0
 
-    def test_unvote_not_voted_returns_false(self):
+    def test_unvote_not_voted_returns_false(self) -> None:
         """Should return False if user hasn't voted."""
         service = BranchService()
         user = baker.make("users.User")
@@ -343,7 +343,7 @@ class TestBranchServiceVote:
 
         assert result is False
 
-    def test_vote_count_cannot_go_negative(self):
+    def test_vote_count_cannot_go_negative(self) -> None:
         """Vote count should not go below 0."""
         service = BranchService()
         user = baker.make("users.User")

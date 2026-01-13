@@ -1,6 +1,6 @@
 services:
   db:
-    image: ankane/pgvector:v0.8.0
+    image: pgvector/pgvector:pg17
     container_name: forklore-db
     environment:
       POSTGRES_DB: app_db

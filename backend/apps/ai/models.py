@@ -13,7 +13,7 @@ class ChapterChunk(BaseModel):
     content = models.TextField("내용")
 
     if VectorField:
-        embedding = VectorField(dimensions=3072)
+        embedding = VectorField(dimensions=3072, null=True, blank=True)
     else:
         embedding = models.BinaryField("임베딩", null=True, blank=True)
 

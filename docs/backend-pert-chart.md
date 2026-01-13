@@ -65,7 +65,8 @@ graph LR
         direction TB
         SubModel[Subscription 모델]:::sub --> SubSvc[Subscription Service]:::sub
         PurchaseModel[Purchase 모델]:::sub --> PurchaseSvc[Purchase Service]:::sub
-        SubSvc & PurchaseSvc --> AccessSvc[AccessService(열람권한)]:::sub
+        SubSvc --> AccessSvc[AccessService(열람권한)]:::sub
+        PurchaseSvc --> AccessSvc
         AccessSvc --> SubViews[Subscription API]:::sub
     end
 

@@ -2,7 +2,7 @@
 
 **작성일**: 2026.01.02  
 **작성자**: HueyJeong (with Gemini)  
-**문서 버전**: v1.0
+**문서 버전**: v1.1
 
 ---
 
@@ -26,33 +26,39 @@
 
 ## 2. 기술 스택 (Tech Stack)
 
-### Backend (현재 구성)
-- **언어**: Java 23
-- **프레임워크**: Spring Boot 4.0.1
-- **빌드 도구**: Gradle (Wrapper 포함)
+### Backend
+- **언어**: Python 3.12+
+- **프레임워크**: Django 5.1+
+- **API 프레임워크**: Django REST Framework (DRF)
+- **패키지 관리**: Poetry
 - **주요 의존성**:
-  - Spring Boot Starters (Web, Data JPA, Security, Actuator, Validation)
-  - Spring Boot DevTools (개발 환경)
-  - Lombok (코드 간소화)
-  - Springdoc OpenAPI 3.0.0 (Swagger UI/API 문서화)
-- **데이터베이스 드라이버**: PostgreSQL, H2 Database (개발/테스트)
+  - djangorestframework (REST API)
+  - djangorestframework-simplejwt (JWT 인증)
+  - dj-rest-auth + django-allauth (소셜 로그인)
+  - drf-spectacular (OpenAPI 3.1 문서화)
+  - django-environ (환경 변수 관리)
+  - celery + redis (비동기 태스크)
+- **데이터베이스 드라이버**: psycopg[binary], django-pgvector
 
-### Frontend (계획)
-개발 생산성과 AI 통합을 위해 Full-Stack TypeScript 환경으로 통일 예정.
-
-- **프레임워크**: Next.js (App Router)
+### Frontend
+- **프레임워크**: Next.js 16 (App Router)
 - **언어**: TypeScript
-- **상태 관리**: Zustand
-- **스타일링**: Tailwind CSS, shadcn/ui
+- **상태 관리**: Zustand, TanStack Query v5
+- **스타일링**: Tailwind CSS 4.x, shadcn/ui (New York)
+- **폼**: React Hook Form + Zod
+- **에디터**: Tiptap
+- **지도**: Leaflet + React Leaflet
+- **인증**: NextAuth.js v5
 
 ### Database
 - **Primary**: PostgreSQL 18 (Core Data)
-- **Vector Extension**: pgvector (Vector Search/RAG)
+- **Vector Extension**: pgvector + django-pgvector (Vector Search/RAG)
+- **Embedding**: Gemini text-embedding-001 (3072차원)
 
 ### Infrastructure & AI
-- **컨테이너**: Docker Compose (V2)
-- **AI**: OpenAI API
-- **개발 환경**: Dev Container (VS Code)
+- **컨테이너**: Docker Compose (루트 디렉토리)
+- **AI**: Gemini API
+- **캐시/태스크 브로커**: Redis
 
 ---
 
@@ -107,7 +113,7 @@
 
 ### C. 깃(Git)의 브랜치를 모방한 팬픽 시스템 (The "ForkLore" Core)
 
-> **정사 편입이란 팬픽의 브랜치가 정사 브랜치의 어느 지점과 논리적으로 연결되는 것으로 정사의 스토리와 팬픽이 합쳐지는 것이 아님.**  
+> **정사 편입이란 팬픽 브랜치가 정사 브랜치의 어느 지점과 논리적으로 연결(Link)되는 것으로 정사의 스토리와 팬픽이 합쳐지는 것이 아님.**  
 > 즉 팬픽이 정사로 편입되면 외전이 되는 것임
 
 #### 1. 브랜치(Branch) & 포크(Fork)
@@ -116,11 +122,11 @@
 - **팬픽 포크**: 독자가 특정 회차(Commit)에서 Fork하여 IF 스토리 연재.
 - **설정 상속**: 포크된 시점까지의 위키/지도 데이터를 그대로 물려받음.
 
-#### 2. 정사 편입 요청 (Merge Request) 및 투표
+#### 2. 정사 편입 요청 (Link Request) 및 투표
 
 - **커뮤니티 검증**: 팬픽 브랜치의 추천 수(Votes)가 작가가 설정한 임계값(Threshold) 도달 시, 자동으로 '편입 후보'로 격상 및 작가에게 알림.
 - **작가 검토**: 작가 전용 Diff 뷰어에서 내용 확인 후 승인/거절/수정 제안.
-- **보상 정책**: 병합 승인 시, 저작권 매절 계약 팝업 → 동의 시 보상 지급 및 크레딧 표기 (`Co-authored by [User]`).
+- **보상 정책**: 연결 승인 시, 저작권 매절 계약 팝업 → 동의 시 보상 지급 및 크레딧 표기 (`Co-authored by [User]`).
 
 ---
 

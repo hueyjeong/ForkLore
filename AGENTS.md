@@ -4,8 +4,7 @@
 
 **ForkLore**는 인터랙티브 웹소설 플랫폼입니다.
 
-- **그룹**: `io.forklore`
-- **버전**: `0.0.1-SNAPSHOT`
+- **버전**: `0.0.1`
 
 ---
 
@@ -14,13 +13,14 @@
 ### 백엔드 (Backend)
 | 카테고리 | 기술 | 버전 |
 |----------|------|------|
-| **언어** | Java | 23 |
-| **프레임워크** | Spring Boot | 4.0.1 |
-| **빌드** | Gradle | Wrapper |
-| **ORM** | Spring Data JPA | - |
-| **보안** | Spring Security + JWT | - |
-| **API 문서** | Springdoc OpenAPI | 3.0.0 |
+| **언어** | Python | 3.12+ |
+| **프레임워크** | Django | 5.1+ |
+| **API** | Django REST Framework | 3.15+ |
+| **패키지 관리** | Poetry | latest |
+| **인증** | SimpleJWT + dj-rest-auth | - |
+| **API 문서** | drf-spectacular | 0.27+ |
 | **데이터베이스** | PostgreSQL + pgvector | 18 |
+| **비동기 태스크** | Celery + Redis | - |
 | **AI** | Gemini API | text-embedding-001 (3072차원) |
 
 ### 프론트엔드 (Frontend)
@@ -45,8 +45,7 @@
 ### 인프라
 | 카테고리 | 기술 |
 |----------|------|
-| **컨테이너** | Docker Compose V2 |
-| **개발 환경** | Dev Container (VS Code) |
+| **컨테이너** | Docker Compose (루트 디렉토리) |
 | **CI/CD** | GitHub Actions (예정) |
 
 ---
@@ -85,39 +84,37 @@ Novel (소설)
 ## 프로젝트 구조
 
 ```
-/workspaces/ForkLore/
-├── .devcontainer/              # Dev Container 설정
-├── backend/                    # Spring Boot 백엔드
-│   ├── src/main/java/io/forklore/
-│   │   ├── domain/            # Entity
-│   │   ├── repository/
-│   │   ├── service/
-│   │   ├── controller/
-│   │   ├── dto/
-│   │   ├── exception/
-│   │   ├── security/
-│   │   └── global/
-│   └── src/test/java/io/forklore/  # 테스트 코드 (도메인별 위치)
-│       ├── domain/            # Repository Test (@DataJpaTest)
-│       ├── service/           # Service Unit Test (Mockito)
-│       ├── controller/        # Controller Test
-│       └── e2e/               # E2E Test (WebTestClient)
-│   └── build.gradle
-├── frontend/                   # Next.js 프론트엔드 (예정)
-│   ├── app/                   # App Router 라우트
-│   ├── components/            # UI 컴포넌트
-│   ├── lib/                   # 유틸, API 클라이언트
-│   ├── hooks/                 # 커스텀 훅
-│   ├── stores/                # Zustand 스토어
-│   └── types/                 # TypeScript 타입
-├── docs/                       # 설계 문서
-│   ├── PRD.md
-│   ├── database-schema.md
-│   ├── backend-architecture.md
-│   ├── api-specification.md
-│   ├── design-system.md
-│   ├── backend-tasks.md       # 백엔드 태스크
-│   └── frontend-tasks.md      # 프론트엔드 태스크
+/ForkLore/
+├── docker-compose.yml           # 루트 Docker Compose
+├── backend/                     # Django 백엔드
+│   ├── Dockerfile
+│   ├── pyproject.toml           # Poetry 의존성
+│   ├── manage.py
+│   ├── config/                  # 프로젝트 설정
+│   │   ├── settings/
+│   │   │   ├── base.py
+│   │   │   ├── local.py
+│   │   │   ├── production.py
+│   │   │   └── test.py
+│   │   ├── urls.py
+│   │   ├── wsgi.py
+│   │   └── celery.py
+│   ├── apps/                    # Django 앱
+│   │   ├── users/               # 사용자 및 인증
+│   │   ├── novels/              # 소설, 브랜치
+│   │   ├── contents/            # 회차, 위키, 지도
+│   │   ├── interactions/        # 댓글, 좋아요, 구독
+│   │   └── ai/                  # AI 연동
+│   ├── common/                  # 공통 모듈
+│   └── tests/                   # 통합 테스트
+├── frontend/                    # Next.js 프론트엔드
+│   ├── app/                     # App Router 라우트
+│   ├── components/              # UI 컴포넌트
+│   ├── lib/                     # 유틸, API 클라이언트
+│   ├── hooks/                   # 커스텀 훅
+│   ├── stores/                  # Zustand 스토어
+│   └── types/                   # TypeScript 타입
+├── docs/                        # 설계 문서
 └── AGENTS.md
 ```
 
@@ -140,11 +137,21 @@ Novel (소설)
 - 테스트 없이 프로덕션 코드 작성 금지
 - 테스트 커버리지 **70% 이상** 유지
 
-### 2. 백엔드 명령어
+### 2. 백엔드 명령어 (Django)
 ```bash
-./gradlew build
-./gradlew bootRun
-./gradlew test
+# 로컬 개발 (Poetry 설치 필요)
+cd backend
+poetry install
+poetry run python manage.py migrate
+poetry run python manage.py runserver
+
+# 테스트
+poetry run pytest
+poetry run pytest --cov=apps
+
+# Docker 환경
+docker compose up -d
+docker compose exec backend poetry run python manage.py migrate
 ```
 
 ### 3. 프론트엔드 명령어
@@ -156,53 +163,47 @@ pnpm build
 ```
 
 ### 4. 데이터베이스
-- **Host**: `db` (Docker Compose)
+- **Host**: `db` (Docker Compose) 또는 `localhost` (로컬)
 - **Port**: `5432`
 - **Database**: `app_db`
 - **Extension**: pgvector
 
 ### 5. API 문서화
-- **Swagger UI**: `/swagger-ui.html`
-- **OpenAPI**: `/v3/api-docs`
+- **Swagger UI**: `/api/docs/`
+- **ReDoc**: `/api/redoc/`
+- **OpenAPI Schema**: `/api/schema/`
 
 ### 6. 보안
-- **JWT 인증** (Access + Refresh Token)
-- **BCrypt** 비밀번호 암호화
-- **@PreAuthorize** 권한 검사
+- **JWT 인증** (Access + Refresh Token via SimpleJWT)
+- **Argon2** 비밀번호 암호화 (Django 기본)
+- **permission_classes** 권한 검사
 
 ### 7. 보안 - 민감 정보 관리 ⚠️ 필수
 > **AI 에이전트가 절대 위반해서는 안 되는 규칙입니다.**
 
-- **하드코딩 금지**: JWT Secret, OAuth Client ID/Secret, DB Password 등 민감 정보를 코드에 직접 작성 금지
-- **환경 변수 사용**: 모든 민감 설정은 `${VARIABLE_NAME}` 형식으로 환경 변수 참조
-- **.gitignore 필수**: `application-local.yml`, `application-dev.yml`, `application-prod.yml`, `.env` 등 환경별 설정 파일은 반드시 `.gitignore`에 추가
+- **하드코딩 금지**: SECRET_KEY, OAuth Client ID/Secret, DB Password 등 민감 정보를 코드에 직접 작성 금지
+- **환경 변수 사용**: `django-environ`을 통해 `env('VARIABLE_NAME')` 형식으로 환경 변수 참조
+- **.gitignore 필수**: `.env`, `.env.local` 등 환경 파일은 반드시 `.gitignore`에 추가
 - **커밋 전 확인**: `git diff --cached`로 민감 정보 포함 여부 확인
-- **히스토리 주의**: 한 번 커밋된 민감 정보는 `filter-branch` 등으로 완전 삭제 필요
 
 ### 8. 테스트 전략 (Standardized) ⚠️ 필수
 > **프로젝트 표준 테스트 전략입니다. 반드시 준수해야 합니다.**
 
-**1. Service Layer (Unit Test)**
-- **규칙**: `@SpringBootTest` **사용 금지**. 순수 Mockito 테스트로 작성.
-- **도구**: `@ExtendWith(MockitoExtension.class)`, `@InjectMocks`, `@Mock`
-- **이유**: 빠른 실행 속도 및 테스트 격리 보장
+**1. Service/Domain (Unit Test)**
+- **도구**: `pytest` + `model_bakery` (또는 `factory_boy`)
+- **규칙**: DB 의존성 최소화, Mock 활용
 
-**2. Repository Layer (Slice Test)**
-- **규칙**: `@DataJpaTest` 사용.
-- **설정**: `@Import(JpaConfig.class)` (Auditing 활성화), `@ActiveProfiles("common")`
-- **이유**: 가벼운 컨텍스트 로드 및 자동 롤백
+**2. Serializer (Unit Test)**
+- **도구**: `pytest`
+- **규칙**: 입력 검증, 출력 형식 검증
 
-**3. Controller Layer (Slice Test)**
-- **규칙**: `@WebMvcTest` 사용 권장 (단, Spring Security 의존성 해결 필요 시 `@SpringBootTest` 허용)
+**3. ViewSet/APIView (Integration Test)**
+- **도구**: `pytest-django` + `APIClient`
+- **규칙**: 실제 HTTP 요청/응답 테스트
 
 **4. E2E Test**
-- **규칙**: `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `WebTestClient`
-- **설정**: `WebTestClient.bindToServer()` 사용
-
-**5. Deprecated Features**
-- `@MockBean` (대체: `@MockitoBean`)
-- `TestRestTemplate` (대체: `WebTestClient`)
-
+- **도구**: `pytest` + `APIClient`
+- **규칙**: 전체 플로우 테스트
 
 ### 9. Context7 MCP 활용 ⚠️ 필수
 > **deprecated 코드 사용을 방지하기 위한 필수 절차입니다.**
@@ -215,21 +216,6 @@ pnpm build
 - **허락 없이 베이스 브랜치 조작 금지**: `main`, `develop` 브랜치를 사용자 승인 없이 강제 푸시/덮어쓰기 금지
 - **작업 완료 시 반드시 PR**: 기능 완료 후 Push와 PR 생성을 빠뜨리지 않음
 
-### 11. 브라우저 CDP 연결 (Dev Container) ⚠️ 필수
-> **브라우저 테스트 시 127.0.0.1:9222 연결이 거부되면 반드시 아래 절차를 따르세요.**
-
-**1. 호스트에서 Chrome을 CDP 모드로 실행:**
-```bash
-google-chrome --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0
-```
-
-**2. 컨테이너 내부에서 socat으로 포트 포워딩:**
-```bash
-socat TCP-LISTEN:9222,bind=127.0.0.1,fork TCP:host.docker.internal:9222 &
-```
-
-**원리**: Dev Container 내부에서 `127.0.0.1:9222`에 접근하면 호스트의 Chrome CDP 포트로 연결됩니다.
-
 ---
 
 ## GitHub 템플릿 사용법
@@ -240,49 +226,20 @@ socat TCP-LISTEN:9222,bind=127.0.0.1,fork TCP:host.docker.internal:9222 &
 
 #### 백엔드
 - **🔧 기능 개발**: `.github/ISSUE_TEMPLATE/backend-feature.md`
-  - 신규 기능 개발 또는 개선
-  - TDD 체크리스트 포함
-  - Entity, Service, Controller, Repository 구조
-  
 - **🐛 버그 수정**: `.github/ISSUE_TEMPLATE/backend-bug.md`
-  - 버그 리포트 및 수정
-  - 재현 단계 명시
-  - 우선순위별 분류
 
 #### 프론트엔드
 - **🎨 기능 개발**: `.github/ISSUE_TEMPLATE/frontend-feature.md`
-  - 신규 기능 개발 또는 개선
-  - 디자인 시스템 체크리스트
-  - 반응형 및 접근성 체크
-  
 - **🎨 버그 수정**: `.github/ISSUE_TEMPLATE/frontend-bug.md`
-  - UI/UX 버그 리포트
-  - 브라우저 호환성 체크
 
 **사용 방법**: GitHub Issues → New Issue → 템플릿 선택
 
 ### Pull Request 템플릿
 
-PR 생성 시 백엔드/프론트엔드 템플릿을 선택할 수 있습니다:
-
-#### 방법 1: URL 쿼리 파라미터 사용
-```
-# 백엔드 PR
-https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_template_backend.md
-
-# 프론트엔드 PR
-https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_template_frontend.md
-```
-
-#### 방법 2: PR 생성 후 수동 선택
-1. PR 생성 페이지 접속
-2. 우측 "Preview template" 드롭다운에서 템플릿 선택
-3. 또는 템플릿 파일 내용을 복사하여 붙여넣기
-
 #### 백엔드 PR 체크리스트
 - ✅ TDD 원칙 준수 (RED-GREEN-REFACTOR)
 - ✅ 테스트 커버리지 70% 이상
-- ✅ Swagger API 문서 업데이트
+- ✅ drf-spectacular 스키마 업데이트
 - ✅ 보안 체크 (SQL Injection, XSS 등)
 - ✅ 성능 체크 (N+1 쿼리 등)
 
@@ -295,8 +252,6 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 
 ---
 
-`AI 에이전트 작업 절차 (Workflow)`를 참조하여 구현을 합니다.
-
 ## AI 에이전트 작업 절차 (Workflow)
 
 **@docs/development-guidelines.md 필독**
@@ -307,12 +262,12 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 
 ### 1. 최신 기술 스택 확인 (Context7) 및 설계 확인
 - **원칙**: 모든 코드는 현재 사용 중인 라이브러리/프레임워크의 **최신 버전 사용법**을 따르며 `docs` 폴더의 설계를 따릅니다.
-- **실행**: 구현 전 `Context7` 도구를 사용하여 최신 공식 문서와 예제를 확인합니다. (예: Next.js 16, Spring Boot 4.x)
+- **실행**: 구현 전 `Context7` 도구를 사용하여 최신 공식 문서와 예제를 확인합니다. (예: Django 5.1, DRF 3.15, Next.js 16)
 
 ### 2. 이슈 확인 및 선정
 - `GitHub CLI`를 사용하여 열려있는 이슈 목록을 확인합니다.
 - **선정 기준**:
-  - `docs/backend-pert-chart.md` (백엔드) 또는 관련 로직 흐름도를 참조하여 선행 작업(종속성)이 완료되었는지 확인
+  - `docs/backend-tasks.md` 또는 관련 태스크 문서를 참조하여 선행 작업(종속성)이 완료되었는지 확인
   - 선행 작업이 완료되어 `develop` 브랜치에 반영된 이슈
   - 병렬 처리가 가능한 독립적인 이슈
   - 우선순위(P0 > P1)가 높은 이슈
@@ -320,7 +275,7 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 ### 3. 브랜치 전략
 - **Base Branch**: `develop`
 - **Naming**: `feat/#<이슈번호>-<간단요약-영어>`
-  - 예: `feat/#42-auth-login`, `fix/#15-user-entity`
+  - 예: `feat/#42-auth-login`, `fix/#15-user-model`
 
 ### 4. 작업 수행 (TDD)
 1. 브랜치 생성 (`create_branch`)
@@ -348,19 +303,24 @@ https://github.com/[owner]/ForkLore/compare/[branch]?template=pull_request_templ
 | `docs/PRD.md` | 제품 요구사항 정의 |
 | `docs/backlog.md` | 제품 백로그 (v2) |
 | `docs/database-schema.md` | DB 스키마 (v4) |
-| `docs/backend-architecture.md` | 백엔드 아키텍처 (v4) |
+| `docs/backend-architecture.md` | 백엔드 아키텍처 (v5 - Django) |
 | `docs/api-specification.md` | REST API 명세 (v2) |
 | `docs/ui-ux-specification.md` | UI/UX 명세서 |
 | `docs/wireframes.md` | 와이어프레임 |
 | `docs/design-system.md` | 디자인 시스템 |
-| `docs/backend-tasks.md` | 백엔드 태스크 목록 |
+| `docs/backend-tasks.md` | 백엔드 태스크 목록 (v3 - Django) |
 | `docs/frontend-tasks.md` | 프론트엔드 태스크 목록 |
 
 ---
 
 ## 버전 히스토리
-- **v0.0.1-SNAPSHOT**: 초기 프로젝트 구조 및 설계 문서 완성
-  - Spring Boot 4.0.1 / Java 23
+- **v0.0.2**: Django 전환
+  - Django 5.1+ / Python 3.12+
+  - Django REST Framework 3.15+
+  - Poetry 패키지 관리
+  - 루트 Docker Compose 설정
+  
+- **v0.0.1**: 초기 프로젝트 구조 및 설계 문서 완성
   - Next.js 16 / TypeScript / TanStack Query / Zustand
   - PostgreSQL 18 + pgvector
   - Gemini Embedding 001 (3072차원)

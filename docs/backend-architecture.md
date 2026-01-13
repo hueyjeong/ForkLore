@@ -1,24 +1,24 @@
-# 🏗️ ForkLore 백엔드 아키텍처 설계
+# 🏗️ ForkLore 백엔드 아키텍처 설계 (Django)
 
-**작성일**: 2026.01.02  
-**작성자**: HueyJeong (with Gemini)  
-**문서 버전**: v4.0 (최종)
+**작성일**: 2026.01.13  
+**작성자**: HueyJeong (with AI)  
+**문서 버전**: v5.1 (DB/응답규약/camelCase 정합성 보강)
 
 ---
 
 ## 1. 개요 (Overview)
 
-ForkLore 백엔드는 **Spring Boot 4.0.1 + Java 23** 기반의 모놀리식 아키텍처로 시작하며, 확장성을 고려한 **레이어드 아키텍처**를 채택합니다.
+ForkLore 백엔드는 **Django 5.1+ / Python 3.12+** 기반의 모놀리식 아키텍처로, **Django REST Framework (DRF)**를 사용하여 RESTful API를 제공합니다.
 
 ### 설계 원칙
 
 | 원칙 | 설명 |
 |------|------|
-| **Layered Architecture** | Presentation → Service → Repository → Domain 분리 |
-| **Domain-Driven Design** | 핵심 도메인(소설, 브랜치, 위키) 중심 설계 |
-| **SOLID Principles** | 단일 책임, 개방-폐쇄, 의존성 역전 원칙 준수 |
-| **RESTful API** | 자원 중심의 일관된 API 설계 |
-| **TDD** | 테스트 우선 개발로 동작 보장 |
+| **App-based Architecture** | 기능 도메인별 Django App 분리 |
+| **Fat Models, Thin Views** | 비즈니스 로직은 Model 또는 Service 레이어에 캡슐화 |
+| **Service Layer** | 복잡한 비즈니스 로직은 `services/` 모듈로 분리 |
+| **DRF Conventions** | Serializer, ViewSet, Router 패턴 준수 |
+| **TDD** | pytest-django 기반 테스트 우선 개발 |
 
 ---
 
@@ -28,189 +28,151 @@ ForkLore 백엔드는 **Spring Boot 4.0.1 + Java 23** 기반의 모놀리식 아
 
 | 구분 | 기술 | 버전 |
 |------|------|------|
-| **언어** | Java | 23 |
-| **프레임워크** | Spring Boot | 4.0.1 |
-| **빌드** | Gradle | 8.x (Wrapper) |
-| **ORM** | Spring Data JPA + Hibernate | - |
-| **보안** | Spring Security | - |
-| **API 문서** | Springdoc OpenAPI | 3.0.0 |
-| **유틸리티** | Lombok | - |
+| **언어** | Python | 3.12+ |
+| **프레임워크** | Django | 5.1+ |
+| **API 프레임워크** | Django REST Framework | 3.15+ |
+| **패키지 관리** | Poetry | latest |
+| **인증** | SimpleJWT + dj-rest-auth | - |
+| **API 문서** | drf-spectacular | 0.27+ |
 
-### 2.2 데이터베이스
+### 2.2 데이터베이스 (모든 환경 동일)
 
 | 환경 | DB | 용도 |
 |------|-----|------|
-| 개발/테스트 | H2 | 인메모리 DB |
-| 운영 | PostgreSQL 18 | Core Data |
-| 운영 | PostgreSQL + pgvector | 벡터 검색 (Gemini Embedding 3072차원) |
+| 개발 | PostgreSQL 18 | Core Data + JSONB |
+| 테스트 | PostgreSQL 18 | pgvector 포함 전제 |
+| 운영 | PostgreSQL 18 | Core Data + pgvector |
+
+> SQLite는 pgvector/JSONB 및 실제 운영 특성과 불일치하므로 사용하지 않는다.
 
 ### 2.3 인프라
 
 | 구분 | 기술 |
 |------|------|
-| **컨테이너** | Docker Compose V2 |
-| **개발 환경** | Dev Container (VS Code) |
+| **컨테이너** | Docker Compose (루트 디렉토리) |
+| **비동기 태스크** | Celery + Redis |
 | **CI/CD** | GitHub Actions (예정) |
 
 ---
 
-## 3. 패키지 구조
+## 3. 프로젝트 구조
 
 ```
-backend/src/main/java/io/forklore/
-├── ForkloreApplication.java
-├── config/
-│   ├── SecurityConfig.java
-│   ├── OpenApiConfig.java
-│   ├── JpaConfig.java
-│   └── WebConfig.java
+backend/
+├── pyproject.toml           # Poetry 의존성 정의
+├── poetry.lock
+├── manage.py
+├── pytest.ini               # pytest 설정
 │
-├── domain/
-│   ├── user/
-│   │   ├── User.java
-│   │   └── UserRole.java
-│   ├── novel/
-│   │   ├── Novel.java
-│   │   ├── AgeRating.java          # ALL, 12, 15, 19
-│   │   ├── Genre.java
-│   │   └── NovelStatus.java
-│   ├── branch/
-│   │   ├── Branch.java             # 메인 + 파생 통합
-│   │   ├── BranchType.java         # MAIN, SIDE_STORY, FAN_FIC, IF_STORY
-│   │   ├── BranchVisibility.java   # PRIVATE, PUBLIC, LINKED
-│   │   └── BranchLinkRequest.java
-│   ├── chapter/
-│   │   ├── Chapter.java            # 브랜치에 귀속
-│   │   ├── ChapterStatus.java
-│   │   ├── AccessType.java         # FREE, SUBSCRIPTION
-│   │   └── ChapterChunk.java       # 벡터 임베딩
-│   ├── wiki/
-│   │   ├── WikiEntry.java          # 브랜치별 위키
-│   │   ├── WikiSnapshot.java
-│   │   └── WikiTagDefinition.java
-│   ├── map/
-│   │   ├── Map.java                # 브랜치별 지도
-│   │   ├── MapSnapshot.java
-│   │   ├── MapLayer.java
-│   │   └── MapObject.java
-│   ├── subscription/
-│   │   ├── Subscription.java       # 구독
-│   │   └── Purchase.java           # 소장
-│   ├── reading/
-│   │   ├── ReadingLog.java
-│   │   └── Bookmark.java
-│   └── common/
-│       ├── BaseEntity.java
-│       └── SoftDeletable.java
+├── config/                  # 프로젝트 설정 (settings, urls, wsgi, asgi)
+│   ├── __init__.py
+│   ├── settings/
+│   │   ├── __init__.py
+│   │   ├── base.py          # 공통 설정
+│   │   ├── local.py         # 로컬 개발
+│   │   ├── production.py    # 운영
+│   │   └── test.py          # 테스트
+│   ├── urls.py
+│   ├── wsgi.py
+│   └── asgi.py
 │
-├── repository/
-│   ├── user/UserRepository.java
-│   ├── novel/NovelRepository.java
-│   ├── branch/BranchRepository.java
-│   ├── chapter/ChapterRepository.java
-│   ├── wiki/WikiEntryRepository.java
-│   ├── map/MapRepository.java
-│   └── subscription/SubscriptionRepository.java
+├── apps/                    # 기능별 Django 앱
+│   ├── __init__.py
+│   ├── users/               # 사용자 및 인증
+│   │   ├── __init__.py
+│   │   ├── models.py        # User, UserRole
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── services.py      # AuthService, UserService
+│   │   ├── permissions.py
+│   │   └── tests/
+│   │       ├── __init__.py
+│   │       ├── test_models.py
+│   │       ├── test_serializers.py
+│   │       └── test_views.py
+│   │
+│   ├── novels/              # 소설 및 브랜치 관리
+│   │   ├── models.py        # Novel, Branch, BranchVote, BranchLinkRequest
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── services.py      # NovelService, BranchService
+│   │   └── tests/
+│   │
+│   ├── contents/            # 회차, 위키, 지도
+│   │   ├── models.py        # Chapter, WikiEntry, WikiSnapshot, Map, MapSnapshot
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── services.py      # ChapterService, WikiService, MapService
+│   │   └── tests/
+│   │
+│   ├── interactions/        # 댓글, 좋아요, 구독, 결제
+│   │   ├── models.py        # Comment, Like, Subscription, Purchase, ReadingLog, Bookmark
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── services.py      # SubscriptionService, PurchaseService, AccessService
+│   │   └── tests/
+│   │
+│   └── ai/                  # AI 연동
+│       ├── models.py        # ChapterChunk (벡터 임베딩)
+│       ├── serializers.py
+│       ├── views.py
+│       ├── urls.py
+│       ├── services.py      # EmbeddingService, AIService
+│       └── tests/
 │
-├── service/
-│   ├── user/
-│   │   ├── UserService.java
-│   │   └── AuthService.java
-│   ├── novel/NovelService.java
-│   ├── branch/
-│   │   ├── BranchService.java
-│   │   └── BranchLinkService.java
-│   ├── chapter/ChapterService.java
-│   ├── wiki/WikiService.java
-│   ├── map/MapService.java
-│   ├── subscription/
-│   │   ├── SubscriptionService.java
-│   │   └── PurchaseService.java
-│   ├── reading/ReadingService.java
-│   └── ai/
-│       ├── AIService.java
-│       └── EmbeddingService.java
+├── common/                  # 공통 유틸리티
+│   ├── __init__.py
+│   ├── models.py            # BaseModel (created_at, updated_at)
+│   ├── pagination.py        # 커스텀 페이지네이션
+│   ├── exceptions.py        # 커스텀 예외
+│   ├── permissions.py       # 공통 권한 클래스
+│   ├── renderers.py         # 응답 래퍼 렌더러
+│   └── utils.py             # 유틸리티 함수
 │
-├── controller/
-│   ├── AuthController.java
-│   ├── UserController.java
-│   ├── NovelController.java
-│   ├── BranchController.java
-│   ├── ChapterController.java
-│   ├── WikiController.java
-│   ├── MapController.java
-│   ├── SubscriptionController.java
-│   └── AIController.java
-│
-├── dto/
-│   ├── request/
-│   │   ├── SignUpRequest.java
-│   │   ├── LoginRequest.java
-│   │   ├── NovelCreateRequest.java
-│   │   └── ChapterCreateRequest.java
-│   ├── response/
-│   │   ├── UserResponse.java
-│   │   ├── NovelResponse.java
-│   │   ├── ChapterResponse.java
-│   │   └── ApiResponse.java
-│   └── mapper/
-│       └── NovelMapper.java
-│
-├── exception/
-│   ├── GlobalExceptionHandler.java
-│   ├── BusinessException.java
-│   ├── NotFoundException.java
-│   ├── UnauthorizedException.java
-│   └── ValidationException.java
-│
-├── security/
-│   ├── jwt/
-│   │   ├── JwtTokenProvider.java
-│   │   ├── JwtAuthenticationFilter.java
-│   │   └── JwtProperties.java
-│   ├── oauth2/
-│   │   ├── OAuth2SuccessHandler.java
-│   │   └── CustomOAuth2UserService.java
-│   └── UserPrincipal.java
-│
-└── util/
-    ├── MarkdownParser.java
-    └── SlugGenerator.java
+└── tests/                   # 통합 테스트
+    ├── __init__.py
+    ├── conftest.py          # pytest fixtures
+    └── e2e/
+        └── test_novel_flow.py
 ```
 
 ---
 
 ## 4. 레이어별 역할
 
-### 4.1 Controller Layer (Presentation)
+### 4.1 Views (Presentation Layer)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                  REST API 엔드포인트                 │
+│              DRF ViewSet / APIView                  │
 │  - HTTP 요청 수신 및 응답 반환                       │
-│  - 입력 유효성 검증 (@Validated)                     │
-│  - Swagger 문서화 (@Operation, @ApiResponse)        │
-│  - 인증/인가 처리 (@PreAuthorize)                   │
+│  - 입력 유효성 검증 (Serializer)                    │
+│  - Swagger 문서화 (@extend_schema)                  │
+│  - 인증/인가 처리 (permission_classes)              │
 └─────────────────────────────────────────────────────┘
 ```
 
 **책임**:
 - HTTP 요청/응답 처리
-- DTO 변환 위임
-- Swagger 어노테이션
+- Serializer를 통한 데이터 검증 및 변환
+- drf-spectacular 데코레이터
 
 **금지 사항**:
 - 비즈니스 로직 포함 ❌
-- Repository 직접 호출 ❌
+- 직접적인 ORM 쿼리 ❌ (단순 CRUD 제외)
 
-### 4.2 Service Layer (Business)
+### 4.2 Services (Business Layer)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   비즈니스 로직                      │
+│                  비즈니스 로직                       │
 │  - 도메인 규칙 적용                                  │
-│  - 트랜잭션 관리 (@Transactional)                   │
-│  - 여러 Repository 조합                             │
+│  - 트랜잭션 관리 (@transaction.atomic)              │
+│  - 여러 Model 조합                                  │
 │  - 외부 서비스 연동 (AI API 등)                     │
 └─────────────────────────────────────────────────────┘
 ```
@@ -220,478 +182,362 @@ backend/src/main/java/io/forklore/
 - 도메인 간 조율
 - 트랜잭션 경계 설정
 
-**금지 사항**:
-- HTTP 관련 로직 ❌
+**예시**:
+```python
+# apps/novels/services.py
+from django.db import transaction
 
-### 4.3 Repository Layer (Persistence)
+class NovelService:
+    @transaction.atomic
+    def create_novel(self, author, data):
+        """소설 생성 시 메인 브랜치도 함께 생성"""
+        novel = Novel.objects.create(author=author, **data)
+        Branch.objects.create(
+            novel=novel,
+            author=author,
+            name=novel.title,
+            is_main=True,
+            branch_type=BranchType.MAIN
+        )
+        return novel
+```
+
+### 4.3 Serializers (Data Layer)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                  데이터 접근 계층                    │
-│  - JPA Repository 인터페이스                         │
-│  - 커스텀 쿼리 메서드                                │
-│  - QueryDSL / Native Query (복잡한 경우)            │
+│              DRF Serializer                          │
+│  - 요청 데이터 유효성 검증                           │
+│  - 객체 ↔ JSON 직렬화/역직렬화                      │
+│  - 중첩 관계 처리                                   │
 └─────────────────────────────────────────────────────┘
 ```
 
-**책임**:
-- CRUD 연산
-- 페이징, 정렬
-- 복잡한 조회 쿼리
-
-### 4.4 Domain Layer (Entity)
+### 4.4 Models (Domain Layer)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    도메인 모델                       │
-│  - JPA Entity (@Entity, @Table)                     │
-│  - 도메인 로직 캡슐화 (Rich Domain Model)            │
-│  - 불변 규칙 (Invariants) 보장                      │
+│                  Django Model                        │
+│  - ORM 정의 (필드, 관계, 제약조건)                   │
+│  - 도메인 로직 캡슐화 (property, method)             │
+│  - Manager 커스터마이징                             │
 └─────────────────────────────────────────────────────┘
 ```
-
-**책임**:
-- 엔티티 정의
-- 도메인 규칙 캡슐화
-- 연관관계 관리
 
 ---
 
-## 5. 핵심 도메인 모델 (v4)
+## 5. 횡단 관심사 (Cross-Cutting Concerns)
 
-### 5.1 도메인 관계도
+### 5.1 공통 응답 래퍼 (Success/Failure)
+
+#### 목표
+- 성공/실패 모두 `success/message/data/timestamp` 규약 준수 (`docs/api-specification.md`와 동일)
+
+#### 구현 전략 (권장)
+1) 예외 응답: `EXCEPTION_HANDLER`로 실패 응답 통일  
+2) 성공 응답: 커스텀 Renderer(또는 Response 헬퍼)로 모든 성공 응답 감싸기
+
+예시(개념):
+```python
+# common/exceptions.py (실패 응답 통일)
+from rest_framework.views import exception_handler
+from rest_framework.response import Response
+from django.utils import timezone
+
+def custom_exception_handler(exc, context):
+    response = exception_handler(exc, context)
+    
+    if response is not None:
+        response.data = {
+            'success': False,
+            'message': response.data.get('detail', str(exc)),
+            'data': None,
+            'errors': response.data if 'detail' not in response.data else None,
+            'timestamp': timezone.now().isoformat()
+        }
+    
+    return response
+```
+
+```python
+# common/renderers.py (성공 응답 통일 - 개념)
+from rest_framework.renderers import JSONRenderer
+from django.utils import timezone
+
+class StandardJSONRenderer(JSONRenderer):
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        response = renderer_context.get('response')
+        
+        # 이미 래핑된 경우 스킵
+        if isinstance(data, dict) and 'success' in data:
+            return super().render(data, accepted_media_type, renderer_context)
+        
+        # 성공 응답 래핑
+        if response and response.status_code < 400:
+            data = {
+                'success': True,
+                'message': None,
+                'data': data,
+                'timestamp': timezone.now().isoformat()
+            }
+        
+        return super().render(data, accepted_media_type, renderer_context)
+```
+
+> "예외만 래핑"하면 로그인/목록 등 성공 응답이 문서와 불일치한다. 성공도 반드시 래핑한다.
+
+---
+
+### 5.2 JSON camelCase 정책 (API)
+
+#### 정책
+- 외부 JSON: camelCase
+- 내부 Python/Django: snake_case
+
+#### 구현 옵션
+- (권장) `djangorestframework-camel-case`를 사용해 Parser/Renderer에서 자동 변환
+- 또는 프로젝트 내 공통 렌더러/파서로 직접 구현
+
+DRF 설정 예시(개념):
+```python
+REST_FRAMEWORK = {
+    "DEFAULT_PARSER_CLASSES": (
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ),
+    "DEFAULT_RENDERER_CLASSES": (
+        # 응답 래퍼 + camelCase 출력이 함께 되도록 구성
+        "common.renderers.StandardJSONRenderer",
+    ),
+}
+```
+
+---
+
+### 5.3 Pagination (1-indexed)
+- PageNumberPagination 기반
+- `page=1`부터 시작
+- query param은 `size`를 사용하도록 커스텀 Pagination에서 통일
+
+```python
+# common/pagination.py
+from rest_framework.pagination import PageNumberPagination
+
+class StandardPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'size'
+    max_page_size = 100
+```
+
+---
+
+## 6. 핵심 도메인 모델
+
+### 6.1 도메인 관계도
 
 ```mermaid
 erDiagram
-    USER ||--o{ NOVEL : writes
-    USER ||--o{ BRANCH : creates
-    USER ||--o{ SUBSCRIPTION : has
-    USER ||--o{ PURCHASE : owns
+    User ||--o{ Novel : writes
+    User ||--o{ Branch : creates
+    User ||--o{ Subscription : has
+    User ||--o{ Purchase : owns
     
-    NOVEL ||--o{ BRANCH : contains
+    Novel ||--o{ Branch : contains
     
-    BRANCH ||--o{ CHAPTER : contains
-    BRANCH ||--o{ WIKI_ENTRY : has
-    BRANCH ||--o{ MAP : has
-    BRANCH }o--|| BRANCH : "forked from"
+    Branch ||--o{ Chapter : contains
+    Branch ||--o{ WikiEntry : has
+    Branch ||--o{ Map : has
+    Branch }o--|| Branch : "forked from"
     
-    CHAPTER ||--o{ CHAPTER_CHUNK : contains
-    WIKI_ENTRY ||--o{ WIKI_SNAPSHOT : versions
-    MAP ||--o{ MAP_SNAPSHOT : versions
+    Chapter ||--o{ ChapterChunk : contains
+    WikiEntry ||--o{ WikiSnapshot : versions
+    Map ||--o{ MapSnapshot : versions
 ```
 
-### 5.2 주요 엔티티 설계
+### 6.2 주요 모델 설계
 
-#### Novel (소설 - 메타 컨테이너)
+#### User (커스텀 유저)
 
-```java
-@Entity
-@Table(name = "novels")
-public class Novel extends BaseEntity implements SoftDeletable {
-    @Id @GeneratedValue
-    private Long id;
+```python
+from django.contrib.auth.models import AbstractUser
+
+class UserRole(models.TextChoices):
+    READER = 'READER', 'Reader'
+    AUTHOR = 'AUTHOR', 'Author'
+    ADMIN = 'ADMIN', 'Admin'
+
+class User(AbstractUser):
+    email = models.EmailField(unique=True)
+    nickname = models.CharField(max_length=50, unique=True)
+    profile_image_url = models.URLField(blank=True)
+    bio = models.TextField(blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User author;
+    role = models.CharField(
+        max_length=20,
+        choices=UserRole.choices,
+        default=UserRole.READER
+    )
+    auth_provider = models.CharField(max_length=20, default='LOCAL')
+    provider_id = models.CharField(max_length=255, blank=True)
     
-    @Column(nullable = false)
-    private String title;
+    mileage = models.IntegerField(default=0)
+    coin = models.IntegerField(default=0)
+    email_verified = models.BooleanField(default=False)
     
-    @Column(columnDefinition = "TEXT")
-    private String description;
-    
-    private String coverImageUrl;
-    
-    @Enumerated(EnumType.STRING)
-    private Genre genre;
-    
-    @Enumerated(EnumType.STRING)
-    private AgeRating ageRating = AgeRating.ALL;  // ALL, 12, 15, 19
-    
-    @Enumerated(EnumType.STRING)
-    private NovelStatus status = NovelStatus.ONGOING;
-    
-    private boolean allowBranching = true;
-    
-    // 집계 (캐시)
-    private Long totalViewCount = 0L;
-    private Long totalLikeCount = 0L;
-    private Integer totalChapterCount = 0;
-    private Integer branchCount = 1;
-    
-    private LocalDateTime deletedAt;
-}
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'nickname']
 ```
 
-#### Branch (브랜치 - 메인 + 파생 통합)
+#### ChapterChunk (벡터 임베딩)
 
-```java
-@Entity
-@Table(name = "branches")
-public class Branch extends BaseEntity implements SoftDeletable {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Novel novel;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User author;
-    
-    // 메인 브랜치 여부 (소설당 하나만 true)
-    private boolean isMain = false;
-    
-    // 파생 시 부모 브랜치 + 분기점
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Branch parentBranch;
-    private Integer forkPointChapter;
-    
-    @Column(nullable = false)
-    private String name;
-    
-    @Column(columnDefinition = "TEXT")
-    private String description;
-    
-    private String coverImageUrl;
-    
-    @Enumerated(EnumType.STRING)
-    private BranchType branchType = BranchType.FAN_FIC;
-    
-    @Enumerated(EnumType.STRING)
-    private BranchVisibility visibility = BranchVisibility.PRIVATE;
-    
-    @Enumerated(EnumType.STRING)
-    private CanonStatus canonStatus = CanonStatus.NON_CANON;
-    private Integer mergedAtChapter;
-    
-    private Long voteCount = 0L;
-    private Integer voteThreshold = 1000;
-    private Long viewCount = 0L;
-    private Integer chapterCount = 0;
-    
-    private LocalDateTime deletedAt;
-}
-```
+```python
+from pgvector.django import VectorField
 
-#### Chapter (회차 - 브랜치 귀속)
-
-```java
-@Entity
-@Table(name = "chapters")
-public class Chapter extends BaseEntity {
-    @Id @GeneratedValue
-    private Long id;
+class ChapterChunk(BaseModel):
+    chapter = models.ForeignKey(Chapter, on_delete=models.CASCADE, related_name='chunks')
+    chunk_index = models.IntegerField()
+    content = models.TextField()
+    embedding = VectorField(dimensions=3072)  # Gemini Embedding 001
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Branch branch;
-    
-    private Integer chapterNumber;
-    
-    @Column(nullable = false)
-    private String title;
-    
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String content;       // 마크다운 원본
-    
-    @Column(columnDefinition = "TEXT")
-    private String contentHtml;   // 렌더링 캐시
-    
-    private Integer wordCount = 0;
-    
-    @Enumerated(EnumType.STRING)
-    private ChapterStatus status = ChapterStatus.DRAFT;
-    
-    @Enumerated(EnumType.STRING)
-    private AccessType accessType = AccessType.FREE;
-    
-    private Integer price = 0;
-    
-    private LocalDateTime scheduledAt;
-    private LocalDateTime publishedAt;
-    
-    private Long viewCount = 0L;
-    private Long likeCount = 0L;
-    private Integer commentCount = 0;
-}
-```
-
-#### WikiEntry (위키 - 브랜치 귀속)
-
-```java
-@Entity
-@Table(name = "wiki_entries")
-public class WikiEntry extends BaseEntity {
-    @Id @GeneratedValue
-    private Long id;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Branch branch;
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    private WikiEntry sourceWiki;  // 포크 시 원본
-    
-    @Column(nullable = false)
-    private String name;
-    
-    private String imageUrl;
-    private Integer firstAppearance;
-    
-    @Column(columnDefinition = "TEXT")
-    private String hiddenNote;
-    
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, Object> aiMetadata;
-    
-    @OneToMany(mappedBy = "wikiEntry", cascade = CascadeType.ALL)
-    @OrderBy("validFromChapter DESC")
-    private List<WikiSnapshot> snapshots = new ArrayList<>();
-    
-    @ManyToMany
-    @JoinTable(name = "wiki_tags")
-    private Set<WikiTagDefinition> tags = new HashSet<>();
-}
+    class Meta:
+        unique_together = ['chapter', 'chunk_index']
+        indexes = [
+            # IVFFlat 인덱스는 마이그레이션에서 Raw SQL로 생성
+        ]
 ```
 
 ---
 
-## 6. 횡단 관심사 (Cross-Cutting Concerns)
+## 7. 데이터베이스/환경 설정
 
-### 6.1 공통 응답 형식 (ApiResponse)
+### 7.1 DATABASE_URL 기본값 정책
+- 기본값은 SQLite가 아니라 PostgreSQL을 전제로 한다.
+- 개발 환경에서도 docker compose로 Postgres를 띄우는 구성이 표준.
 
-```java
-@Data
-@Builder
-public class ApiResponse<T> {
-    private boolean success;
-    private String message;
-    private T data;
-    private LocalDateTime timestamp;
-    
-    public static <T> ApiResponse<T> success(T data) {
-        return ApiResponse.<T>builder()
-            .success(true)
-            .data(data)
-            .timestamp(LocalDateTime.now())
-            .build();
-    }
-    
-    public static <T> ApiResponse<T> error(String message) {
-        return ApiResponse.<T>builder()
-            .success(false)
-            .message(message)
-            .timestamp(LocalDateTime.now())
-            .build();
-    }
+예시:
+```python
+# config/settings/base.py
+import environ
+
+env = environ.Env()
+
+DATABASES = {
+    "default": env.db("DATABASE_URL")  # 환경변수 필수
 }
 ```
 
-### 6.2 전역 예외 처리
-
-```java
-@ControllerAdvice
-public class GlobalExceptionHandler {
-    
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNotFound(NotFoundException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(ApiResponse.error(e.getMessage()));
-    }
-    
-    @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(ApiResponse.error(e.getMessage()));
-    }
-    
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.error("유효성 검사 실패"));
-    }
-}
+`.env` 예시:
+```
+DATABASE_URL=postgres://app_user:app_password@db:5432/app_db
 ```
 
-### 6.3 감사 (Auditing)
+---
 
-```java
-@MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
-public abstract class BaseEntity {
+## 8. AI 연동 (Gemini + pgvector)
+
+### 8.1 임베딩 차원(3072) 정합성
+- 스키마: `vector(3072)`
+- 애플리케이션: 임베딩 결과 길이가 3072인지 런타임에서 검증/가드한다.
+- 모델/차원 변경 시:
+  1) 스키마 변경(마이그레이션)
+  2) 인덱스 재생성(ivfflat)
+  3) 기존 임베딩 재생성(배치)
+
+```python
+# apps/ai/services.py
+import google.generativeai as genai
+
+class EmbeddingService:
+    EMBEDDING_DIMENSION = 3072
     
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
+    def __init__(self):
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        self.model = 'models/text-embedding-001'
     
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
-}
-```
-
-### 6.4 JWT 인증/인가
-
-```
-┌─────────────────────────────────────────────────────┐
-│                   JWT 기반 인증                      │
-│                                                     │
-│  1. 로그인 → Access Token + Refresh Token 발급      │
-│  2. API 요청 → Bearer Token 검증                    │
-│  3. Token 만료 → Refresh Token으로 갱신             │
-│  4. 인가 → @PreAuthorize("hasRole('AUTHOR')")       │
-└─────────────────────────────────────────────────────┘
-```
-
-### 6.5 열람 권한 검사
-
-```java
-@Service
-public class AccessService {
-    
-    public boolean canAccessChapter(Long userId, Chapter chapter) {
-        // 1. FREE 회차
-        if (chapter.getAccessType() == AccessType.FREE) return true;
+    def embed(self, text: str) -> list[float]:
+        result = genai.embed_content(
+            model=self.model,
+            content=text,
+            task_type="retrieval_document"
+        )
+        embedding = result['embedding']
         
-        // 2. 소장 중
-        if (purchaseRepository.existsByUserIdAndChapterId(userId, chapter.getId())) {
-            return true;
-        }
+        # 차원 검증
+        if len(embedding) != self.EMBEDDING_DIMENSION:
+            raise ValueError(f"Expected {self.EMBEDDING_DIMENSION} dimensions, got {len(embedding)}")
         
-        // 3. 구독 중
-        return subscriptionRepository.existsActiveByUserId(userId);
-    }
-}
+        return embedding
 ```
 
 ---
 
-## 7. AI 서비스 연동
+## 9. 열람 권한 검사
 
-### 7.1 Gemini API
-
-```java
-@Service
-public class EmbeddingService {
-    private static final int EMBEDDING_DIMENSION = 3072;
-    
-    public float[] embed(String text) {
-        // Gemini Embedding 001 호출
-    }
-    
-    public List<ChunkResult> search(float[] embedding, int limit) {
-        // pgvector 유사도 검색
-    }
-}
-```
-
-### 7.2 벡터 DB (pgvector)
-
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-
-CREATE TABLE chapter_chunks (
-    id SERIAL PRIMARY KEY,
-    chapter_id BIGINT REFERENCES chapters(id),
-    chunk_index INTEGER,
-    content TEXT,
-    embedding vector(3072)  -- Gemini Embedding 001
-);
-
-CREATE INDEX ON chapter_chunks 
-    USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-```
-
----
-
-## 8. 환경 설정
-
-```yaml
-spring:
-  application:
-    name: forklore
-  
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
+```python
+# apps/interactions/services.py
+class AccessService:
+    def can_access_chapter(self, user, chapter) -> bool:
+        # 1. FREE 회차
+        if chapter.access_type == AccessType.FREE:
+            return True
         
-  data:
-    web:
-      pageable:
-        default-page-size: 20
-        max-page-size: 100
-
-jwt:
-  secret: ${JWT_SECRET}
-  access-token-expiration: 3600000
-  refresh-token-expiration: 604800000
-
-ai:
-  gemini:
-    api-key: ${GEMINI_API_KEY}
-    model: gemini-1.5-pro
-    embedding-model: text-embedding-001
-    embedding-dimension: 3072
+        # 2. 소장 중
+        if Purchase.objects.filter(user=user, chapter=chapter).exists():
+            return True
+        
+        # 3. 구독 중
+        return Subscription.objects.filter(
+            user=user,
+            status=SubscriptionStatus.ACTIVE,
+            expires_at__gt=timezone.now()
+        ).exists()
 ```
 
 ---
 
-## 9. 테스트 전략
+## 10. 테스트 전략
 
-### 9.1 테스트 피라미드
+### 10.1 테스트 피라미드
 
 ```
         ┌─────────┐
         │  E2E   │  ← 최소화 (API 통합 테스트)
        ┌───────────┐
-       │Integration│  ← 서비스 + Repository
+       │Integration│  ← Service + Repository
      ┌───────────────┐
-     │    Unit      │  ← Service, Domain 로직
+     │    Unit      │  ← Service, Serializer, Model
    └─────────────────┘
 ```
 
-### 9.2 테스트 구성
+### 10.2 테스트 도구
 
 | 레벨 | 도구 | 대상 |
 |------|------|------|
-| Unit | JUnit 5 + Mockito | Service, Domain |
-| Integration | @DataJpaTest | Repository |
-| Integration | @WebMvcTest | Controller |
-| E2E | @SpringBootTest + TestRestTemplate | 전체 플로우 |
-| Security | @WithMockUser | 인증/인가 |
+| Unit | pytest + pytest-django | Service, Serializer |
+| Unit | pytest + model_bakery | Model |
+| Integration | pytest + APIClient | ViewSet |
+| E2E | pytest + APIClient | 전체 플로우 |
 
-### 9.3 TDD 원칙
+### 10.3 TDD 원칙
 
 - **Red → Green → Refactor** 사이클 준수
 - 기능 구현 전 테스트 먼저 작성
 - 테스트 커버리지 70% 이상 유지
 
----
+```python
+# 예시: tests/conftest.py
+import pytest
+from model_bakery import baker
 
-## 10. 배포 구조 (향후)
+@pytest.fixture
+def user(db):
+    return baker.make('users.User')
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                     Load Balancer                        │
-└──────────────────────────────────────────────────────────┘
-                            │
-         ┌──────────────────┼──────────────────┐
-         ▼                  ▼                  ▼
-    ┌─────────┐        ┌─────────┐        ┌─────────┐
-    │  App 1  │        │  App 2  │        │  App 3  │
-    │ (Spring)│        │ (Spring)│        │ (Spring)│
-    └─────────┘        └─────────┘        └─────────┘
-         │                  │                  │
-         └──────────────────┼──────────────────┘
-                            │
-                   ┌────────┴────────┐
-                   ▼                 ▼
-            ┌───────────┐     ┌───────────┐
-            │ PostgreSQL│     │   Redis   │
-            │  Primary  │     │  (Cache)  │
-            └───────────┘     └───────────┘
+@pytest.fixture
+def novel(db, user):
+    return baker.make('novels.Novel', author=user)
 ```
 
 ---

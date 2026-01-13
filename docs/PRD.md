@@ -26,33 +26,39 @@
 
 ## 2. 기술 스택 (Tech Stack)
 
-### Backend (현재 구성)
-- **언어**: Java 23
-- **프레임워크**: Spring Boot 4.0.1
-- **빌드 도구**: Gradle (Wrapper 포함)
+### Backend
+- **언어**: Python 3.12+
+- **프레임워크**: Django 5.1+
+- **API 프레임워크**: Django REST Framework (DRF)
+- **패키지 관리**: Poetry
 - **주요 의존성**:
-  - Spring Boot Starters (Web, Data JPA, Security, Actuator, Validation)
-  - Spring Boot DevTools (개발 환경)
-  - Lombok (코드 간소화)
-  - Springdoc OpenAPI 3.0.0 (Swagger UI/API 문서화)
-- **데이터베이스 드라이버**: PostgreSQL, H2 Database (개발/테스트)
+  - djangorestframework (REST API)
+  - djangorestframework-simplejwt (JWT 인증)
+  - dj-rest-auth + django-allauth (소셜 로그인)
+  - drf-spectacular (OpenAPI 3.1 문서화)
+  - django-environ (환경 변수 관리)
+  - celery + redis (비동기 태스크)
+- **데이터베이스 드라이버**: psycopg[binary], django-pgvector
 
-### Frontend (계획)
-개발 생산성과 AI 통합을 위해 Full-Stack TypeScript 환경으로 통일 예정.
-
-- **프레임워크**: Next.js (App Router)
+### Frontend
+- **프레임워크**: Next.js 16 (App Router)
 - **언어**: TypeScript
-- **상태 관리**: Zustand
-- **스타일링**: Tailwind CSS, shadcn/ui
+- **상태 관리**: Zustand, TanStack Query v5
+- **스타일링**: Tailwind CSS 4.x, shadcn/ui (New York)
+- **폼**: React Hook Form + Zod
+- **에디터**: Tiptap
+- **지도**: Leaflet + React Leaflet
+- **인증**: NextAuth.js v5
 
 ### Database
 - **Primary**: PostgreSQL 18 (Core Data)
-- **Vector Extension**: pgvector (Vector Search/RAG)
+- **Vector Extension**: pgvector + django-pgvector (Vector Search/RAG)
+- **Embedding**: Gemini text-embedding-001 (3072차원)
 
 ### Infrastructure & AI
-- **컨테이너**: Docker Compose (V2)
-- **AI**: OpenAI API
-- **개발 환경**: Dev Container (VS Code)
+- **컨테이너**: Docker Compose (루트 디렉토리)
+- **AI**: Gemini API
+- **캐시/태스크 브로커**: Redis
 
 ---
 

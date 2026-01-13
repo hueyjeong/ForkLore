@@ -1,79 +1,52 @@
 """
-Custom renderers for standardized API responses.
+Standard JSON Renderer with response wrapper and camelCase support.
+
+This renderer:
+1. Wraps all successful responses (status < 400) in a standard format
+2. Converts snake_case keys to camelCase for JSON output
+3. Error responses are NOT wrapped here - they are handled by custom_exception_handler
+
+Standard Response Format:
+{
+    "success": true,
+    "message": null,
+    "data": <original_data>,
+    "timestamp": "2026-01-13T12:00:00+09:00"
+}
 """
 
-from datetime import datetime, timezone
+from djangorestframework_camel_case.render import CamelCaseJSONRenderer
+from django.utils import timezone
 
-from rest_framework.renderers import JSONRenderer
 
-
-class StandardJSONRenderer(JSONRenderer):
+class StandardJSONRenderer(CamelCaseJSONRenderer):
     """
-    Custom JSON renderer that wraps all responses in a standard format.
+    Custom JSON renderer that:
+    1. Wraps all success responses in standard format
+    2. Applies camelCase transformation to keys
 
-    Success response format:
-    {
-        "success": true,
-        "message": "Operation completed",
-        "data": { ... },
-        "timestamp": "2026-01-13T14:55:00.000Z"
-    }
-
-    Error responses are handled by the exception handler and passed through as-is.
+    Error responses (4xx, 5xx) pass through unchanged - they are
+    handled by custom_exception_handler in common/exceptions.py.
     """
 
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        response = renderer_context.get("response") if renderer_context else None
+        # Handle missing context
+        if renderer_context is None:
+            return super().render(data, accepted_media_type, renderer_context)
 
-        # Don't wrap error responses (they're handled by exception handler)
-        if response and response.status_code >= 400:
-            # Check if this is already a wrapped error response from exception handler
-            if isinstance(data, dict) and "success" in data and data.get("success") is False:
-                return super().render(data, accepted_media_type, renderer_context)
-            # Otherwise, wrap the error
-            wrapped = {
-                "success": False,
-                "message": self._extract_error_message(data),
+        response = renderer_context.get("response")
+
+        # Skip wrapping if already wrapped (has 'success' key)
+        if isinstance(data, dict) and "success" in data:
+            return super().render(data, accepted_media_type, renderer_context)
+
+        # Only wrap success responses (status < 400)
+        if response and response.status_code < 400:
+            data = {
+                "success": True,
+                "message": None,
                 "data": data,
-                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "timestamp": timezone.now().isoformat(),
             }
-            return super().render(wrapped, accepted_media_type, renderer_context)
 
-        # Wrap success responses
-        wrapped = {
-            "success": True,
-            "message": self._extract_success_message(data, response),
-            "data": data,
-            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        }
-
-        return super().render(wrapped, accepted_media_type, renderer_context)
-
-    def _extract_success_message(self, data, response):
-        """Extract or generate a success message."""
-        if isinstance(data, dict) and "message" in data:
-            msg = data.pop("message")
-            return msg
-        if response:
-            if response.status_code == 201:
-                return "Created successfully"
-            elif response.status_code == 204:
-                return "Deleted successfully"
-        return "Request completed successfully"
-
-    def _extract_error_message(self, data):
-        """Extract or generate an error message from error data."""
-        if isinstance(data, dict):
-            if "detail" in data:
-                return str(data["detail"])
-            if "message" in data:
-                return str(data["message"])
-            # For validation errors, return first error
-            for key, value in data.items():
-                if isinstance(value, list) and value:
-                    return f"{key}: {value[0]}"
-                elif isinstance(value, str):
-                    return f"{key}: {value}"
-        elif isinstance(data, str):
-            return data
-        return "An error occurred"
+        return super().render(data, accepted_media_type, renderer_context)

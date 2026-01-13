@@ -24,7 +24,7 @@ class SignUpView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(
-            {"success": True, "message": "회원가입이 완료되었습니다."},
+            {"message": "회원가입이 완료되었습니다."},
             status=status.HTTP_201_CREATED,
         )
 
@@ -51,4 +51,4 @@ class ChangePasswordView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         request.user.set_password(serializer.validated_data["new_password"])
         request.user.save()
-        return Response({"success": True, "message": "비밀번호가 변경되었습니다."})
+        return Response({"message": "비밀번호가 변경되었습니다."})

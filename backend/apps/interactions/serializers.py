@@ -9,7 +9,7 @@ Contains serializers for:
 from rest_framework import serializers
 
 from apps.contents.serializers import ChapterListSerializer
-from .models import Subscription, Purchase, PlanType, SubscriptionStatus
+from .models import Subscription, Purchase, PlanType, SubscriptionStatus, ReadingLog, Bookmark
 
 
 # =============================================================================
@@ -98,6 +98,72 @@ class PurchaseListSerializer(serializers.ModelSerializer):
             "id",
             "chapter",
             "price_paid",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+# =============================================================================
+# ReadingLog Serializers
+# =============================================================================
+
+
+class ReadingProgressSerializer(serializers.Serializer):
+    """Serializer for recording reading progress."""
+
+    progress = serializers.DecimalField(max_digits=5, decimal_places=4, min_value=0, max_value=1)
+
+
+class ReadingLogSerializer(serializers.ModelSerializer):
+    """Serializer for reading log."""
+
+    chapter = ChapterListSerializer(read_only=True)
+
+    class Meta:
+        model = ReadingLog
+        fields = [
+            "id",
+            "chapter",
+            "progress",
+            "is_completed",
+            "read_at",
+        ]
+        read_only_fields = fields
+
+
+class ContinueReadingSerializer(serializers.Serializer):
+    """Serializer for continue reading response."""
+
+    chapter = ChapterListSerializer(read_only=True, allow_null=True)
+    progress = serializers.DecimalField(max_digits=5, decimal_places=4, read_only=True)
+
+
+# =============================================================================
+# Bookmark Serializers
+# =============================================================================
+
+
+class BookmarkCreateSerializer(serializers.Serializer):
+    """Serializer for creating a bookmark."""
+
+    scroll_position = serializers.DecimalField(
+        max_digits=5, decimal_places=4, min_value=0, max_value=1, default=0
+    )
+    note = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    """Serializer for bookmark."""
+
+    chapter = ChapterListSerializer(read_only=True)
+
+    class Meta:
+        model = Bookmark
+        fields = [
+            "id",
+            "chapter",
+            "scroll_position",
+            "note",
             "created_at",
         ]
         read_only_fields = fields

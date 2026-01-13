@@ -395,6 +395,29 @@ class BranchDetailViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="continue-reading",
+        permission_classes=[IsAuthenticated],
+    )
+    def continue_reading(self, request, pk=None):
+        """Get continue reading info for this branch."""
+        from apps.interactions.services import ReadingService
+        from apps.interactions.serializers import ContinueReadingSerializer
+
+        try:
+            branch = Branch.objects.get(pk=pk)
+        except Branch.DoesNotExist:
+            return Response(
+                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        result = ReadingService.get_continue_reading(user=request.user, branch_id=pk)
+        serializer = ContinueReadingSerializer(result)
+        return Response(serializer.data)
+
 
 class LinkRequestViewSet(viewsets.ViewSet):
     """ViewSet for BranchLinkRequest operations."""

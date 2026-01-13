@@ -363,6 +363,80 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         response_serializer = ChapterDetailSerializer(scheduled)
         return Response(response_serializer.data)
 
+    @extend_schema(
+        summary="북마크 추가/삭제",
+        description="회차에 북마크를 추가하거나 삭제합니다.",
+        tags=["Reading"],
+    )
+    @action(detail=True, methods=["post", "delete"], permission_classes=[IsAuthenticated])
+    def bookmark(self, request, pk=None):
+        """Add or remove a bookmark."""
+        from apps.interactions.services import BookmarkService
+        from apps.interactions.serializers import BookmarkCreateSerializer, BookmarkSerializer
+
+        chapter = self._get_chapter(pk)
+        if not chapter:
+            return Response(
+                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if request.method == "POST":
+            serializer = BookmarkCreateSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            bookmark = BookmarkService.add_bookmark(
+                user=request.user,
+                chapter_id=pk,
+                scroll_position=serializer.validated_data.get("scroll_position", 0),
+                note=serializer.validated_data.get("note", ""),
+            )
+            return Response(BookmarkSerializer(bookmark).data, status=status.HTTP_201_CREATED)
+        else:  # DELETE
+            BookmarkService.remove_bookmark(user=request.user, chapter_id=pk)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        summary="읽은 기록 저장",
+        description="회차 읽은 진행률을 저장합니다.",
+        tags=["Reading"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="reading-progress",
+        permission_classes=[IsAuthenticated],
+    )
+    def reading_progress(self, request, pk=None):
+        """Record reading progress."""
+        from apps.interactions.services import ReadingService
+        from apps.interactions.serializers import ReadingProgressSerializer, ReadingLogSerializer
+
+        chapter = self._get_chapter(pk)
+        if not chapter:
+            return Response(
+                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ReadingProgressSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        log = ReadingService.record_reading(
+            user=request.user,
+            chapter_id=pk,
+            progress=float(serializer.validated_data["progress"]),
+        )
+        return Response(ReadingLogSerializer(log).data)
+
 
 # =============================================================================
 # Wiki ViewSets

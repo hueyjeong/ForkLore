@@ -231,3 +231,184 @@ class PurchaseService:
             QuerySet of Purchase instances
         """
         return Purchase.objects.filter(user=user).select_related("chapter").order_by("-created_at")
+
+
+class ReadingService:
+    """Service for managing reading logs."""
+
+    @staticmethod
+    def record_reading(user, chapter_id: int, progress: float):
+        """
+        Record or update reading progress for a chapter.
+
+        Args:
+            user: User instance
+            chapter_id: ID of chapter being read
+            progress: Reading progress (0.0 to 1.0)
+
+        Returns:
+            ReadingLog instance
+        """
+        from apps.interactions.models import ReadingLog
+        from apps.contents.models import Chapter
+
+        chapter = Chapter.objects.get(id=chapter_id)
+        is_completed = progress >= 1.0
+
+        log, _ = ReadingLog.objects.update_or_create(
+            user=user,
+            chapter=chapter,
+            defaults={
+                "progress": progress,
+                "is_completed": is_completed,
+            },
+        )
+        return log
+
+    @staticmethod
+    def get_recent_reads(user, limit: int = 20):
+        """
+        Get recently read chapters for a user.
+
+        Args:
+            user: User instance
+            limit: Maximum number of results
+
+        Returns:
+            QuerySet of ReadingLog instances ordered by read_at desc
+        """
+        from apps.interactions.models import ReadingLog
+
+        return (
+            ReadingLog.objects.filter(user=user)
+            .select_related("chapter", "chapter__branch", "chapter__branch__novel")
+            .order_by("-read_at")[:limit]
+        )
+
+    @staticmethod
+    def get_continue_reading(user, branch_id: int) -> Dict[str, Any]:
+        """
+        Get continue reading info for a specific branch.
+
+        Logic:
+        1. If user has incomplete reading log, return that chapter
+        2. If all read chapters are complete, return next unread chapter
+        3. If no history, return first chapter
+
+        Args:
+            user: User instance
+            branch_id: ID of branch
+
+        Returns:
+            Dict with 'chapter' and 'progress' keys
+        """
+        from apps.interactions.models import ReadingLog
+        from apps.contents.models import Chapter
+
+        # Get all chapters in branch ordered by chapter_number
+        chapters = Chapter.objects.filter(branch_id=branch_id).order_by("chapter_number")
+
+        if not chapters.exists():
+            return {"chapter": None, "progress": 0}
+
+        # Get user's reading logs for this branch
+        user_logs = ReadingLog.objects.filter(
+            user=user,
+            chapter__branch_id=branch_id,
+        ).select_related("chapter")
+
+        # Check for incomplete reading (미완독 우선)
+        incomplete_log = user_logs.filter(is_completed=False).order_by("-read_at").first()
+        if incomplete_log:
+            return {
+                "chapter": incomplete_log.chapter,
+                "progress": incomplete_log.progress,
+            }
+
+        # Find the last completed chapter
+        last_completed = (
+            user_logs.filter(is_completed=True).order_by("-chapter__chapter_number").first()
+        )
+
+        if last_completed:
+            # Find next chapter after the last completed one
+            next_chapter = chapters.filter(
+                chapter_number__gt=last_completed.chapter.chapter_number
+            ).first()
+
+            if next_chapter:
+                return {"chapter": next_chapter, "progress": 0}
+
+            # All chapters completed, return last one
+            return {
+                "chapter": last_completed.chapter,
+                "progress": last_completed.progress,
+            }
+
+        # No reading history, return first chapter
+        return {"chapter": chapters.first(), "progress": 0}
+
+
+class BookmarkService:
+    """Service for managing bookmarks."""
+
+    @staticmethod
+    def add_bookmark(user, chapter_id: int, scroll_position: float = 0, note: str = ""):
+        """
+        Add or update a bookmark for a chapter.
+
+        Args:
+            user: User instance
+            chapter_id: ID of chapter to bookmark
+            scroll_position: Scroll position (0.0 to 1.0)
+            note: Optional note
+
+        Returns:
+            Bookmark instance
+        """
+        from apps.interactions.models import Bookmark
+        from apps.contents.models import Chapter
+
+        chapter = Chapter.objects.get(id=chapter_id)
+
+        bookmark, _ = Bookmark.objects.update_or_create(
+            user=user,
+            chapter=chapter,
+            defaults={
+                "scroll_position": scroll_position,
+                "note": note,
+            },
+        )
+        return bookmark
+
+    @staticmethod
+    def remove_bookmark(user, chapter_id: int) -> None:
+        """
+        Remove a bookmark.
+
+        Args:
+            user: User instance
+            chapter_id: ID of chapter to remove bookmark from
+        """
+        from apps.interactions.models import Bookmark
+
+        Bookmark.objects.filter(user=user, chapter_id=chapter_id).delete()
+
+    @staticmethod
+    def get_bookmarks(user):
+        """
+        Get all bookmarks for a user.
+
+        Args:
+            user: User instance
+
+        Returns:
+            QuerySet of Bookmark instances
+        """
+        from apps.interactions.models import Bookmark
+
+        return (
+            Bookmark.objects.filter(user=user)
+            .select_related("chapter", "chapter__branch", "chapter__branch__novel")
+            .order_by("-created_at")
+        )

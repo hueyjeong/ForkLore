@@ -8,58 +8,41 @@ Contains views for:
 - LikeViewSet: Like toggle
 """
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from drf_spectacular.utils import extend_schema, extend_schema_view
-
-from common.pagination import StandardPagination
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
 
 from apps.contents.models import Chapter
+from common.pagination import StandardPagination
+
 from .models import Comment, Report
+from .serializers import (
+    CoinTransactionSerializer,
+    CommentCreateSerializer,
+    CommentSerializer,
+    CommentUpdateSerializer,
+    LikeToggleResponseSerializer,
+    PurchaseDetailSerializer,
+    PurchaseListSerializer,
+    ReportActionSerializer,
+    ReportAdminSerializer,
+    ReportCreateSerializer,
+    ReportSerializer,
+    SubscriptionCreateSerializer,
+    SubscriptionDetailSerializer,
+    SubscriptionStatusSerializer,
+    WalletAdjustmentSerializer,
+    WalletChargeSerializer,
+)
 from .services import (
-    SubscriptionService,
-    PurchaseService,
     CommentService,
     LikeService,
+    PurchaseService,
     ReportService,
+    SubscriptionService,
     WalletService,
-)
-from .serializers import (
-    SubscriptionCreateSerializer,
-    SubscriptionDetailSerializer,
-    SubscriptionStatusSerializer,
-    PurchaseDetailSerializer,
-    PurchaseListSerializer,
-    CommentCreateSerializer,
-    CommentUpdateSerializer,
-    CommentSerializer,
-    LikeToggleResponseSerializer,
-    ReportCreateSerializer,
-    ReportSerializer,
-    ReportAdminSerializer,
-    ReportActionSerializer,
-    WalletChargeSerializer,
-    WalletAdjustmentSerializer,
-    CoinTransactionSerializer,
-    WalletSerializer,
-    WalletBalanceResponseSerializer,
-)
-from .serializers import (
-    SubscriptionCreateSerializer,
-    SubscriptionDetailSerializer,
-    SubscriptionStatusSerializer,
-    PurchaseDetailSerializer,
-    PurchaseListSerializer,
-    CommentCreateSerializer,
-    CommentUpdateSerializer,
-    CommentSerializer,
-    LikeToggleResponseSerializer,
-    ReportCreateSerializer,
-    ReportSerializer,
-    ReportAdminSerializer,
-    ReportActionSerializer,
 )
 
 
@@ -684,7 +667,7 @@ class UserWalletViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="transactions")
     def transactions(self, request):
         """Get full transaction history with pagination."""
-        from apps.interactions.models import Wallet, CoinTransaction
+        from apps.interactions.models import CoinTransaction, Wallet
 
         try:
             wallet = Wallet.objects.get(user=request.user)
@@ -779,8 +762,8 @@ class UserAIUsageViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"], url_path="", url_name="usage-status")
     def usage_status(self, request):
         """Get AI usage status for current user."""
-        from apps.interactions.services import AIUsageService
         from apps.interactions.serializers import AIUsageStatusSerializer
+        from apps.interactions.services import AIUsageService
 
         service = AIUsageService()
         status_data = service.get_usage_status(request.user)
@@ -815,11 +798,10 @@ class AIUsageViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="check-limit", url_name="check-limit")
     def check_limit(self, request):
         """Check if user can use AI."""
-        from apps.interactions.services import AIUsageService
         from apps.interactions.serializers import (
             AIUsageCheckLimitSerializer,
-            AIUsageCheckLimitResponseSerializer,
         )
+        from apps.interactions.services import AIUsageService
 
         serializer = AIUsageCheckLimitSerializer(data=request.data)
         if not serializer.is_valid():
@@ -856,11 +838,10 @@ class AIUsageViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="record-usage", url_name="record-usage")
     def record_usage(self, request):
         """Record AI usage."""
-        from apps.interactions.services import AIUsageService
         from apps.interactions.serializers import (
             AIUsageRecordSerializer,
-            AIUsageRecordResponseSerializer,
         )
+        from apps.interactions.services import AIUsageService
 
         serializer = AIUsageRecordSerializer(data=request.data)
         if not serializer.is_valid():

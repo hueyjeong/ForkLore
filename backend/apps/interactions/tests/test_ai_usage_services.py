@@ -8,21 +8,19 @@ Tests:
 """
 
 from datetime import date, timedelta
-from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
 from model_bakery import baker
 
 from apps.interactions.models import (
-    AIUsageLog,
     AIActionType,
+    AIUsageLog,
+    PlanType,
     Subscription,
     SubscriptionStatus,
-    PlanType,
 )
 from apps.interactions.services import AIUsageService
-
 
 pytestmark = pytest.mark.django_db
 
@@ -73,7 +71,7 @@ class TestAIUsageServiceIncrement:
         """Different action types should have separate logs."""
         service = AIUsageService()
         user = baker.make("users.User")
-        today = date.today()
+        date.today()
 
         log1 = service.increment(user=user, action_type=AIActionType.ASK)
         log2 = service.increment(user=user, action_type=AIActionType.WIKI_SUGGEST)

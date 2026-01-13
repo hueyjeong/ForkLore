@@ -10,12 +10,12 @@ Tests:
 """
 
 import pytest
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from model_bakery import baker
 
-from apps.interactions.models import ReportReason, ReportStatus, Report
+from apps.interactions.models import Report, ReportReason, ReportStatus
 from apps.users.models import User
 
 

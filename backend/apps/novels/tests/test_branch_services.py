@@ -14,12 +14,11 @@ from django.db import IntegrityError
 from model_bakery import baker
 
 from apps.novels.models import (
-    Novel,
     Branch,
     BranchType,
     BranchVisibility,
-    CanonStatus,
     BranchVote,
+    Novel,
 )
 from apps.novels.services import BranchService
 

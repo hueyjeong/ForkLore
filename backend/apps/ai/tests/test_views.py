@@ -3,15 +3,12 @@ TDD: AI Views 테스트
 RED → GREEN → REFACTOR
 """
 
+from unittest.mock import patch
+
 import pytest
-from django.urls import reverse
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
-from unittest.mock import patch, MagicMock
-from model_bakery import baker
-
-from apps.ai.views import AIViewSet
-
 
 pytestmark = pytest.mark.django_db
 

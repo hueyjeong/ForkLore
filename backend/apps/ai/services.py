@@ -10,13 +10,12 @@ Contains:
 """
 
 import json
-import time
 import logging
 import re
-from typing import List, Optional, Dict, Any
+import time
+from typing import Any
 
 from django.conf import settings
-from django.db.models import Q
 
 try:
     import google.generativeai as genai
@@ -25,9 +24,7 @@ except ImportError:
 
 from apps.ai.models import ChapterChunk
 from apps.contents.models import Chapter, WikiEntry
-from apps.novels.models import Branch
 from apps.interactions.services import AIUsageService
-
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +37,7 @@ class TextChunker:
         text: str,
         max_chunk_size: int = 1000,
         overlap: int = 100,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         텍스트를 청크로 분할합니다.
 
@@ -134,7 +131,7 @@ class EmbeddingService:
             if api_key:
                 genai.configure(api_key=api_key)
 
-    def embed(self, text: str, max_retries: int = 3) -> List[float]:
+    def embed(self, text: str, max_retries: int = 3) -> list[float]:
         """
         텍스트를 임베딩 벡터로 변환합니다.
 
@@ -167,7 +164,7 @@ class EmbeddingService:
         logger.error(f"All embedding attempts failed: {last_error}")
         raise last_error
 
-    def batch_embed(self, texts: List[str], max_retries: int = 3) -> List[List[float]]:
+    def batch_embed(self, texts: list[str], max_retries: int = 3) -> list[list[float]]:
         """
         여러 텍스트를 배치로 임베딩합니다.
 
@@ -193,7 +190,7 @@ class ChunkingService:
         self.max_chunk_size = 1000
         self.overlap = 100
 
-    def create_chunks(self, chapter: Chapter) -> List[ChapterChunk]:
+    def create_chunks(self, chapter: Chapter) -> list[ChapterChunk]:
         """
         회차의 내용을 청크로 분할하고 임베딩을 생성합니다.
 
@@ -235,7 +232,7 @@ class ChunkingService:
 
         return created_chunks
 
-    def create_chunks_batch(self, chapters: List[Chapter]) -> int:
+    def create_chunks_batch(self, chapters: list[Chapter]) -> int:
         """
         여러 회차에 대해 청크를 생성합니다.
 
@@ -263,7 +260,7 @@ class SimilaritySearchService:
         branch_id: int,
         query: str,
         limit: int = 10,
-    ) -> List[ChapterChunk]:
+    ) -> list[ChapterChunk]:
         """
         텍스트 쿼리로 유사한 청크를 검색합니다.
 
@@ -285,9 +282,9 @@ class SimilaritySearchService:
     def search_by_embedding(
         self,
         branch_id: int,
-        query_embedding: List[float],
+        query_embedding: list[float],
         limit: int = 10,
-    ) -> List[ChapterChunk]:
+    ) -> list[ChapterChunk]:
         """
         임베딩 벡터로 유사한 청크를 검색합니다.
 
@@ -357,7 +354,7 @@ class AIService:
         branch_id: int,
         user,
         text: str,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         텍스트에서 위키 엔트리 후보를 제안합니다.
 
@@ -418,7 +415,7 @@ JSON 형식으로 응답해주세요:
         branch_id: int,
         chapter_id: int,
         user,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         회차의 설정 일관성을 검사합니다.
 
@@ -434,8 +431,8 @@ JSON 형식으로 응답해주세요:
 
         try:
             chapter = Chapter.objects.get(id=chapter_id)
-        except Chapter.DoesNotExist:
-            raise ValueError("존재하지 않는 회차입니다.")
+        except Chapter.DoesNotExist as e:
+            raise ValueError("존재하지 않는 회차입니다.") from e
 
         # 관련 청크 검색
         related_chunks = self.search_service.search_by_text(
@@ -531,4 +528,4 @@ JSON 형식으로 응답해주세요:
             return response.text
         except Exception as e:
             logger.error(f"Ask failed: {e}")
-            raise ValueError(f"AI 응답 생성에 실패했습니다: {e}")
+            raise ValueError(f"AI 응답 생성에 실패했습니다: {e}") from e

@@ -8,18 +8,19 @@ Tests:
 - ChapterUpdateSerializer: Partial update validation
 """
 
-import pytest
 from datetime import timedelta
+
+import pytest
 from django.utils import timezone
 from model_bakery import baker
 
-from apps.contents.models import Chapter, ChapterStatus, AccessType
+from apps.contents.models import AccessType, Chapter, ChapterStatus
 from apps.contents.serializers import (
     ChapterCreateSerializer,
     ChapterDetailSerializer,
     ChapterListSerializer,
-    ChapterUpdateSerializer,
     ChapterScheduleSerializer,
+    ChapterUpdateSerializer,
 )
 from apps.novels.models import Branch
 
@@ -123,7 +124,7 @@ class TestChapterDetailSerializer:
     def test_includes_navigation_info(self):
         """Should include prev/next chapter navigation."""
         branch = baker.make(Branch)
-        ch1 = baker.make(
+        baker.make(
             Chapter,
             branch=branch,
             chapter_number=1,
@@ -137,7 +138,7 @@ class TestChapterDetailSerializer:
             title="Chapter 2",
             status=ChapterStatus.PUBLISHED,
         )
-        ch3 = baker.make(
+        baker.make(
             Chapter,
             branch=branch,
             chapter_number=3,

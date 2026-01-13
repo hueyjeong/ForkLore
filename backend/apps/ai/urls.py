@@ -8,13 +8,12 @@ AI endpoints are nested under branches:
 - /branches/{id}/ai/create-chunks
 """
 
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import include, path
 from rest_framework_nested import routers
 
 from apps.novels.urls import branches_router
-from .views import AIViewSet
 
+from .views import AIViewSet
 
 # Nested router for AI under branches
 branches_ai_router = routers.NestedDefaultRouter(branches_router, r"branches", lookup="branch")

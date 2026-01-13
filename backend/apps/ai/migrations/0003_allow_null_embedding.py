@@ -5,15 +5,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ai', '0002_initial'),
+        ("ai", "0002_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='chapterchunk',
-            name='embedding',
+            model_name="chapterchunk",
+            name="embedding",
             field=pgvector.django.vector.VectorField(blank=True, dimensions=3072, null=True),
         ),
     ]

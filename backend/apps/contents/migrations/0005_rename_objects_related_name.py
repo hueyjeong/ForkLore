@@ -5,15 +5,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('contents', '0004_add_map_models'),
+        ("contents", "0004_add_map_models"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='mapobject',
-            name='layer',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='map_objects', to='contents.maplayer'),
+            model_name="mapobject",
+            name="layer",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="map_objects",
+                to="contents.maplayer",
+            ),
         ),
     ]

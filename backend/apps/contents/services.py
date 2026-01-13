@@ -3,23 +3,23 @@ ChapterService - Business logic for Chapter management.
 WikiService - Business logic for Wiki management.
 """
 
-from datetime import datetime
-from typing import Optional, List
-import markdown
+import builtins
 import re
+from datetime import datetime
 
+import markdown
+from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
 from django.utils import timezone
-from django.core.exceptions import PermissionDenied
 
 from apps.contents.models import (
+    AccessType,
     Chapter,
     ChapterStatus,
-    AccessType,
+    ContributorType,
     WikiEntry,
     WikiSnapshot,
     WikiTagDefinition,
-    ContributorType,
 )
 from apps.novels.models import Branch
 
@@ -75,10 +75,10 @@ class ChapterService:
     def update(
         self,
         chapter: Chapter,
-        title: Optional[str] = None,
-        content: Optional[str] = None,
-        access_type: Optional[str] = None,
-        price: Optional[int] = None,
+        title: str | None = None,
+        content: str | None = None,
+        access_type: str | None = None,
+        price: int | None = None,
     ) -> Chapter:
         """
         Update a draft chapter.
@@ -169,7 +169,7 @@ class ChapterService:
 
         return chapter
 
-    def retrieve(self, branch_id: int, chapter_number: int) -> Optional[Chapter]:
+    def retrieve(self, branch_id: int, chapter_number: int) -> Chapter | None:
         """
         Retrieve a chapter by branch and chapter number.
 
@@ -241,10 +241,10 @@ class WikiService:
         user,
         name: str,
         image_url: str = "",
-        first_appearance: Optional[int] = None,
+        first_appearance: int | None = None,
         hidden_note: str = "",
-        ai_metadata: Optional[dict] = None,
-        initial_content: Optional[str] = None,
+        ai_metadata: dict | None = None,
+        initial_content: str | None = None,
     ) -> WikiEntry:
         """
         Create a new wiki entry.
@@ -268,8 +268,8 @@ class WikiService:
         """
         try:
             branch = Branch.objects.get(id=branch_id)
-        except Branch.DoesNotExist:
-            raise ValueError("존재하지 않는 브랜치입니다.")
+        except Branch.DoesNotExist as e:
+            raise ValueError("존재하지 않는 브랜치입니다.") from e
 
         WikiService._check_branch_author(branch, user)
 
@@ -302,11 +302,11 @@ class WikiService:
     def update(
         wiki_id: int,
         user,
-        name: Optional[str] = None,
-        image_url: Optional[str] = None,
-        first_appearance: Optional[int] = None,
-        hidden_note: Optional[str] = None,
-        ai_metadata: Optional[dict] = None,
+        name: str | None = None,
+        image_url: str | None = None,
+        first_appearance: int | None = None,
+        hidden_note: str | None = None,
+        ai_metadata: dict | None = None,
     ) -> WikiEntry:
         """
         Update a wiki entry.
@@ -329,8 +329,8 @@ class WikiService:
         """
         try:
             wiki = WikiEntry.objects.select_related("branch").get(id=wiki_id)
-        except WikiEntry.DoesNotExist:
-            raise ValueError("존재하지 않는 위키입니다.")
+        except WikiEntry.DoesNotExist as e:
+            raise ValueError("존재하지 않는 위키입니다.") from e
 
         WikiService._check_branch_author(wiki.branch, user)
 
@@ -368,13 +368,13 @@ class WikiService:
                 .prefetch_related("tags", "snapshots")
                 .get(id=wiki_id)
             )
-        except WikiEntry.DoesNotExist:
-            raise ValueError("존재하지 않는 위키입니다.")
+        except WikiEntry.DoesNotExist as e:
+            raise ValueError("존재하지 않는 위키입니다.") from e
 
     @staticmethod
     def list(
         branch_id: int,
-        tag_id: Optional[int] = None,
+        tag_id: int | None = None,
     ) -> QuerySet[WikiEntry]:
         """
         List wiki entries for a branch.
@@ -408,14 +408,14 @@ class WikiService:
         """
         try:
             wiki = WikiEntry.objects.select_related("branch").get(id=wiki_id)
-        except WikiEntry.DoesNotExist:
-            raise ValueError("존재하지 않는 위키입니다.")
+        except WikiEntry.DoesNotExist as e:
+            raise ValueError("존재하지 않는 위키입니다.") from e
 
         WikiService._check_branch_author(wiki.branch, user)
         wiki.delete()
 
     @staticmethod
-    def update_tags(wiki_id: int, user, tag_ids: List[int]) -> WikiEntry:
+    def update_tags(wiki_id: int, user, tag_ids: builtins.list[int]) -> WikiEntry:
         """
         Update tags for a wiki entry.
 
@@ -432,8 +432,8 @@ class WikiService:
         """
         try:
             wiki = WikiEntry.objects.select_related("branch").get(id=wiki_id)
-        except WikiEntry.DoesNotExist:
-            raise ValueError("존재하지 않는 위키입니다.")
+        except WikiEntry.DoesNotExist as e:
+            raise ValueError("존재하지 않는 위키입니다.") from e
 
         WikiService._check_branch_author(wiki.branch, user)
 
@@ -472,8 +472,8 @@ class WikiService:
         """
         try:
             branch = Branch.objects.get(id=branch_id)
-        except Branch.DoesNotExist:
-            raise ValueError("존재하지 않는 브랜치입니다.")
+        except Branch.DoesNotExist as e:
+            raise ValueError("존재하지 않는 브랜치입니다.") from e
 
         WikiService._check_branch_author(branch, user)
 
@@ -515,8 +515,8 @@ class WikiService:
         """
         try:
             tag = WikiTagDefinition.objects.select_related("branch").get(id=tag_id)
-        except WikiTagDefinition.DoesNotExist:
-            raise ValueError("존재하지 않는 태그입니다.")
+        except WikiTagDefinition.DoesNotExist as e:
+            raise ValueError("존재하지 않는 태그입니다.") from e
 
         WikiService._check_branch_author(tag.branch, user)
         tag.delete()
@@ -548,8 +548,8 @@ class WikiService:
         """
         try:
             wiki = WikiEntry.objects.select_related("branch").get(id=wiki_id)
-        except WikiEntry.DoesNotExist:
-            raise ValueError("존재하지 않는 위키입니다.")
+        except WikiEntry.DoesNotExist as e:
+            raise ValueError("존재하지 않는 위키입니다.") from e
 
         WikiService._check_branch_author(wiki.branch, user)
 
@@ -571,7 +571,7 @@ class WikiService:
     def get_snapshot_for_chapter(
         wiki_id: int,
         chapter_number: int,
-    ) -> Optional[WikiSnapshot]:
+    ) -> WikiSnapshot | None:
         """
         Get the appropriate snapshot for a given chapter (spoiler prevention).
 
@@ -627,7 +627,7 @@ class WikiService:
         source_branch_id: int,
         target_branch_id: int,
         user,
-    ) -> List[WikiEntry]:
+    ) -> builtins.list[WikiEntry]:
         """
         Fork all wiki entries from source branch to target branch.
 
@@ -647,8 +647,8 @@ class WikiService:
         try:
             source_branch = Branch.objects.get(id=source_branch_id)
             target_branch = Branch.objects.get(id=target_branch_id)
-        except Branch.DoesNotExist:
-            raise ValueError("존재하지 않는 브랜치입니다.")
+        except Branch.DoesNotExist as e:
+            raise ValueError("존재하지 않는 브랜치입니다.") from e
 
         # 1. Copy tag definitions and create mapping
         tag_mapping = {}  # old_tag_id -> new_tag

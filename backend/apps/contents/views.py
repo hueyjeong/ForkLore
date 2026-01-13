@@ -10,52 +10,48 @@ Contains views for:
 - WikiSnapshotViewSet: Nested under wikis for list/create
 """
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
-from common.pagination import StandardPagination
-
-from apps.novels.models import Branch
+from apps.contents.map_services import MapService
 from apps.contents.models import (
     Chapter,
     ChapterStatus,
-    WikiEntry,
-    WikiTagDefinition,
-    Map,
-    MapSnapshot,
     MapLayer,
+    MapSnapshot,
 )
-from apps.contents.services import ChapterService, WikiService
-from apps.contents.map_services import MapService
 from apps.contents.serializers import (
     ChapterCreateSerializer,
     ChapterDetailSerializer,
     ChapterListSerializer,
-    ChapterUpdateSerializer,
     ChapterScheduleSerializer,
-    WikiEntryListSerializer,
-    WikiEntryDetailSerializer,
-    WikiEntryCreateSerializer,
-    WikiEntryUpdateSerializer,
-    WikiTagDefinitionSerializer,
-    WikiTagDefinitionCreateSerializer,
-    WikiSnapshotSerializer,
-    WikiSnapshotCreateSerializer,
-    WikiTagUpdateSerializer,
-    MapListSerializer,
-    MapDetailSerializer,
+    ChapterUpdateSerializer,
     MapCreateSerializer,
-    MapUpdateSerializer,
-    MapSnapshotSerializer,
-    MapSnapshotCreateSerializer,
-    MapLayerSerializer,
+    MapDetailSerializer,
     MapLayerCreateSerializer,
-    MapObjectSerializer,
+    MapLayerSerializer,
+    MapListSerializer,
     MapObjectCreateSerializer,
+    MapObjectSerializer,
+    MapSnapshotCreateSerializer,
+    MapSnapshotSerializer,
+    MapUpdateSerializer,
+    WikiEntryCreateSerializer,
+    WikiEntryDetailSerializer,
+    WikiEntryListSerializer,
+    WikiEntryUpdateSerializer,
+    WikiSnapshotCreateSerializer,
+    WikiSnapshotSerializer,
+    WikiTagDefinitionCreateSerializer,
+    WikiTagDefinitionSerializer,
+    WikiTagUpdateSerializer,
 )
+from apps.contents.services import ChapterService, WikiService
+from apps.novels.models import Branch
+from common.pagination import StandardPagination
 
 
 class IsBranchAuthor:
@@ -390,8 +386,8 @@ class ChapterDetailViewSet(viewsets.ViewSet):
     @action(detail=True, methods=["post", "delete"], permission_classes=[IsAuthenticated])
     def bookmark(self, request, pk=None):
         """Add or remove a bookmark."""
-        from apps.interactions.services import BookmarkService
         from apps.interactions.serializers import BookmarkCreateSerializer, BookmarkSerializer
+        from apps.interactions.services import BookmarkService
 
         chapter = self._get_chapter(pk)
         if not chapter:
@@ -432,8 +428,8 @@ class ChapterDetailViewSet(viewsets.ViewSet):
     )
     def reading_progress(self, request, pk=None):
         """Record reading progress."""
+        from apps.interactions.serializers import ReadingLogSerializer, ReadingProgressSerializer
         from apps.interactions.services import ReadingService
-        from apps.interactions.serializers import ReadingProgressSerializer, ReadingLogSerializer
 
         chapter = self._get_chapter(pk)
         if not chapter:

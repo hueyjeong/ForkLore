@@ -3,19 +3,19 @@ TDD: AI Services 테스트
 RED → GREEN → REFACTOR
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from model_bakery import baker
 
-from apps.ai.services import (
-    EmbeddingService,
-    TextChunker,
-    ChunkingService,
-    SimilaritySearchService,
-    AIService,
-)
 from apps.ai.models import ChapterChunk
-
+from apps.ai.services import (
+    AIService,
+    ChunkingService,
+    EmbeddingService,
+    SimilaritySearchService,
+    TextChunker,
+)
 
 pytestmark = pytest.mark.django_db
 

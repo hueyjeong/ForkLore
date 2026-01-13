@@ -12,19 +12,19 @@ import pytest
 from model_bakery import baker
 
 from apps.novels.models import (
-    Novel,
     Branch,
+    BranchLinkRequest,
     BranchType,
     BranchVisibility,
-    BranchLinkRequest,
     LinkRequestStatus,
+    Novel,
 )
 from apps.novels.serializers import (
     BranchCreateSerializer,
     BranchDetailSerializer,
-    BranchListSerializer,
     BranchLinkRequestCreateSerializer,
     BranchLinkRequestSerializer,
+    BranchListSerializer,
     BranchVisibilityUpdateSerializer,
 )
 

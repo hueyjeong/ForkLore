@@ -6,7 +6,6 @@ Following TDD: Write tests first, then implement.
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-from unittest.mock import Mock, patch
 
 from apps.users.services import AuthService, UserService
 
@@ -196,7 +195,7 @@ class TestUserServiceUpdateProfile:
     def test_update_profile_duplicate_nickname_raises_error(self, existing_user, db):
         """update_profile() should raise ValueError for duplicate nickname."""
         # Create another user
-        other_user = User.objects.create_user(
+        User.objects.create_user(
             username="other@example.com",
             email="other@example.com",
             password="OtherPassword123!",

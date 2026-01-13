@@ -8,7 +8,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from model_bakery import baker
 
-from apps.interactions.models import Comment, ReportReason, ReportStatus, Report
+from apps.interactions.models import Comment, Report, ReportReason, ReportStatus
 from apps.interactions.services import ReportService
 
 
@@ -334,9 +334,7 @@ class TestReportServiceListAll:
         report2 = report_service.create_report(
             reporter=user, target=comment2, reason=ReportReason.ABUSE
         )
-        report3 = report_service.create_report(
-            reporter=user, target=comment3, reason=ReportReason.SPOILER
-        )
+        report_service.create_report(reporter=user, target=comment3, reason=ReportReason.SPOILER)
 
         # Resolve one, reject one
         report_service.admin_resolve(report_id=report1.id, resolver=admin_user)

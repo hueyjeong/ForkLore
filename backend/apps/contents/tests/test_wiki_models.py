@@ -7,7 +7,6 @@ import pytest
 from django.db import IntegrityError
 from model_bakery import baker
 
-
 pytestmark = pytest.mark.django_db
 
 

@@ -8,8 +8,7 @@ from django.core.exceptions import PermissionDenied
 from model_bakery import baker
 
 from apps.contents.map_services import MapService
-from apps.contents.models import Map, MapSnapshot, MapLayer, MapObject, LayerType, ObjectType
-
+from apps.contents.models import LayerType, Map, ObjectType
 
 pytestmark = pytest.mark.django_db
 

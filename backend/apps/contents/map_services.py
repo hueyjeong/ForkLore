@@ -2,18 +2,17 @@
 MapService - Business logic for Map management.
 """
 
-from typing import Optional, List
+import builtins
 
-from django.db.models import QuerySet, Prefetch
 from django.core.exceptions import PermissionDenied
+from django.db.models import Prefetch, QuerySet
 
 from apps.contents.models import (
+    LayerType,
     Map,
-    MapSnapshot,
     MapLayer,
     MapObject,
-    LayerType,
-    ObjectType,
+    MapSnapshot,
     WikiEntry,
 )
 from apps.novels.models import Branch
@@ -57,8 +56,8 @@ class MapService:
         """
         try:
             branch = Branch.objects.get(id=branch_id)
-        except Branch.DoesNotExist:
-            raise ValueError("존재하지 않는 브랜치입니다.")
+        except Branch.DoesNotExist as e:
+            raise ValueError("존재하지 않는 브랜치입니다.") from e
 
         MapService._check_branch_author(branch, user)
 
@@ -78,10 +77,10 @@ class MapService:
     def update(
         map_id: int,
         user,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        width: Optional[int] = None,
-        height: Optional[int] = None,
+        name: str | None = None,
+        description: str | None = None,
+        width: int | None = None,
+        height: int | None = None,
     ) -> Map:
         """
         Update a map.
@@ -103,8 +102,8 @@ class MapService:
         """
         try:
             map_obj = Map.objects.select_related("branch").get(id=map_id)
-        except Map.DoesNotExist:
-            raise ValueError("존재하지 않는 지도입니다.")
+        except Map.DoesNotExist as e:
+            raise ValueError("존재하지 않는 지도입니다.") from e
 
         MapService._check_branch_author(map_obj.branch, user)
 
@@ -136,8 +135,8 @@ class MapService:
         """
         try:
             return Map.objects.select_related("branch").prefetch_related("snapshots").get(id=map_id)
-        except Map.DoesNotExist:
-            raise ValueError("존재하지 않는 지도입니다.")
+        except Map.DoesNotExist as e:
+            raise ValueError("존재하지 않는 지도입니다.") from e
 
     @staticmethod
     def list(branch_id: int) -> QuerySet[Map]:
@@ -167,8 +166,8 @@ class MapService:
         """
         try:
             map_obj = Map.objects.select_related("branch").get(id=map_id)
-        except Map.DoesNotExist:
-            raise ValueError("존재하지 않는 지도입니다.")
+        except Map.DoesNotExist as e:
+            raise ValueError("존재하지 않는 지도입니다.") from e
 
         MapService._check_branch_author(map_obj.branch, user)
         map_obj.delete()
@@ -200,8 +199,8 @@ class MapService:
         """
         try:
             map_obj = Map.objects.select_related("branch").get(id=map_id)
-        except Map.DoesNotExist:
-            raise ValueError("존재하지 않는 지도입니다.")
+        except Map.DoesNotExist as e:
+            raise ValueError("존재하지 않는 지도입니다.") from e
 
         MapService._check_branch_author(map_obj.branch, user)
 
@@ -216,7 +215,7 @@ class MapService:
         )
 
     @staticmethod
-    def get_snapshot_for_chapter(map_id: int, chapter_number: int) -> Optional[MapSnapshot]:
+    def get_snapshot_for_chapter(map_id: int, chapter_number: int) -> MapSnapshot | None:
         """
         Get the appropriate snapshot for a given chapter (spoiler prevention).
 
@@ -274,7 +273,7 @@ class MapService:
         layer_type: str = LayerType.OVERLAY,
         z_index: int = 0,
         is_visible: bool = True,
-        style_json: Optional[dict] = None,
+        style_json: dict | None = None,
     ) -> MapLayer:
         """
         Add a layer to a map snapshot.
@@ -297,8 +296,8 @@ class MapService:
         """
         try:
             snapshot = MapSnapshot.objects.select_related("map__branch").get(id=snapshot_id)
-        except MapSnapshot.DoesNotExist:
-            raise ValueError("존재하지 않는 스냅샷입니다.")
+        except MapSnapshot.DoesNotExist as e:
+            raise ValueError("존재하지 않는 스냅샷입니다.") from e
 
         MapService._check_branch_author(snapshot.map.branch, user)
 
@@ -315,11 +314,11 @@ class MapService:
     def update_layer(
         layer_id: int,
         user,
-        name: Optional[str] = None,
-        layer_type: Optional[str] = None,
-        z_index: Optional[int] = None,
-        is_visible: Optional[bool] = None,
-        style_json: Optional[dict] = None,
+        name: str | None = None,
+        layer_type: str | None = None,
+        z_index: int | None = None,
+        is_visible: bool | None = None,
+        style_json: dict | None = None,
     ) -> MapLayer:
         """
         Update a map layer.
@@ -338,8 +337,8 @@ class MapService:
         """
         try:
             layer = MapLayer.objects.select_related("snapshot__map__branch").get(id=layer_id)
-        except MapLayer.DoesNotExist:
-            raise ValueError("존재하지 않는 레이어입니다.")
+        except MapLayer.DoesNotExist as e:
+            raise ValueError("존재하지 않는 레이어입니다.") from e
 
         MapService._check_branch_author(layer.snapshot.map.branch, user)
 
@@ -362,8 +361,8 @@ class MapService:
         """Delete a map layer."""
         try:
             layer = MapLayer.objects.select_related("snapshot__map__branch").get(id=layer_id)
-        except MapLayer.DoesNotExist:
-            raise ValueError("존재하지 않는 레이어입니다.")
+        except MapLayer.DoesNotExist as e:
+            raise ValueError("존재하지 않는 레이어입니다.") from e
 
         MapService._check_branch_author(layer.snapshot.map.branch, user)
         layer.delete()
@@ -378,8 +377,8 @@ class MapService:
         coordinates: dict,
         label: str = "",
         description: str = "",
-        wiki_entry_id: Optional[int] = None,
-        style_json: Optional[dict] = None,
+        wiki_entry_id: int | None = None,
+        style_json: dict | None = None,
     ) -> MapObject:
         """
         Add an object to a map layer.
@@ -399,8 +398,8 @@ class MapService:
         """
         try:
             layer = MapLayer.objects.select_related("snapshot__map__branch").get(id=layer_id)
-        except MapLayer.DoesNotExist:
-            raise ValueError("존재하지 않는 레이어입니다.")
+        except MapLayer.DoesNotExist as e:
+            raise ValueError("존재하지 않는 레이어입니다.") from e
 
         MapService._check_branch_author(layer.snapshot.map.branch, user)
 
@@ -408,8 +407,8 @@ class MapService:
         if wiki_entry_id:
             try:
                 wiki_entry = WikiEntry.objects.get(id=wiki_entry_id)
-            except WikiEntry.DoesNotExist:
-                raise ValueError("존재하지 않는 위키입니다.")
+            except WikiEntry.DoesNotExist as e:
+                raise ValueError("존재하지 않는 위키입니다.") from e
 
         return MapObject.objects.create(
             layer=layer,
@@ -425,18 +424,18 @@ class MapService:
     def update_object(
         object_id: int,
         user,
-        object_type: Optional[str] = None,
-        coordinates: Optional[dict] = None,
-        label: Optional[str] = None,
-        description: Optional[str] = None,
-        wiki_entry_id: Optional[int] = None,
-        style_json: Optional[dict] = None,
+        object_type: str | None = None,
+        coordinates: dict | None = None,
+        label: str | None = None,
+        description: str | None = None,
+        wiki_entry_id: int | None = None,
+        style_json: dict | None = None,
     ) -> MapObject:
         """Update a map object."""
         try:
             obj = MapObject.objects.select_related("layer__snapshot__map__branch").get(id=object_id)
-        except MapObject.DoesNotExist:
-            raise ValueError("존재하지 않는 오브젝트입니다.")
+        except MapObject.DoesNotExist as e:
+            raise ValueError("존재하지 않는 오브젝트입니다.") from e
 
         MapService._check_branch_author(obj.layer.snapshot.map.branch, user)
 
@@ -451,8 +450,8 @@ class MapService:
         if wiki_entry_id is not None:
             try:
                 obj.wiki_entry = WikiEntry.objects.get(id=wiki_entry_id)
-            except WikiEntry.DoesNotExist:
-                raise ValueError("존재하지 않는 위키입니다.")
+            except WikiEntry.DoesNotExist as e:
+                raise ValueError("존재하지 않는 위키입니다.") from e
         if style_json is not None:
             obj.style_json = style_json
 
@@ -464,8 +463,8 @@ class MapService:
         """Delete a map object."""
         try:
             obj = MapObject.objects.select_related("layer__snapshot__map__branch").get(id=object_id)
-        except MapObject.DoesNotExist:
-            raise ValueError("존재하지 않는 오브젝트입니다.")
+        except MapObject.DoesNotExist as e:
+            raise ValueError("존재하지 않는 오브젝트입니다.") from e
 
         MapService._check_branch_author(obj.layer.snapshot.map.branch, user)
         obj.delete()
@@ -477,7 +476,7 @@ class MapService:
         source_branch_id: int,
         target_branch_id: int,
         user,
-    ) -> List[Map]:
+    ) -> builtins.list[Map]:
         """
         Fork all maps from source branch to target branch.
 
@@ -498,8 +497,8 @@ class MapService:
         try:
             source_branch = Branch.objects.get(id=source_branch_id)
             target_branch = Branch.objects.get(id=target_branch_id)
-        except Branch.DoesNotExist:
-            raise ValueError("존재하지 않는 브랜치입니다.")
+        except Branch.DoesNotExist as e:
+            raise ValueError("존재하지 않는 브랜치입니다.") from e
 
         forked_maps = []
         source_maps = Map.objects.filter(branch=source_branch).prefetch_related(

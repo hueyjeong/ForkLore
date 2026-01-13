@@ -4,26 +4,26 @@ URL routing for contents app.
 Uses nested routing for chapters under branches.
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers as nested_routers
 
 from apps.novels.urls import branches_router
+
 from .views import (
-    ChapterViewSet,
     ChapterDetailViewSet,
-    WikiEntryViewSet,
-    WikiEntryDetailViewSet,
-    WikiTagViewSet,
-    WikiTagDetailViewSet,
-    WikiSnapshotViewSet,
-    MapViewSet,
+    ChapterViewSet,
     MapDetailViewSet,
-    MapSnapshotViewSet,
     MapLayerViewSet,
     MapObjectViewSet,
+    MapSnapshotViewSet,
+    MapViewSet,
+    WikiEntryDetailViewSet,
+    WikiEntryViewSet,
+    WikiSnapshotViewSet,
+    WikiTagDetailViewSet,
+    WikiTagViewSet,
 )
-
 
 # Nested router for chapters under branches
 # /api/v1/branches/{branch_pk}/chapters/

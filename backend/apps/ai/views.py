@@ -9,27 +9,27 @@ Endpoints:
 """
 
 import logging
+
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.ai.serializers import (
-    WikiSuggestionRequestSerializer,
-    WikiSuggestionResponseSerializer,
-    ConsistencyCheckRequestSerializer,
-    ConsistencyCheckResponseSerializer,
     AskRequestSerializer,
     AskResponseSerializer,
     ChunkTaskRequestSerializer,
     ChunkTaskResponseSerializer,
+    ConsistencyCheckRequestSerializer,
+    ConsistencyCheckResponseSerializer,
+    WikiSuggestionRequestSerializer,
+    WikiSuggestionResponseSerializer,
 )
 from apps.ai.services import AIService
-from apps.ai.tasks import create_chapter_chunks, create_branch_chunks
+from apps.ai.tasks import create_branch_chunks, create_chapter_chunks
 from apps.novels.models import Branch
-
 
 logger = logging.getLogger(__name__)
 

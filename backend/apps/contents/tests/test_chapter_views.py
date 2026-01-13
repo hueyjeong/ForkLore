@@ -11,17 +11,17 @@ Tests:
 - DELETE /api/v1/chapters/{id} - Delete chapter
 """
 
-import pytest
 from datetime import timedelta
-from django.urls import reverse
+
+import pytest
 from django.utils import timezone
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from model_bakery import baker
 
-from apps.contents.models import Chapter, ChapterStatus, AccessType
-from apps.novels.models import Novel, Branch
+from apps.contents.models import Chapter, ChapterStatus
+from apps.novels.models import Branch
 from apps.users.models import User
 
 
@@ -39,14 +39,14 @@ class TestChapterList:
         """Should return all published chapters for a branch."""
         client = APIClient()
         branch = baker.make(Branch)
-        ch1 = baker.make(
+        baker.make(
             Chapter,
             branch=branch,
             chapter_number=1,
             title="Chapter 1",
             status=ChapterStatus.PUBLISHED,
         )
-        ch2 = baker.make(
+        baker.make(
             Chapter,
             branch=branch,
             chapter_number=2,

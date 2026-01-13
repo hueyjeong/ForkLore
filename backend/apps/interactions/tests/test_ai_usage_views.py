@@ -14,13 +14,12 @@ from model_bakery import baker
 from rest_framework.test import APIClient
 
 from apps.interactions.models import (
-    AIUsageLog,
     AIActionType,
+    AIUsageLog,
+    PlanType,
     Subscription,
     SubscriptionStatus,
-    PlanType,
 )
-
 
 pytestmark = pytest.mark.django_db
 

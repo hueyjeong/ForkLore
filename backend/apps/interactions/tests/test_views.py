@@ -9,17 +9,17 @@ Tests:
 - POST /chapters/{id}/purchase/ - Purchase chapter
 """
 
-import pytest
 from datetime import timedelta
+
+import pytest
 from django.utils import timezone
+from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
-from model_bakery import baker
 
-from apps.contents.models import Chapter, ChapterStatus, AccessType
-from apps.interactions.models import Subscription, Purchase, SubscriptionStatus, PlanType
-from apps.novels.models import Branch
+from apps.contents.models import AccessType, Chapter, ChapterStatus
+from apps.interactions.models import PlanType, Purchase, Subscription, SubscriptionStatus
 from apps.users.models import User
 
 

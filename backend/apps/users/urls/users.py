@@ -1,6 +1,6 @@
 from django.urls import path
 
-from ..views import MeView, ChangePasswordView, ReadingHistoryView, BookmarksView
+from ..views import BookmarksView, ChangePasswordView, MeView, ReadingHistoryView
 
 urlpatterns = [
     path("me/", MeView.as_view(), name="me"),

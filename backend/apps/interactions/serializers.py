@@ -9,20 +9,17 @@ Contains serializers for:
 from rest_framework import serializers
 
 from apps.contents.serializers import ChapterListSerializer
+
 from .models import (
-    Subscription,
-    Purchase,
-    PlanType,
-    SubscriptionStatus,
-    ReadingLog,
     Bookmark,
     Comment,
-    Like,
+    PlanType,
+    Purchase,
+    ReadingLog,
     Report,
     ReportReason,
-    ReportStatus,
+    Subscription,
 )
-
 
 # =============================================================================
 # Subscription Serializers
@@ -297,8 +294,8 @@ class ReportCreateSerializer(serializers.Serializer):
             model = apps.get_model(app_label, model_name)
             target = model.objects.get(id=target_id)
             data["target"] = target
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError({"target_id": "대상을 찾을 수 없습니다."})
+        except ObjectDoesNotExist as e:
+            raise serializers.ValidationError({"target_id": "대상을 찾을 수 없습니다."}) from e
 
         return data
 

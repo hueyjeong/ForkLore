@@ -1,6 +1,7 @@
-from django.db import models
 from django.conf import settings
-from common.models import SoftDeleteModel, BaseModel
+from django.db import models
+
+from common.models import BaseModel, SoftDeleteModel
 
 
 class Genre(models.TextChoices):

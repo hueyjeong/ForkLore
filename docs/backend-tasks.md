@@ -1,7 +1,7 @@
 # 🔧 ForkLore 백엔드 태스크 (Django)
 
 **작성일**: 2026.01.13  
-**문서 버전**: v3.0 (Django 전환)
+**문서 버전**: v3.1 (누락 도메인: 댓글/신고/코인/AI한도 추가)
 
 ---
 
@@ -82,6 +82,7 @@
 |   | ├─ ⬜ 기본 필드 (title, description, cover_image_url) | 🟢 | 0.5h |
 |   | ├─ ⬜ Genre, AgeRating, NovelStatus 선택지 | 🟢 | 0.5h |
 |   | ├─ ⬜ allow_branching, 집계 캐시 필드 | 🟢 | 0.5h |
+|   | ├─ ⬜ linked_branch_count 캐시 필드 추가 | 🟢 | 0.5h |
 |   | └─ ⬜ soft delete (deleted_at) | 🟢 | 0.5h |
 | ⬜ | **NovelService 구현** | 🟡 | 3h |
 |   | ├─ ⬜ create() - 소설 생성 (+ 메인 브랜치 자동 생성) | 🟡 | 1h |
@@ -245,27 +246,94 @@
 
 ---
 
-## 10. 커뮤니티 (P1)
+## 10. 커뮤니티: 댓글/좋아요 (P1) — Paragraph Comment 포함
 
 | 상태 | 태스크 | 난이도 | 공수 |
 |------|--------|--------|------|
-| ⬜ | **Comment 모델 구현** | 🟡 | 2h |
-|   | ├─ ⬜ 기본 필드 (content, is_spoiler, is_pinned) | 🟢 | 0.5h |
-|   | ├─ ⬜ 대댓글 관계 (parent) | 🟢 | 0.5h |
-|   | └─ ⬜ 소프트 삭제 (deleted_at) | 🟢 | 0.5h |
-| ⬜ | **Like 모델 구현** (GenericForeignKey) | 🟡 | 1h |
+| ⬜ | **Comment 모델 확장 (Paragraph Comment)** | 🟡 | 2h |
+|   | ├─ ⬜ `paragraph_index`, `selection_start`, `selection_end`, `quoted_text` 필드 추가 | 🟢 | 1h |
+|   | ├─ ⬜ 무결성 체크 (start < end), 인덱스 설계 | 🟡 | 1h |
+| ⬜ | **Comment Serializer 구현** | 🟡 | 2h |
+|   | ├─ ⬜ 작성/수정 시 문단 anchor 검증 | 🟡 | 1h |
+|   | └─ ⬜ 응답 포맷(camelCase) 정합성 테스트 | 🟢 | 1h |
 | ⬜ | **CommentService 구현** | 🟡 | 3h |
-|   | ├─ ⬜ create() - 댓글 작성 | 🟢 | 0.5h |
-|   | ├─ ⬜ update() - 수정 | 🟢 | 0.5h |
-|   | ├─ ⬜ delete() - 삭제 | 🟢 | 0.5h |
-|   | ├─ ⬜ list() - 목록 조회 | 🟢 | 0.5h |
-|   | └─ ⬜ pin() - 고정 (작가 전용) | 🟢 | 0.5h |
+|   | ├─ ⬜ create/update/delete + 소프트 삭제 정책 | 🟡 | 1.5h |
+|   | ├─ ⬜ list 필터: `chapter_id`, `paragraph_index`, 최신순 | 🟢 | 1h |
+|   | └─ ⬜ pin/unpin (권한: 작가/관리자) | 🟢 | 0.5h |
 | ⬜ | **CommentViewSet 구현** | 🟡 | 2h |
+|   | ├─ ⬜ GET `/chapters/{id}/comments` (page/size, paragraphIndex) | 🟢 | 1h |
+|   | ├─ ⬜ POST `/chapters/{id}/comments` | 🟢 | 0.5h |
+|   | └─ ⬜ PATCH/DELETE `/comments/{id}`, pin endpoints | 🟢 | 0.5h |
+| ⬜ | **테스트 (TDD)** | 🟡 | 4h |
+|   | ├─ ⬜ Serializer unit tests (anchor 검증/에러 케이스) | 🟢 | 1.5h |
+|   | ├─ ⬜ Service unit tests (스레드/소프트삭제) | 🟡 | 1.5h |
+|   | └─ ⬜ API integration tests (권한/페이징/필터) | 🟡 | 1h |
+| ⬜ | **Like 모델 구현** (GenericForeignKey) | 🟡 | 1h |
 | ⬜ | **LikeService 구현** | 🟢 | 1h |
 
 ---
 
-## 11. AI 연동 (P2)
+## 11. 신고 시스템 (P1)
+
+| 상태 | 태스크 | 난이도 | 공수 |
+|------|--------|--------|------|
+| ⬜ | **Report 모델 구현** | 🟡 | 2h |
+|   | ├─ ⬜ target_type/target_id 폴리모픽 설계 | 🟡 | 1h |
+|   | └─ ⬜ status(대기/처리/반려), resolver 필드 | 🟢 | 1h |
+| ⬜ | **Report Serializer 구현** | 🟢 | 1.5h |
+| ⬜ | **ReportService 구현** | 🟡 | 2h |
+|   | ├─ ⬜ create_report() 중복/스팸 방지 최소 로직 | 🟡 | 1h |
+|   | └─ ⬜ admin_review() (resolve/reject) | 🟢 | 1h |
+| ⬜ | **Report API 구현** | 🟡 | 2h |
+|   | ├─ ⬜ POST `/reports` (유저) | 🟢 | 0.5h |
+|   | ├─ ⬜ GET `/admin/reports` (관리자) | 🟢 | 0.5h |
+|   | └─ ⬜ PATCH `/admin/reports/{id}` (관리자) | 🟢 | 1h |
+| ⬜ | **테스트 (TDD)** | 🟡 | 4h |
+|   | ├─ ⬜ Serializer validation tests | 🟢 | 1h |
+|   | ├─ ⬜ API integration tests (권한 분리) | 🟡 | 2h |
+|   | └─ ⬜ target reference 오류 케이스 | 🟢 | 1h |
+
+---
+
+## 12. 코인/지갑/원장 (P1)
+
+> 백로그(E6-S5 코인 충전) 충족을 위해 코인 잔액 변경을 "원장 기반"으로 추적한다.
+
+| 상태 | 태스크 | 난이도 | 공수 |
+|------|--------|--------|------|
+| ⬜ | **Wallet 모델 구현** (user 1:1) | 🟢 | 1h |
+| ⬜ | **CoinTransaction 모델 구현** (불변 원장) | 🟡 | 2h |
+| ⬜ | **WalletService 구현** | 🔴 | 5h |
+|   | ├─ ⬜ charge() (충전) | 🟡 | 1.5h |
+|   | ├─ ⬜ spend() (구매/사용) | 🔴 | 2h |
+|   | └─ ⬜ refund()/adjustment() (정정) | 🟡 | 1.5h |
+| ⬜ | **API 구현 (MVP 최소)** | 🟡 | 2h |
+|   | ├─ ⬜ POST `/wallet/charge` (결제 연동은 후속, 지금은 내부 시뮬레이션) | 🟡 | 1h |
+|   | └─ ⬜ GET `/users/me/wallet` (잔액/최근 거래) | 🟢 | 1h |
+| ⬜ | **테스트 (TDD)** | 🔴 | 6h |
+|   | ├─ ⬜ 원장 불변성/경합(트랜잭션) 테스트 | 🔴 | 3h |
+|   | └─ ⬜ API integration tests | 🟡 | 3h |
+
+---
+
+## 13. AI 사용량 추적/일일 한도 (P1)
+
+| 상태 | 태스크 | 난이도 | 공수 |
+|------|--------|--------|------|
+| ⬜ | **AIUsageLog 모델 구현** | 🟢 | 1h |
+| ⬜ | **AIUsageService 구현** | 🟡 | 3h |
+|   | ├─ ⬜ increment(action_type) (유저/일자/액션별) | 🟡 | 1.5h |
+|   | └─ ⬜ can_use_ai(user, action_type) (티어별 한도 정책) | 🟡 | 1.5h |
+| ⬜ | **AI API 연동** | 🟡 | 2h |
+|   | ├─ ⬜ 요청 전 한도 체크 | 🟢 | 1h |
+|   | └─ ⬜ 성공/실패 시 로깅 정책 확정 | 🟡 | 1h |
+| ⬜ | **테스트 (TDD)** | 🟡 | 4h |
+|   | ├─ ⬜ 날짜 경계(UTC/KST) 정책 테스트 | 🟡 | 2h |
+|   | └─ ⬜ 한도 초과 응답 규약 테스트 | 🟢 | 2h |
+
+---
+
+## 14. AI 연동 (P2)
 
 | 상태 | 태스크 | 난이도 | 공수 |
 |------|--------|--------|------|
@@ -299,7 +367,7 @@
 | 우선순위 | 메인 태스크 | 예상 총 공수 |
 |----------|------------|--------------|
 | P0 | 프로젝트 설정, 인증, 소설, 브랜치, 회차, 구독 | ~70h |
-| P1 | 위키, 읽은 기록, 커뮤니티 | ~30h |
+| P1 | 위키, 읽은 기록, 커뮤니티(댓글), 신고, 코인/지갑, AI한도 | ~50h |
 | P2 | 지도, AI 연동 | ~30h |
 
 ---

@@ -2,7 +2,7 @@
 
 **작성일**: 2026.01.13  
 **작성자**: HueyJeong (with AI)  
-**문서 버전**: v5.0 (Django 전환)
+**문서 버전**: v5.1 (DB/응답규약/camelCase 정합성 보강)
 
 ---
 
@@ -35,13 +35,15 @@ ForkLore 백엔드는 **Django 5.1+ / Python 3.12+** 기반의 모놀리식 아�
 | **인증** | SimpleJWT + dj-rest-auth | - |
 | **API 문서** | drf-spectacular | 0.27+ |
 
-### 2.2 데이터베이스
+### 2.2 데이터베이스 (모든 환경 동일)
 
 | 환경 | DB | 용도 |
 |------|-----|------|
-| 개발/테스트 | SQLite / PostgreSQL | 로컬 개발 |
-| 운영 | PostgreSQL 18 | Core Data |
-| 운영 | PostgreSQL + pgvector | 벡터 검색 (Gemini Embedding 3072차원) |
+| 개발 | PostgreSQL 18 | Core Data + JSONB |
+| 테스트 | PostgreSQL 18 | pgvector 포함 전제 |
+| 운영 | PostgreSQL 18 | Core Data + pgvector |
+
+> SQLite는 pgvector/JSONB 및 실제 운영 특성과 불일치하므로 사용하지 않는다.
 
 ### 2.3 인프라
 
@@ -128,6 +130,7 @@ backend/
 │   ├── pagination.py        # 커스텀 페이지네이션
 │   ├── exceptions.py        # 커스텀 예외
 │   ├── permissions.py       # 공통 권한 클래스
+│   ├── renderers.py         # 응답 래퍼 렌더러
 │   └── utils.py             # 유틸리티 함수
 │
 └── tests/                   # 통합 테스트
@@ -223,9 +226,115 @@ class NovelService:
 
 ---
 
-## 5. 핵심 도메인 모델
+## 5. 횡단 관심사 (Cross-Cutting Concerns)
 
-### 5.1 도메인 관계도
+### 5.1 공통 응답 래퍼 (Success/Failure)
+
+#### 목표
+- 성공/실패 모두 `success/message/data/timestamp` 규약 준수 (`docs/api-specification.md`와 동일)
+
+#### 구현 전략 (권장)
+1) 예외 응답: `EXCEPTION_HANDLER`로 실패 응답 통일  
+2) 성공 응답: 커스텀 Renderer(또는 Response 헬퍼)로 모든 성공 응답 감싸기
+
+예시(개념):
+```python
+# common/exceptions.py (실패 응답 통일)
+from rest_framework.views import exception_handler
+from rest_framework.response import Response
+from django.utils import timezone
+
+def custom_exception_handler(exc, context):
+    response = exception_handler(exc, context)
+    
+    if response is not None:
+        response.data = {
+            'success': False,
+            'message': response.data.get('detail', str(exc)),
+            'data': None,
+            'errors': response.data if 'detail' not in response.data else None,
+            'timestamp': timezone.now().isoformat()
+        }
+    
+    return response
+```
+
+```python
+# common/renderers.py (성공 응답 통일 - 개념)
+from rest_framework.renderers import JSONRenderer
+from django.utils import timezone
+
+class StandardJSONRenderer(JSONRenderer):
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        response = renderer_context.get('response')
+        
+        # 이미 래핑된 경우 스킵
+        if isinstance(data, dict) and 'success' in data:
+            return super().render(data, accepted_media_type, renderer_context)
+        
+        # 성공 응답 래핑
+        if response and response.status_code < 400:
+            data = {
+                'success': True,
+                'message': None,
+                'data': data,
+                'timestamp': timezone.now().isoformat()
+            }
+        
+        return super().render(data, accepted_media_type, renderer_context)
+```
+
+> "예외만 래핑"하면 로그인/목록 등 성공 응답이 문서와 불일치한다. 성공도 반드시 래핑한다.
+
+---
+
+### 5.2 JSON camelCase 정책 (API)
+
+#### 정책
+- 외부 JSON: camelCase
+- 내부 Python/Django: snake_case
+
+#### 구현 옵션
+- (권장) `djangorestframework-camel-case`를 사용해 Parser/Renderer에서 자동 변환
+- 또는 프로젝트 내 공통 렌더러/파서로 직접 구현
+
+DRF 설정 예시(개념):
+```python
+REST_FRAMEWORK = {
+    "DEFAULT_PARSER_CLASSES": (
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ),
+    "DEFAULT_RENDERER_CLASSES": (
+        # 응답 래퍼 + camelCase 출력이 함께 되도록 구성
+        "common.renderers.StandardJSONRenderer",
+    ),
+}
+```
+
+---
+
+### 5.3 Pagination (1-indexed)
+- PageNumberPagination 기반
+- `page=1`부터 시작
+- query param은 `size`를 사용하도록 커스텀 Pagination에서 통일
+
+```python
+# common/pagination.py
+from rest_framework.pagination import PageNumberPagination
+
+class StandardPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'size'
+    max_page_size = 100
+```
+
+---
+
+## 6. 핵심 도메인 모델
+
+### 6.1 도메인 관계도
 
 ```mermaid
 erDiagram
@@ -246,7 +355,7 @@ erDiagram
     Map ||--o{ MapSnapshot : versions
 ```
 
-### 5.2 주요 모델 설계
+### 6.2 주요 모델 설계
 
 #### User (커스텀 유저)
 
@@ -281,64 +390,6 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['username', 'nickname']
 ```
 
-#### Novel (소설)
-
-```python
-class Novel(BaseModel):
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='novels')
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    cover_image_url = models.URLField(blank=True)
-    
-    genre = models.CharField(max_length=50, choices=Genre.choices)
-    age_rating = models.CharField(max_length=10, choices=AgeRating.choices, default=AgeRating.ALL)
-    status = models.CharField(max_length=20, choices=NovelStatus.choices, default=NovelStatus.ONGOING)
-    
-    allow_branching = models.BooleanField(default=True)
-    
-    # 집계 캐시
-    total_view_count = models.BigIntegerField(default=0)
-    total_like_count = models.BigIntegerField(default=0)
-    total_chapter_count = models.IntegerField(default=0)
-    branch_count = models.IntegerField(default=1)
-    
-    deleted_at = models.DateTimeField(null=True, blank=True)
-```
-
-#### Branch (브랜치)
-
-```python
-class Branch(BaseModel):
-    novel = models.ForeignKey(Novel, on_delete=models.CASCADE, related_name='branches')
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='branches')
-    
-    is_main = models.BooleanField(default=False)
-    parent_branch = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
-    fork_point_chapter = models.IntegerField(null=True, blank=True)
-    
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    cover_image_url = models.URLField(blank=True)
-    
-    branch_type = models.CharField(max_length=20, choices=BranchType.choices, default=BranchType.FAN_FIC)
-    visibility = models.CharField(max_length=20, choices=BranchVisibility.choices, default=BranchVisibility.PRIVATE)
-    canon_status = models.CharField(max_length=20, choices=CanonStatus.choices, default=CanonStatus.NON_CANON)
-    
-    vote_count = models.BigIntegerField(default=0)
-    vote_threshold = models.IntegerField(default=1000)
-    view_count = models.BigIntegerField(default=0)
-    chapter_count = models.IntegerField(default=0)
-    
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['novel'],
-                condition=models.Q(is_main=True),
-                name='unique_main_branch_per_novel'
-            )
-        ]
-```
-
 #### ChapterChunk (벡터 임베딩)
 
 ```python
@@ -359,62 +410,70 @@ class ChapterChunk(BaseModel):
 
 ---
 
-## 6. 횡단 관심사 (Cross-Cutting Concerns)
+## 7. 데이터베이스/환경 설정
 
-### 6.1 공통 모델 (BaseModel)
+### 7.1 DATABASE_URL 기본값 정책
+- 기본값은 SQLite가 아니라 PostgreSQL을 전제로 한다.
+- 개발 환경에서도 docker compose로 Postgres를 띄우는 구성이 표준.
 
-```python
-# common/models.py
-from django.db import models
-
-class BaseModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        abstract = True
-```
-
-### 6.2 전역 예외 처리
-
-```python
-# common/exceptions.py
-from rest_framework.views import exception_handler
-from rest_framework.response import Response
-
-def custom_exception_handler(exc, context):
-    response = exception_handler(exc, context)
-    
-    if response is not None:
-        response.data = {
-            'success': False,
-            'message': response.data.get('detail', str(exc)),
-            'errors': response.data if 'detail' not in response.data else None,
-            'timestamp': timezone.now().isoformat()
-        }
-    
-    return response
-```
-
-### 6.3 JWT 인증
-
+예시:
 ```python
 # config/settings/base.py
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-    'EXCEPTION_HANDLER': 'common.exceptions.custom_exception_handler',
-}
+import environ
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
+env = environ.Env()
+
+DATABASES = {
+    "default": env.db("DATABASE_URL")  # 환경변수 필수
 }
 ```
 
-### 6.4 열람 권한 검사
+`.env` 예시:
+```
+DATABASE_URL=postgres://app_user:app_password@db:5432/app_db
+```
+
+---
+
+## 8. AI 연동 (Gemini + pgvector)
+
+### 8.1 임베딩 차원(3072) 정합성
+- 스키마: `vector(3072)`
+- 애플리케이션: 임베딩 결과 길이가 3072인지 런타임에서 검증/가드한다.
+- 모델/차원 변경 시:
+  1) 스키마 변경(마이그레이션)
+  2) 인덱스 재생성(ivfflat)
+  3) 기존 임베딩 재생성(배치)
+
+```python
+# apps/ai/services.py
+import google.generativeai as genai
+
+class EmbeddingService:
+    EMBEDDING_DIMENSION = 3072
+    
+    def __init__(self):
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        self.model = 'models/text-embedding-001'
+    
+    def embed(self, text: str) -> list[float]:
+        result = genai.embed_content(
+            model=self.model,
+            content=text,
+            task_type="retrieval_document"
+        )
+        embedding = result['embedding']
+        
+        # 차원 검증
+        if len(embedding) != self.EMBEDDING_DIMENSION:
+            raise ValueError(f"Expected {self.EMBEDDING_DIMENSION} dimensions, got {len(embedding)}")
+        
+        return embedding
+```
+
+---
+
+## 9. 열람 권한 검사
 
 ```python
 # apps/interactions/services.py
@@ -438,69 +497,9 @@ class AccessService:
 
 ---
 
-## 7. AI 서비스 연동
+## 10. 테스트 전략
 
-### 7.1 Gemini API
-
-```python
-# apps/ai/services.py
-import google.generativeai as genai
-
-class EmbeddingService:
-    EMBEDDING_DIMENSION = 3072
-    
-    def __init__(self):
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = 'models/text-embedding-001'
-    
-    def embed(self, text: str) -> list[float]:
-        result = genai.embed_content(
-            model=self.model,
-            content=text,
-            task_type="retrieval_document"
-        )
-        return result['embedding']
-    
-    def search_similar(self, embedding: list[float], branch_id: int, limit: int = 5):
-        return ChapterChunk.objects.filter(
-            chapter__branch_id=branch_id
-        ).order_by(
-            CosineDistance('embedding', embedding)
-        )[:limit]
-```
-
----
-
-## 8. 환경 설정
-
-```python
-# config/settings/base.py
-import environ
-
-env = environ.Env()
-
-DATABASES = {
-    'default': env.db('DATABASE_URL', default='sqlite:///db.sqlite3')
-}
-
-# JWT
-JWT_SECRET = env('JWT_SECRET')
-
-# AI
-GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
-
-# DRF
-REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'common.pagination.StandardPagination',
-    'PAGE_SIZE': 20,
-}
-```
-
----
-
-## 9. 테스트 전략
-
-### 9.1 테스트 피라미드
+### 10.1 테스트 피라미드
 
 ```
         ┌─────────┐
@@ -512,7 +511,7 @@ REST_FRAMEWORK = {
    └─────────────────┘
 ```
 
-### 9.2 테스트 도구
+### 10.2 테스트 도구
 
 | 레벨 | 도구 | 대상 |
 |------|------|------|
@@ -521,7 +520,7 @@ REST_FRAMEWORK = {
 | Integration | pytest + APIClient | ViewSet |
 | E2E | pytest + APIClient | 전체 플로우 |
 
-### 9.3 TDD 원칙
+### 10.3 TDD 원칙
 
 - **Red → Green → Refactor** 사이클 준수
 - 기능 구현 전 테스트 먼저 작성
@@ -539,32 +538,6 @@ def user(db):
 @pytest.fixture
 def novel(db, user):
     return baker.make('novels.Novel', author=user)
-```
-
----
-
-## 10. 배포 구조 (향후)
-
-```
-┌──────────────────────────────────────────────────────────┐
-│                     Load Balancer                        │
-└──────────────────────────────────────────────────────────┘
-                            │
-         ┌──────────────────┼──────────────────┐
-         ▼                  ▼                  ▼
-    ┌─────────┐        ┌─────────┐        ┌─────────┐
-    │  App 1  │        │  App 2  │        │  App 3  │
-    │ (Gunicorn)│      │ (Gunicorn)│      │ (Gunicorn)│
-    └─────────┘        └─────────┘        └─────────┘
-         │                  │                  │
-         └──────────────────┼──────────────────┘
-                            │
-                   ┌────────┴────────┐
-                   ▼                 ▼
-            ┌───────────┐     ┌───────────┐
-            │ PostgreSQL│     │   Redis   │
-            │  Primary  │     │  (Cache)  │
-            └───────────┘     └───────────┘
 ```
 
 ---

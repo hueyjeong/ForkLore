@@ -3,14 +3,17 @@ Views for authentication and user management.
 Uses service layer for business logic.
 """
 
+from typing import Any
+
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.kakao.views import KakaoOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from dj_rest_auth.registration.views import SocialLoginView
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status
+from rest_framework import generics, serializers, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -36,7 +39,7 @@ class SignUpView(generics.CreateAPIView):
     serializer_class = SignUpSerializer
     permission_classes = [AllowAny]
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -58,7 +61,7 @@ class LogoutView(generics.GenericAPIView):
     serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -78,10 +81,10 @@ class MeView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_object(self):
+    def get_object(self) -> Any:
         return self.request.user
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[serializers.Serializer]:
         if self.request.method in ["PUT", "PATCH"]:
             return UpdateProfileSerializer
         return UserSerializer
@@ -93,7 +96,7 @@ class ChangePasswordView(generics.GenericAPIView):
     serializer_class = ChangePasswordSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         request.user.set_password(serializer.validated_data["new_password"])
@@ -128,7 +131,7 @@ class ReadingHistoryView(generics.ListAPIView):
         description="내가 최근 읽은 회차 목록을 조회합니다.",
         tags=["Reading"],
     )
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         from apps.interactions.serializers import ReadingLogSerializer
         from apps.interactions.services import ReadingService
 
@@ -152,7 +155,7 @@ class BookmarksView(generics.ListAPIView):
         description="내 북마크 목록을 조회합니다.",
         tags=["Reading"],
     )
-    def get(self, request, *args, **kwargs):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         from apps.interactions.serializers import BookmarkSerializer
         from apps.interactions.services import BookmarkService
 

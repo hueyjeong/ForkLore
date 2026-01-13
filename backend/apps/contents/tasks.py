@@ -12,7 +12,7 @@ from apps.contents.models import Chapter, ChapterStatus
 
 
 @shared_task
-def publish_scheduled_chapters():
+def publish_scheduled_chapters() -> int:
     """
     Publish all chapters whose scheduled_at time has passed.
 

@@ -202,7 +202,7 @@ class CommentCreateSerializer(serializers.Serializer):
     selection_end = serializers.IntegerField(required=False, allow_null=True)
     quoted_text = serializers.CharField(required=False, allow_blank=True, default="")
 
-    def validate(self, data):
+    def validate(self, data: dict) -> dict:
         start = data.get("selection_start")
         end = data.get("selection_end")
         if start is not None and end is not None and start >= end:
@@ -243,7 +243,7 @@ class CommentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_reply_count(self, obj):
+    def get_reply_count(self, obj: Comment) -> int:
         return obj.replies.filter(deleted_at__isnull=True).count()
 
 
@@ -279,7 +279,7 @@ class ReportCreateSerializer(serializers.Serializer):
     reason = serializers.ChoiceField(choices=ReportReason.choices)
     description = serializers.CharField(required=False, allow_blank=True, default="")
 
-    def validate(self, data):
+    def validate(self, data: dict) -> dict:
         """Validate that the target exists."""
         from django.apps import apps
         from django.core.exceptions import ObjectDoesNotExist
@@ -321,7 +321,7 @@ class ReportSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_target_type(self, obj):
+    def get_target_type(self, obj: Report) -> str:
         """Get human-readable target type."""
         model_name = obj.content_type.model
         return model_name
@@ -353,7 +353,7 @@ class ReportAdminSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_target_type(self, obj):
+    def get_target_type(self, obj: Report) -> str:
         """Get human-readable target type."""
         return obj.content_type.model
 
@@ -419,7 +419,7 @@ class WalletBalanceResponseSerializer(serializers.Serializer):
 class AIUsageActionTypeField(serializers.ChoiceField):
     """Custom field for AI action type validation."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: object) -> None:
         from apps.interactions.models import AIActionType
 
         super().__init__(choices=AIActionType.choices, **kwargs)

@@ -116,7 +116,7 @@ class Comment(SoftDeleteModel):
             models.Index(fields=["chapter", "paragraph_index"]),
         ]
 
-    def clean(self):
+    def clean(self) -> None:
         from django.core.exceptions import ValidationError
 
         if self.selection_start is not None and self.selection_end is not None:

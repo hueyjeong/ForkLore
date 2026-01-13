@@ -16,13 +16,14 @@ from apps.contents.models import (
     WikiEntry,
 )
 from apps.novels.models import Branch
+from apps.users.models import User
 
 
 class MapService:
     """Service for managing maps, snapshots, layers, and objects."""
 
     @staticmethod
-    def _check_branch_author(branch: Branch, user) -> None:
+    def _check_branch_author(branch: Branch, user: User) -> None:
         """Check if user is the branch author."""
         if branch.author_id != user.id:
             raise PermissionDenied("브랜치 작가만 수정할 수 있습니다.")
@@ -30,7 +31,7 @@ class MapService:
     @staticmethod
     def create(
         branch_id: int,
-        user,
+        user: User,
         name: str,
         width: int,
         height: int,
@@ -76,7 +77,7 @@ class MapService:
     @staticmethod
     def update(
         map_id: int,
-        user,
+        user: User,
         name: str | None = None,
         description: str | None = None,
         width: int | None = None,
@@ -152,7 +153,7 @@ class MapService:
         return Map.objects.filter(branch_id=branch_id).order_by("name")
 
     @staticmethod
-    def delete(map_id: int, user) -> None:
+    def delete(map_id: int, user: User) -> None:
         """
         Delete a map.
 
@@ -177,7 +178,7 @@ class MapService:
     @staticmethod
     def create_snapshot(
         map_id: int,
-        user,
+        user: User,
         valid_from_chapter: int,
         base_image_url: str = "",
     ) -> MapSnapshot:
@@ -268,7 +269,7 @@ class MapService:
     @staticmethod
     def add_layer(
         snapshot_id: int,
-        user,
+        user: User,
         name: str,
         layer_type: str = LayerType.OVERLAY,
         z_index: int = 0,
@@ -313,7 +314,7 @@ class MapService:
     @staticmethod
     def update_layer(
         layer_id: int,
-        user,
+        user: User,
         name: str | None = None,
         layer_type: str | None = None,
         z_index: int | None = None,
@@ -357,7 +358,7 @@ class MapService:
         return layer
 
     @staticmethod
-    def delete_layer(layer_id: int, user) -> None:
+    def delete_layer(layer_id: int, user: User) -> None:
         """Delete a map layer."""
         try:
             layer = MapLayer.objects.select_related("snapshot__map__branch").get(id=layer_id)
@@ -372,7 +373,7 @@ class MapService:
     @staticmethod
     def add_object(
         layer_id: int,
-        user,
+        user: User,
         object_type: str,
         coordinates: dict,
         label: str = "",
@@ -423,7 +424,7 @@ class MapService:
     @staticmethod
     def update_object(
         object_id: int,
-        user,
+        user: User,
         object_type: str | None = None,
         coordinates: dict | None = None,
         label: str | None = None,
@@ -459,7 +460,7 @@ class MapService:
         return obj
 
     @staticmethod
-    def delete_object(object_id: int, user) -> None:
+    def delete_object(object_id: int, user: User) -> None:
         """Delete a map object."""
         try:
             obj = MapObject.objects.select_related("layer__snapshot__map__branch").get(id=object_id)
@@ -475,7 +476,7 @@ class MapService:
     def fork_maps(
         source_branch_id: int,
         target_branch_id: int,
-        user,
+        user: User,
     ) -> builtins.list[Map]:
         """
         Fork all maps from source branch to target branch.

@@ -115,10 +115,22 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "common.renderers.StandardJSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ],
     "DEFAULT_PAGINATION_CLASS": "common.pagination.StandardPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "common.exceptions.custom_exception_handler",
+    # camelCase settings
+    "JSON_UNDERSCOREIZE": {
+        "no_underscore_before_number": True,
+    },
 }
 
 from datetime import timedelta
@@ -134,6 +146,7 @@ SIMPLE_JWT = {
 REST_AUTH = {
     "USE_JWT": True,
     "JWT_AUTH_HTTPONLY": False,
+    "TOKEN_MODEL": None,  # We use JWT, not Token auth
 }
 
 

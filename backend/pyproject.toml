@@ -10,13 +10,14 @@ packages = [{include = "apps"}, {include = "config"}, {include = "common"}]
 python = "^3.12"
 django = "^5.1"
 djangorestframework = "^3.15"
+djangorestframework-camel-case = "^1.4"
 djangorestframework-simplejwt = "^5.3"
-dj-rest-auth = {extras = ["with-social"], version = "^6.0"}
+dj-rest-auth = {extras = ["with-social"], version = "^7.0"}
 django-allauth = "^65.0"
 drf-spectacular = "^0.27"
 django-environ = "^0.11"
 psycopg = {extras = ["binary"], version = "^3.2"}
-django-pgvector = "^0.1"
+pgvector = "^0.3"
 celery = {extras = ["redis"], version = "^5.4"}
 django-celery-beat = "^2.7"
 gunicorn = "^23.0"

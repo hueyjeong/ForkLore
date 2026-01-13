@@ -1,17 +1,12 @@
-"""
-ViewSet Tests for AI Usage API endpoints - TDD approach.
-
-Endpoints:
-- GET /api/v1/users/me/ai-usage/ - Get AI usage status
-- POST /api/v1/ai/check-limit/ - Check if user can use AI action
-"""
-
 from datetime import date, timedelta
+from typing import Any
 
 import pytest
 from django.utils import timezone
 from model_bakery import baker
+from rest_framework.response import Response
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.interactions.models import (
     AIActionType,
@@ -20,21 +15,20 @@ from apps.interactions.models import (
     Subscription,
     SubscriptionStatus,
 )
+from apps.users.models import User
 
 pytestmark = pytest.mark.django_db
 
 
-def get_auth_client(user):
+def get_auth_client(user: User) -> APIClient:
     """Create authenticated API client."""
-    from rest_framework_simplejwt.tokens import RefreshToken
-
     client = APIClient()
     refresh = RefreshToken.for_user(user)
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
     return client
 
 
-def get_response_data(response):
+def get_response_data(response: Response) -> Any:
     """Extract data from wrapped response or return as-is."""
     json_data = response.json()
     # Response is wrapped in {success, message, data, timestamp}
@@ -51,7 +45,7 @@ def get_response_data(response):
 class TestGetAIUsageStatus:
     """Tests for GET /api/v1/users/me/ai-usage/"""
 
-    def test_get_usage_status_authenticated(self):
+    def test_get_usage_status_authenticated(self) -> None:
         """Should return usage status for authenticated user."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -78,7 +72,7 @@ class TestGetAIUsageStatus:
         assert usage_by_action["ASK"]["used"] == 3
         assert usage_by_action["ASK"]["remaining"] == 2
 
-    def test_get_usage_status_premium_user(self):
+    def test_get_usage_status_premium_user(self) -> None:
         """Premium user should have higher limits."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -100,7 +94,7 @@ class TestGetAIUsageStatus:
         assert data["tier"] == "PREMIUM"
         assert data.get("dailyLimit") == 20 or data.get("daily_limit") == 20
 
-    def test_get_usage_status_unauthenticated(self):
+    def test_get_usage_status_unauthenticated(self) -> None:
         """Should return 401 for unauthenticated request."""
         client = APIClient()
         url = "/api/v1/users/me/ai-usage/"
@@ -117,7 +111,7 @@ class TestGetAIUsageStatus:
 class TestCheckAILimit:
     """Tests for POST /api/v1/ai/check-limit/"""
 
-    def test_check_limit_allowed(self):
+    def test_check_limit_allowed(self) -> None:
         """Should return allowed=True when under limit."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -130,7 +124,7 @@ class TestCheckAILimit:
         assert data["allowed"] is True
         assert data["remaining"] == 5
 
-    def test_check_limit_denied(self):
+    def test_check_limit_denied(self) -> None:
         """Should return allowed=False when at limit."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -153,7 +147,7 @@ class TestCheckAILimit:
         assert data["allowed"] is False
         assert data["remaining"] == 0
 
-    def test_check_limit_returns_429_when_over(self):
+    def test_check_limit_returns_429_when_over(self) -> None:
         """Optional: Return 429 when over limit for AI endpoints."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -177,7 +171,7 @@ class TestCheckAILimit:
         detail = data.get("detail", "")
         assert "limit" in detail.lower() or "한도" in detail
 
-    def test_check_limit_invalid_action_type(self):
+    def test_check_limit_invalid_action_type(self) -> None:
         """Should return 400 for invalid action type."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -187,7 +181,7 @@ class TestCheckAILimit:
 
         assert response.status_code == 400
 
-    def test_check_limit_unauthenticated(self):
+    def test_check_limit_unauthenticated(self) -> None:
         """Should return 401 for unauthenticated request."""
         client = APIClient()
         url = "/api/v1/ai/check-limit/"
@@ -204,7 +198,7 @@ class TestCheckAILimit:
 class TestRecordAIUsage:
     """Tests for POST /api/v1/ai/record-usage/"""
 
-    def test_record_usage_success(self):
+    def test_record_usage_success(self) -> None:
         """Should record usage and return updated status."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -217,7 +211,7 @@ class TestRecordAIUsage:
         assert data["used"] == 1
         assert data["remaining"] == 4
 
-    def test_record_usage_increments(self):
+    def test_record_usage_increments(self) -> None:
         """Should increment existing usage."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -239,7 +233,7 @@ class TestRecordAIUsage:
         assert data["used"] == 3
         assert data["remaining"] == 2
 
-    def test_record_usage_with_token_count(self):
+    def test_record_usage_with_token_count(self) -> None:
         """Should record token count if provided."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -252,7 +246,7 @@ class TestRecordAIUsage:
         log = AIUsageLog.objects.get(user=user)
         assert log.token_count == 150
 
-    def test_record_usage_blocked_at_limit(self):
+    def test_record_usage_blocked_at_limit(self) -> None:
         """Should return 429 when recording would exceed limit."""
         user = baker.make("users.User")
         client = get_auth_client(user)
@@ -272,7 +266,7 @@ class TestRecordAIUsage:
 
         assert response.status_code == 429
 
-    def test_record_usage_unauthenticated(self):
+    def test_record_usage_unauthenticated(self) -> None:
         """Should return 401 for unauthenticated request."""
         client = APIClient()
         url = "/api/v1/ai/record-usage/"

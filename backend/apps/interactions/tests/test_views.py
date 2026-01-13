@@ -23,7 +23,7 @@ from apps.interactions.models import PlanType, Purchase, Subscription, Subscript
 from apps.users.models import User
 
 
-def get_tokens_for_user(user):
+def get_tokens_for_user(user: User) -> dict[str, str]:
     """Generate JWT tokens for a user."""
     refresh = RefreshToken.for_user(user)
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
@@ -33,7 +33,7 @@ def get_tokens_for_user(user):
 class TestSubscriptionCreate:
     """Tests for POST /subscriptions/"""
 
-    def test_create_subscription(self):
+    def test_create_subscription(self) -> None:
         """Should create a new subscription."""
         user = baker.make(User)
         client = APIClient()
@@ -49,7 +49,7 @@ class TestSubscriptionCreate:
         assert resp_data["success"] is True
         assert resp_data["data"]["planType"] == "BASIC"
 
-    def test_create_subscription_unauthenticated(self):
+    def test_create_subscription_unauthenticated(self) -> None:
         """Should reject unauthenticated request."""
         client = APIClient()
 
@@ -64,7 +64,7 @@ class TestSubscriptionCreate:
 class TestSubscriptionCancel:
     """Tests for DELETE /subscriptions/current/"""
 
-    def test_cancel_subscription(self):
+    def test_cancel_subscription(self) -> None:
         """Should cancel active subscription."""
         user = baker.make(User)
         baker.make(
@@ -82,7 +82,7 @@ class TestSubscriptionCancel:
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_cancel_no_subscription(self):
+    def test_cancel_no_subscription(self) -> None:
         """Should return 404 if no active subscription."""
         user = baker.make(User)
         client = APIClient()
@@ -99,7 +99,7 @@ class TestSubscriptionCancel:
 class TestSubscriptionStatus:
     """Tests for GET /subscriptions/status/"""
 
-    def test_get_subscription_status(self):
+    def test_get_subscription_status(self) -> None:
         """Should return subscription status."""
         user = baker.make(User)
         baker.make(
@@ -121,7 +121,7 @@ class TestSubscriptionStatus:
         assert resp_data["data"]["isActive"] is True
         assert resp_data["data"]["planType"] == "PREMIUM"
 
-    def test_get_status_no_subscription(self):
+    def test_get_status_no_subscription(self) -> None:
         """Should return null data if no subscription."""
         user = baker.make(User)
         client = APIClient()
@@ -140,7 +140,7 @@ class TestSubscriptionStatus:
 class TestPurchaseList:
     """Tests for GET /purchases/"""
 
-    def test_list_purchases(self):
+    def test_list_purchases(self) -> None:
         """Should return user's purchases."""
         user = baker.make(User)
         ch1 = baker.make(Chapter)
@@ -163,7 +163,7 @@ class TestPurchaseList:
 class TestChapterPurchase:
     """Tests for POST /chapters/{id}/purchase/"""
 
-    def test_purchase_chapter(self):
+    def test_purchase_chapter(self) -> None:
         """Should purchase a chapter."""
         user = baker.make(User)
         chapter = baker.make(
@@ -183,7 +183,7 @@ class TestChapterPurchase:
         resp_data = response.json()
         assert resp_data["data"]["pricePaid"] == 100
 
-    def test_purchase_free_chapter_fails(self):
+    def test_purchase_free_chapter_fails(self) -> None:
         """Should fail for FREE chapters."""
         user = baker.make(User)
         chapter = baker.make(Chapter, access_type=AccessType.FREE)
@@ -196,7 +196,7 @@ class TestChapterPurchase:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_purchase_duplicate_fails(self):
+    def test_purchase_duplicate_fails(self) -> None:
         """Should fail if already purchased."""
         user = baker.make(User)
         chapter = baker.make(Chapter, price=100, access_type=AccessType.SUBSCRIPTION)
@@ -210,7 +210,7 @@ class TestChapterPurchase:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_purchase_nonexistent_chapter(self):
+    def test_purchase_nonexistent_chapter(self) -> None:
         """Should return 404 for non-existent chapter."""
         user = baker.make(User)
         client = APIClient()

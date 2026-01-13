@@ -25,7 +25,7 @@ from apps.novels.services import BranchLinkService
 class TestBranchLinkServiceRequestLink:
     """Tests for BranchLinkService.request_link()"""
 
-    def test_request_link_success(self):
+    def test_request_link_success(self) -> None:
         """Should create a link request for a branch."""
         service = BranchLinkService()
         branch_author = baker.make("users.User")
@@ -46,7 +46,7 @@ class TestBranchLinkServiceRequestLink:
         assert result.status == LinkRequestStatus.PENDING
         assert result.request_message == "작품 페이지에 연결을 요청합니다."
 
-    def test_request_link_not_branch_author_raises_error(self):
+    def test_request_link_not_branch_author_raises_error(self) -> None:
         """Should raise error if requester is not branch author."""
         service = BranchLinkService()
         branch_author = baker.make("users.User")
@@ -62,7 +62,7 @@ class TestBranchLinkServiceRequestLink:
 
         assert "브랜치 작성자만" in str(exc_info.value)
 
-    def test_request_link_main_branch_raises_error(self):
+    def test_request_link_main_branch_raises_error(self) -> None:
         """Should raise error for main branch link request."""
         service = BranchLinkService()
         user = baker.make("users.User")
@@ -77,7 +77,7 @@ class TestBranchLinkServiceRequestLink:
 
         assert "메인 브랜치" in str(exc_info.value)
 
-    def test_request_link_already_linked_raises_error(self):
+    def test_request_link_already_linked_raises_error(self) -> None:
         """Should raise error if branch is already LINKED."""
         service = BranchLinkService()
         user = baker.make("users.User")
@@ -92,7 +92,7 @@ class TestBranchLinkServiceRequestLink:
 
         assert "이미 연결된" in str(exc_info.value)
 
-    def test_request_link_pending_request_exists_raises_error(self):
+    def test_request_link_pending_request_exists_raises_error(self) -> None:
         """Should raise error if pending request already exists."""
         service = BranchLinkService()
         user = baker.make("users.User")
@@ -113,7 +113,7 @@ class TestBranchLinkServiceRequestLink:
 class TestBranchLinkServiceApproveLink:
     """Tests for BranchLinkService.approve_link()"""
 
-    def test_approve_link_success(self):
+    def test_approve_link_success(self) -> None:
         """Should approve link request and change branch visibility to LINKED."""
         service = BranchLinkService()
         novel_author = baker.make("users.User")
@@ -145,7 +145,7 @@ class TestBranchLinkServiceApproveLink:
         novel.refresh_from_db()
         assert novel.linked_branch_count == 1
 
-    def test_approve_link_not_novel_author_raises_error(self):
+    def test_approve_link_not_novel_author_raises_error(self) -> None:
         """Should raise error if reviewer is not the novel author."""
         service = BranchLinkService()
         novel_author = baker.make("users.User")
@@ -165,7 +165,7 @@ class TestBranchLinkServiceApproveLink:
 
         assert "원작 작가만" in str(exc_info.value)
 
-    def test_approve_link_not_pending_raises_error(self):
+    def test_approve_link_not_pending_raises_error(self) -> None:
         """Should raise error if request is not pending."""
         service = BranchLinkService()
         novel_author = baker.make("users.User")
@@ -189,7 +189,7 @@ class TestBranchLinkServiceApproveLink:
 class TestBranchLinkServiceRejectLink:
     """Tests for BranchLinkService.reject_link()"""
 
-    def test_reject_link_success(self):
+    def test_reject_link_success(self) -> None:
         """Should reject link request."""
         service = BranchLinkService()
         novel_author = baker.make("users.User")
@@ -213,7 +213,7 @@ class TestBranchLinkServiceRejectLink:
         branch.refresh_from_db()
         assert branch.visibility == BranchVisibility.PUBLIC  # unchanged
 
-    def test_reject_link_not_novel_author_raises_error(self):
+    def test_reject_link_not_novel_author_raises_error(self) -> None:
         """Should raise error if reviewer is not the novel author."""
         service = BranchLinkService()
         novel_author = baker.make("users.User")
@@ -238,7 +238,7 @@ class TestBranchLinkServiceRejectLink:
 class TestBranchLinkServiceListRequests:
     """Tests for BranchLinkService.list_requests()"""
 
-    def test_list_requests_for_branch(self):
+    def test_list_requests_for_branch(self) -> None:
         """Should list all link requests for a branch."""
         service = BranchLinkService()
         branch = baker.make(Branch)
@@ -252,7 +252,7 @@ class TestBranchLinkServiceListRequests:
         assert request1 in result
         assert request2 in result
 
-    def test_list_requests_filter_by_status(self):
+    def test_list_requests_filter_by_status(self) -> None:
         """Should filter requests by status."""
         service = BranchLinkService()
         branch = baker.make(Branch)

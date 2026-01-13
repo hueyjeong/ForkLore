@@ -13,7 +13,7 @@ pytestmark = pytest.mark.django_db
 class TestWikiEntryModel:
     """WikiEntry 모델 테스트"""
 
-    def test_create_wiki_entry(self):
+    def test_create_wiki_entry(self) -> None:
         """위키 엔트리 생성 테스트"""
         branch = baker.make("novels.Branch")
         wiki = baker.make(
@@ -34,7 +34,7 @@ class TestWikiEntryModel:
         assert wiki.ai_metadata is None
         assert wiki.source_wiki is None
 
-    def test_wiki_entry_unique_name_per_branch(self):
+    def test_wiki_entry_unique_name_per_branch(self) -> None:
         """같은 브랜치에서 위키 이름 중복 불가"""
         branch = baker.make("novels.Branch")
         baker.make("contents.WikiEntry", branch=branch, name="캐릭터A")
@@ -42,7 +42,7 @@ class TestWikiEntryModel:
         with pytest.raises(IntegrityError):
             baker.make("contents.WikiEntry", branch=branch, name="캐릭터A")
 
-    def test_wiki_entry_same_name_different_branch(self):
+    def test_wiki_entry_same_name_different_branch(self) -> None:
         """다른 브랜치에서는 같은 이름 가능"""
         branch1 = baker.make("novels.Branch")
         branch2 = baker.make("novels.Branch")
@@ -53,7 +53,7 @@ class TestWikiEntryModel:
         assert wiki1.name == wiki2.name
         assert wiki1.branch != wiki2.branch
 
-    def test_wiki_entry_source_wiki_self_reference(self):
+    def test_wiki_entry_source_wiki_self_reference(self) -> None:
         """포크된 위키는 source_wiki 참조"""
         original_branch = baker.make("novels.Branch")
         forked_branch = baker.make("novels.Branch")
@@ -69,7 +69,7 @@ class TestWikiEntryModel:
         assert forked_wiki.source_wiki == original_wiki
         assert forked_wiki.source_wiki.branch == original_branch
 
-    def test_wiki_entry_ai_metadata_jsonfield(self):
+    def test_wiki_entry_ai_metadata_jsonfield(self) -> None:
         """ai_metadata JSONField 저장"""
         branch = baker.make("novels.Branch")
         wiki = baker.make(
@@ -82,7 +82,7 @@ class TestWikiEntryModel:
         assert wiki.ai_metadata["embedding"] == [0.1, 0.2, 0.3]
         assert wiki.ai_metadata["summary"] == "테스트 요약"
 
-    def test_wiki_entry_str(self):
+    def test_wiki_entry_str(self) -> None:
         """__str__ 메서드 테스트"""
         branch = baker.make("novels.Branch", name="메인 스토리")
         wiki = baker.make("contents.WikiEntry", branch=branch, name="주인공")
@@ -93,7 +93,7 @@ class TestWikiEntryModel:
 class TestWikiSnapshotModel:
     """WikiSnapshot 모델 테스트"""
 
-    def test_create_wiki_snapshot(self):
+    def test_create_wiki_snapshot(self) -> None:
         """위키 스냅샷 생성 테스트"""
         wiki = baker.make("contents.WikiEntry")
         user = baker.make("users.User")
@@ -114,7 +114,7 @@ class TestWikiSnapshotModel:
         assert snapshot.contributor_type == "USER"
         assert snapshot.contributor == user
 
-    def test_wiki_snapshot_unique_per_chapter(self):
+    def test_wiki_snapshot_unique_per_chapter(self) -> None:
         """같은 위키에서 같은 회차에 스냅샷 중복 불가"""
         wiki = baker.make("contents.WikiEntry")
         baker.make("contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=1)
@@ -122,7 +122,7 @@ class TestWikiSnapshotModel:
         with pytest.raises(IntegrityError):
             baker.make("contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=1)
 
-    def test_wiki_snapshot_multiple_chapters(self):
+    def test_wiki_snapshot_multiple_chapters(self) -> None:
         """같은 위키에서 다른 회차 스냅샷 가능"""
         wiki = baker.make("contents.WikiEntry")
 
@@ -134,7 +134,7 @@ class TestWikiSnapshotModel:
         assert snapshot2.valid_from_chapter == 5
         assert snapshot3.valid_from_chapter == 10
 
-    def test_wiki_snapshot_contributor_type_choices(self):
+    def test_wiki_snapshot_contributor_type_choices(self) -> None:
         """contributor_type은 USER 또는 AI"""
         wiki = baker.make("contents.WikiEntry")
 
@@ -158,7 +158,7 @@ class TestWikiSnapshotModel:
 class TestWikiTagDefinitionModel:
     """WikiTagDefinition 모델 테스트"""
 
-    def test_create_wiki_tag_definition(self):
+    def test_create_wiki_tag_definition(self) -> None:
         """태그 정의 생성 테스트"""
         branch = baker.make("novels.Branch")
         tag = baker.make(
@@ -179,7 +179,7 @@ class TestWikiTagDefinitionModel:
         assert tag.description == "등장인물 태그"
         assert tag.display_order == 1
 
-    def test_wiki_tag_unique_name_per_branch(self):
+    def test_wiki_tag_unique_name_per_branch(self) -> None:
         """같은 브랜치에서 태그 이름 중복 불가"""
         branch = baker.make("novels.Branch")
         baker.make("contents.WikiTagDefinition", branch=branch, name="인물")
@@ -187,7 +187,7 @@ class TestWikiTagDefinitionModel:
         with pytest.raises(IntegrityError):
             baker.make("contents.WikiTagDefinition", branch=branch, name="인물")
 
-    def test_wiki_tag_same_name_different_branch(self):
+    def test_wiki_tag_same_name_different_branch(self) -> None:
         """다른 브랜치에서는 같은 태그 이름 가능"""
         branch1 = baker.make("novels.Branch")
         branch2 = baker.make("novels.Branch")
@@ -198,7 +198,7 @@ class TestWikiTagDefinitionModel:
         assert tag1.name == tag2.name
         assert tag1.branch != tag2.branch
 
-    def test_wiki_tag_str(self):
+    def test_wiki_tag_str(self) -> None:
         """__str__ 메서드 테스트"""
         branch = baker.make("novels.Branch", name="메인")
         tag = baker.make("contents.WikiTagDefinition", branch=branch, name="장소")
@@ -209,7 +209,7 @@ class TestWikiTagDefinitionModel:
 class TestWikiEntryTagRelation:
     """WikiEntry와 WikiTagDefinition M2M 관계 테스트"""
 
-    def test_wiki_entry_add_tags(self):
+    def test_wiki_entry_add_tags(self) -> None:
         """위키에 태그 추가"""
         branch = baker.make("novels.Branch")
         wiki = baker.make("contents.WikiEntry", branch=branch, name="캐릭터")
@@ -223,7 +223,7 @@ class TestWikiEntryTagRelation:
         assert tag1 in wiki.tags.all()
         assert tag2 in wiki.tags.all()
 
-    def test_wiki_entry_remove_tag(self):
+    def test_wiki_entry_remove_tag(self) -> None:
         """위키에서 태그 제거"""
         branch = baker.make("novels.Branch")
         wiki = baker.make("contents.WikiEntry", branch=branch, name="캐릭터")
@@ -235,7 +235,7 @@ class TestWikiEntryTagRelation:
         wiki.tags.remove(tag)
         assert wiki.tags.count() == 0
 
-    def test_tag_definition_reverse_relation(self):
+    def test_tag_definition_reverse_relation(self) -> None:
         """태그에서 위키 역참조"""
         branch = baker.make("novels.Branch")
         tag = baker.make("contents.WikiTagDefinition", branch=branch, name="인물")

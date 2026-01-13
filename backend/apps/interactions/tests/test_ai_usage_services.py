@@ -33,7 +33,7 @@ pytestmark = pytest.mark.django_db
 class TestAIUsageServiceIncrement:
     """Tests for AIUsageService.increment()"""
 
-    def test_increment_creates_new_log(self):
+    def test_increment_creates_new_log(self) -> None:
         """Should create a new usage log when none exists for today."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -47,7 +47,7 @@ class TestAIUsageServiceIncrement:
         assert log.usage_date == today
         assert log.request_count == 1
 
-    def test_increment_updates_existing_log(self):
+    def test_increment_updates_existing_log(self) -> None:
         """Should increment count on existing log for same user/date/action."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -67,11 +67,10 @@ class TestAIUsageServiceIncrement:
         assert log.id == existing.id
         assert log.request_count == 4
 
-    def test_increment_different_action_types_separate(self):
+    def test_increment_different_action_types_separate(self) -> None:
         """Different action types should have separate logs."""
         service = AIUsageService()
         user = baker.make("users.User")
-        date.today()
 
         log1 = service.increment(user=user, action_type=AIActionType.ASK)
         log2 = service.increment(user=user, action_type=AIActionType.WIKI_SUGGEST)
@@ -80,7 +79,7 @@ class TestAIUsageServiceIncrement:
         assert log1.request_count == 1
         assert log2.request_count == 1
 
-    def test_increment_different_dates_separate(self):
+    def test_increment_different_dates_separate(self) -> None:
         """Different dates should have separate logs."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -102,7 +101,7 @@ class TestAIUsageServiceIncrement:
         assert log.usage_date == today
         assert log.request_count == 1
 
-    def test_increment_with_token_count(self):
+    def test_increment_with_token_count(self) -> None:
         """Should increment token_count when provided."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -125,7 +124,7 @@ class TestAIUsageServiceIncrement:
 class TestAIUsageServiceGetDailyUsage:
     """Tests for AIUsageService.get_daily_usage()"""
 
-    def test_get_daily_usage_returns_count(self):
+    def test_get_daily_usage_returns_count(self) -> None:
         """Should return today's usage count for user/action."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -143,7 +142,7 @@ class TestAIUsageServiceGetDailyUsage:
 
         assert count == 7
 
-    def test_get_daily_usage_no_log_returns_zero(self):
+    def test_get_daily_usage_no_log_returns_zero(self) -> None:
         """Should return 0 when no log exists."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -152,7 +151,7 @@ class TestAIUsageServiceGetDailyUsage:
 
         assert count == 0
 
-    def test_get_daily_usage_ignores_other_dates(self):
+    def test_get_daily_usage_ignores_other_dates(self) -> None:
         """Should only count today's usage."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -172,7 +171,7 @@ class TestAIUsageServiceGetDailyUsage:
 
         assert count == 0
 
-    def test_get_daily_usage_all_actions(self):
+    def test_get_daily_usage_all_actions(self) -> None:
         """Should return total usage across all action types when action_type is None."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -206,7 +205,7 @@ class TestAIUsageServiceGetDailyUsage:
 class TestAIUsageServiceCanUseAI:
     """Tests for AIUsageService.can_use_ai() with tier-based limits."""
 
-    def test_free_user_limit_5(self):
+    def test_free_user_limit_5(self) -> None:
         """Free user (no subscription) should have 5 requests/day limit."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -228,7 +227,7 @@ class TestAIUsageServiceCanUseAI:
 
         assert service.can_use_ai(user=user, action_type=AIActionType.ASK) is False
 
-    def test_basic_subscriber_limit_10(self):
+    def test_basic_subscriber_limit_10(self) -> None:
         """BASIC subscriber should have 10 requests/day limit."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -259,7 +258,7 @@ class TestAIUsageServiceCanUseAI:
 
         assert service.can_use_ai(user=user, action_type=AIActionType.ASK) is False
 
-    def test_premium_subscriber_limit_20(self):
+    def test_premium_subscriber_limit_20(self) -> None:
         """PREMIUM subscriber should have 20 requests/day limit."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -290,7 +289,7 @@ class TestAIUsageServiceCanUseAI:
 
         assert service.can_use_ai(user=user, action_type=AIActionType.ASK) is False
 
-    def test_expired_subscription_uses_free_limit(self):
+    def test_expired_subscription_uses_free_limit(self) -> None:
         """Expired subscription should use FREE tier limit."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -316,7 +315,7 @@ class TestAIUsageServiceCanUseAI:
 
         assert service.can_use_ai(user=user, action_type=AIActionType.ASK) is False
 
-    def test_cancelled_but_not_expired_uses_plan_limit(self):
+    def test_cancelled_but_not_expired_uses_plan_limit(self) -> None:
         """Cancelled but not expired subscription should still use plan limit."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -342,14 +341,14 @@ class TestAIUsageServiceCanUseAI:
 
         assert service.can_use_ai(user=user, action_type=AIActionType.ASK) is True
 
-    def test_no_usage_returns_true(self):
+    def test_no_usage_returns_true(self) -> None:
         """Should return True when no usage today."""
         service = AIUsageService()
         user = baker.make("users.User")
 
         assert service.can_use_ai(user=user, action_type=AIActionType.ASK) is True
 
-    def test_get_remaining_quota(self):
+    def test_get_remaining_quota(self) -> None:
         """Should return remaining quota for user."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -376,7 +375,7 @@ class TestAIUsageServiceCanUseAI:
 class TestAIUsageServiceGetUserTier:
     """Tests for AIUsageService.get_user_tier()"""
 
-    def test_no_subscription_returns_free(self):
+    def test_no_subscription_returns_free(self) -> None:
         """User without subscription should be FREE tier."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -385,7 +384,7 @@ class TestAIUsageServiceGetUserTier:
 
         assert tier == "FREE"
 
-    def test_active_basic_returns_basic(self):
+    def test_active_basic_returns_basic(self) -> None:
         """User with active BASIC subscription should be BASIC tier."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -402,7 +401,7 @@ class TestAIUsageServiceGetUserTier:
 
         assert tier == "BASIC"
 
-    def test_active_premium_returns_premium(self):
+    def test_active_premium_returns_premium(self) -> None:
         """User with active PREMIUM subscription should be PREMIUM tier."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -428,7 +427,7 @@ class TestAIUsageServiceGetUserTier:
 class TestAIUsageDateBoundary:
     """Tests for date boundary handling."""
 
-    def test_usage_resets_at_midnight_utc(self):
+    def test_usage_resets_at_midnight_utc(self) -> None:
         """Usage should reset at UTC midnight."""
         service = AIUsageService()
         user = baker.make("users.User")
@@ -448,7 +447,7 @@ class TestAIUsageDateBoundary:
         assert service.can_use_ai(user=user, action_type=AIActionType.ASK) is True
         assert service.get_daily_usage(user=user, action_type=AIActionType.ASK) == 0
 
-    def test_usage_counts_per_action_type(self):
+    def test_usage_counts_per_action_type(self) -> None:
         """Each action type has separate daily quota."""
         service = AIUsageService()
         user = baker.make("users.User")

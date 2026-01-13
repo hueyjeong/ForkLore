@@ -16,14 +16,14 @@ pytestmark = pytest.mark.django_db
 class TestMapViewSet:
     """MapViewSet 테스트"""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         self.client = APIClient()
         self.user = baker.make("users.User")
         self.novel = baker.make("novels.Novel", author=self.user)
         self.branch = baker.make("novels.Branch", novel=self.novel, author=self.user, is_main=True)
         self.client.force_authenticate(user=self.user)
 
-    def test_list_maps(self):
+    def test_list_maps(self) -> None:
         """지도 목록 조회"""
         baker.make("contents.Map", branch=self.branch, name="지도1")
         baker.make("contents.Map", branch=self.branch, name="지도2")
@@ -36,7 +36,7 @@ class TestMapViewSet:
         data = response.data.get("results") or response.data.get("data")
         assert len(data) == 2
 
-    def test_create_map(self):
+    def test_create_map(self) -> None:
         """지도 생성"""
         url = f"/api/v1/branches/{self.branch.id}/maps/"
         data = {
@@ -52,7 +52,7 @@ class TestMapViewSet:
         assert response.data["data"]["name"] == "세계 지도"
         assert response.data["data"]["width"] == 1920
 
-    def test_create_map_unauthenticated(self):
+    def test_create_map_unauthenticated(self) -> None:
         """비인증 사용자 지도 생성 불가"""
         self.client.force_authenticate(user=None)
         url = f"/api/v1/branches/{self.branch.id}/maps/"
@@ -62,7 +62,7 @@ class TestMapViewSet:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_retrieve_map(self):
+    def test_retrieve_map(self) -> None:
         """지도 상세 조회"""
         map_obj = baker.make("contents.Map", branch=self.branch, name="테스트 지도")
 
@@ -72,7 +72,7 @@ class TestMapViewSet:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["data"]["name"] == "테스트 지도"
 
-    def test_retrieve_map_with_context(self):
+    def test_retrieve_map_with_context(self) -> None:
         """문맥 인식 지도 조회"""
         map_obj = baker.make("contents.Map", branch=self.branch, name="지도")
         baker.make("contents.MapSnapshot", map=map_obj, valid_from_chapter=1)
@@ -84,7 +84,7 @@ class TestMapViewSet:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["data"]["snapshot"]["valid_from_chapter"] == 1
 
-    def test_update_map(self):
+    def test_update_map(self) -> None:
         """지도 수정"""
         map_obj = baker.make("contents.Map", branch=self.branch, name="원래 지도")
 
@@ -96,7 +96,7 @@ class TestMapViewSet:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["data"]["name"] == "수정된 지도"
 
-    def test_delete_map(self):
+    def test_delete_map(self) -> None:
         """지도 삭제"""
         map_obj = baker.make("contents.Map", branch=self.branch)
 
@@ -110,7 +110,7 @@ class TestMapViewSet:
 class TestMapSnapshotViewSet:
     """MapSnapshot 관련 테스트"""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         self.client = APIClient()
         self.user = baker.make("users.User")
         self.novel = baker.make("novels.Novel", author=self.user)
@@ -118,7 +118,7 @@ class TestMapSnapshotViewSet:
         self.map_obj = baker.make("contents.Map", branch=self.branch)
         self.client.force_authenticate(user=self.user)
 
-    def test_create_snapshot(self):
+    def test_create_snapshot(self) -> None:
         """스냅샷 생성"""
         url = f"/api/v1/maps/{self.map_obj.id}/snapshots/"
         data = {
@@ -131,7 +131,7 @@ class TestMapSnapshotViewSet:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["data"]["valid_from_chapter"] == 1
 
-    def test_list_snapshots(self):
+    def test_list_snapshots(self) -> None:
         """스냅샷 목록 조회"""
         baker.make("contents.MapSnapshot", map=self.map_obj, valid_from_chapter=1)
         baker.make("contents.MapSnapshot", map=self.map_obj, valid_from_chapter=5)
@@ -147,7 +147,7 @@ class TestMapSnapshotViewSet:
 class TestMapLayerViewSet:
     """MapLayer 관련 테스트"""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         self.client = APIClient()
         self.user = baker.make("users.User")
         self.novel = baker.make("novels.Novel", author=self.user)
@@ -156,7 +156,7 @@ class TestMapLayerViewSet:
         self.snapshot = baker.make("contents.MapSnapshot", map=self.map_obj)
         self.client.force_authenticate(user=self.user)
 
-    def test_create_layer(self):
+    def test_create_layer(self) -> None:
         """레이어 생성"""
         url = f"/api/v1/snapshots/{self.snapshot.id}/layers/"
         data = {
@@ -170,7 +170,7 @@ class TestMapLayerViewSet:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["data"]["name"] == "마커 레이어"
 
-    def test_list_layers(self):
+    def test_list_layers(self) -> None:
         """레이어 목록 조회"""
         baker.make("contents.MapLayer", snapshot=self.snapshot, name="레이어1")
         baker.make("contents.MapLayer", snapshot=self.snapshot, name="레이어2")
@@ -186,7 +186,7 @@ class TestMapLayerViewSet:
 class TestMapObjectViewSet:
     """MapObject 관련 테스트"""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         self.client = APIClient()
         self.user = baker.make("users.User")
         self.novel = baker.make("novels.Novel", author=self.user)
@@ -196,7 +196,7 @@ class TestMapObjectViewSet:
         self.layer = baker.make("contents.MapLayer", snapshot=self.snapshot)
         self.client.force_authenticate(user=self.user)
 
-    def test_create_object(self):
+    def test_create_object(self) -> None:
         """오브젝트 생성"""
         url = f"/api/v1/layers/{self.layer.id}/objects/"
         data = {
@@ -211,7 +211,7 @@ class TestMapObjectViewSet:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["data"]["label"] == "수도"
 
-    def test_list_objects(self):
+    def test_list_objects(self) -> None:
         """오브젝트 목록 조회"""
         baker.make(
             "contents.MapObject", layer=self.layer, label="오브젝트1", coordinates={"x": 0, "y": 0}
@@ -230,7 +230,7 @@ class TestMapObjectViewSet:
         data = response.data.get("results") or response.data.get("data")
         assert len(data) == 2
 
-    def test_create_object_with_wiki_link(self):
+    def test_create_object_with_wiki_link(self) -> None:
         """위키 연결된 오브젝트 생성"""
         wiki = baker.make("contents.WikiEntry", branch=self.branch)
 

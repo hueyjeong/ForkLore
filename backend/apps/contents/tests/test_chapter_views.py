@@ -25,7 +25,7 @@ from apps.novels.models import Branch
 from apps.users.models import User
 
 
-def get_tokens_for_user(user):
+def get_tokens_for_user(user: User) -> dict[str, str]:
     """Generate JWT tokens for a user."""
     refresh = RefreshToken.for_user(user)
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
@@ -35,7 +35,7 @@ def get_tokens_for_user(user):
 class TestChapterList:
     """Tests for GET /api/v1/branches/{branch_id}/chapters"""
 
-    def test_list_chapters_for_branch(self):
+    def test_list_chapters_for_branch(self) -> None:
         """Should return all published chapters for a branch."""
         client = APIClient()
         branch = baker.make(Branch)
@@ -69,7 +69,7 @@ class TestChapterList:
         assert data["success"] is True
         assert len(data["data"]["results"]) == 2
 
-    def test_list_chapters_ordered_by_number(self):
+    def test_list_chapters_ordered_by_number(self) -> None:
         """Should return chapters ordered by chapter_number."""
         client = APIClient()
         branch = baker.make(Branch)
@@ -86,7 +86,7 @@ class TestChapterList:
         assert results[1]["chapterNumber"] == 2
         assert results[2]["chapterNumber"] == 3
 
-    def test_author_can_see_all_chapters(self):
+    def test_author_can_see_all_chapters(self) -> None:
         """Branch author should see drafts too."""
         user = baker.make(User)
         client = APIClient()
@@ -108,7 +108,7 @@ class TestChapterList:
 class TestChapterDetail:
     """Tests for GET /api/v1/branches/{branch_id}/chapters/{chapter_number}"""
 
-    def test_get_chapter_detail(self):
+    def test_get_chapter_detail(self) -> None:
         """Should return chapter detail with HTML content."""
         client = APIClient()
         branch = baker.make(Branch)
@@ -130,7 +130,7 @@ class TestChapterDetail:
         assert data["data"]["title"] == "Test Chapter"
         assert data["data"]["contentHtml"] == "<p>Hello</p>"
 
-    def test_get_nonexistent_chapter_returns_404(self):
+    def test_get_nonexistent_chapter_returns_404(self) -> None:
         """Should return 404 for non-existent chapter."""
         client = APIClient()
         branch = baker.make(Branch)
@@ -145,7 +145,7 @@ class TestChapterDetail:
 class TestChapterCreate:
     """Tests for POST /api/v1/branches/{branch_id}/chapters"""
 
-    def test_create_chapter_as_author(self):
+    def test_create_chapter_as_author(self) -> None:
         """Branch author should be able to create chapters."""
         user = baker.make(User)
         client = APIClient()
@@ -168,7 +168,7 @@ class TestChapterCreate:
         assert resp_data["data"]["chapterNumber"] == 1
         assert resp_data["data"]["status"] == ChapterStatus.DRAFT
 
-    def test_create_chapter_unauthenticated(self):
+    def test_create_chapter_unauthenticated(self) -> None:
         """Unauthenticated user should not create chapters."""
         client = APIClient()
         branch = baker.make(Branch)
@@ -179,7 +179,7 @@ class TestChapterCreate:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_create_chapter_non_author(self):
+    def test_create_chapter_non_author(self) -> None:
         """Non-author should not create chapters in others' branches."""
         owner = baker.make(User)
         other_user = baker.make(User)
@@ -200,7 +200,7 @@ class TestChapterCreate:
 class TestChapterUpdate:
     """Tests for PATCH /api/v1/chapters/{id}"""
 
-    def test_update_draft_chapter(self):
+    def test_update_draft_chapter(self) -> None:
         """Author should be able to update their draft chapter."""
         user = baker.make(User)
         client = APIClient()
@@ -223,7 +223,7 @@ class TestChapterUpdate:
 class TestChapterPublish:
     """Tests for POST /api/v1/chapters/{id}/publish"""
 
-    def test_publish_draft_chapter(self):
+    def test_publish_draft_chapter(self) -> None:
         """Author should be able to publish their draft chapter."""
         user = baker.make(User)
         client = APIClient()
@@ -246,7 +246,7 @@ class TestChapterPublish:
 class TestChapterSchedule:
     """Tests for POST /api/v1/chapters/{id}/schedule"""
 
-    def test_schedule_chapter(self):
+    def test_schedule_chapter(self) -> None:
         """Author should be able to schedule their draft chapter."""
         user = baker.make(User)
         client = APIClient()
@@ -270,7 +270,7 @@ class TestChapterSchedule:
 class TestChapterDelete:
     """Tests for DELETE /api/v1/chapters/{id}"""
 
-    def test_delete_chapter(self):
+    def test_delete_chapter(self) -> None:
         """Author should be able to delete their chapter."""
         user = baker.make(User)
         client = APIClient()

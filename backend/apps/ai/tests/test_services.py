@@ -3,6 +3,7 @@ TDD: AI Services 테스트
 RED → GREEN → REFACTOR
 """
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -23,7 +24,7 @@ pytestmark = pytest.mark.django_db
 class TestTextChunker:
     """TextChunker 유틸 테스트"""
 
-    def test_chunk_by_paragraphs(self):
+    def test_chunk_by_paragraphs(self) -> None:
         """문단 기반 청킹"""
         text = """첫 번째 문단입니다.
 여러 문장이 있습니다.
@@ -38,7 +39,7 @@ class TestTextChunker:
         assert len(chunks) >= 1
         assert all(len(chunk) <= 500 for chunk in chunks)
 
-    def test_chunk_with_overlap(self):
+    def test_chunk_with_overlap(self) -> None:
         """오버랩이 있는 청킹"""
         text = "문장1. 문장2. 문장3. 문장4. 문장5. 문장6. 문장7. 문장8."
 
@@ -47,13 +48,13 @@ class TestTextChunker:
         # 오버랩이 있으면 청크 간에 겹치는 부분이 있어야 함
         assert len(chunks) >= 2
 
-    def test_chunk_empty_text(self):
+    def test_chunk_empty_text(self) -> None:
         """빈 텍스트 처리"""
         chunks = TextChunker.chunk_text("")
 
         assert chunks == []
 
-    def test_chunk_small_text(self):
+    def test_chunk_small_text(self) -> None:
         """작은 텍스트는 하나의 청크"""
         text = "짧은 텍스트입니다."
 
@@ -67,7 +68,7 @@ class TestEmbeddingService:
     """EmbeddingService 테스트"""
 
     @patch("apps.ai.services.genai")
-    def test_embed_text(self, mock_genai):
+    def test_embed_text(self, mock_genai: Any) -> None:
         """텍스트 임베딩 생성"""
         # Mock Gemini API response
         mock_result = MagicMock()
@@ -81,7 +82,7 @@ class TestEmbeddingService:
         mock_genai.embed_content.assert_called_once()
 
     @patch("apps.ai.services.genai")
-    def test_batch_embed(self, mock_genai):
+    def test_batch_embed(self, mock_genai: Any) -> None:
         """배치 임베딩"""
         mock_genai.embed_content.return_value = {"embedding": [0.1] * 3072}
 
@@ -93,7 +94,7 @@ class TestEmbeddingService:
         assert all(len(e) == 3072 for e in embeddings)
 
     @patch("apps.ai.services.genai")
-    def test_embed_with_retry_on_error(self, mock_genai):
+    def test_embed_with_retry_on_error(self, mock_genai: Any) -> None:
         """API 에러 시 재시도"""
         mock_genai.embed_content.side_effect = [Exception("API Error"), {"embedding": [0.1] * 3072}]
 
@@ -108,7 +109,7 @@ class TestChunkingService:
     """ChunkingService 테스트"""
 
     @patch("apps.ai.services.EmbeddingService")
-    def test_create_chunks_for_chapter(self, mock_embedding_service):
+    def test_create_chunks_for_chapter(self, mock_embedding_service: Any) -> None:
         """회차에 대한 청크 생성"""
         mock_embedding_service.return_value.embed.return_value = [0.1] * 3072
 
@@ -122,7 +123,7 @@ class TestChunkingService:
         assert all(c.chapter == chapter for c in chunks)
 
     @patch("apps.ai.services.EmbeddingService")
-    def test_recreate_chunks_deletes_old(self, mock_embedding_service):
+    def test_recreate_chunks_deletes_old(self, mock_embedding_service: Any) -> None:
         """청크 재생성 시 기존 청크 삭제"""
         mock_embedding_service.return_value.embed.return_value = [0.1] * 3072
 
@@ -141,7 +142,7 @@ class TestChunkingService:
 class TestSimilaritySearchService:
     """SimilaritySearchService 테스트"""
 
-    def test_search_similar_chunks(self):
+    def test_search_similar_chunks(self) -> None:
         """유사 청크 검색"""
         branch = baker.make("novels.Branch")
         chapter = baker.make("contents.Chapter", branch=branch)
@@ -161,7 +162,7 @@ class TestSimilaritySearchService:
         # pgvector 없으면 빈 결과 또는 폴백 동작
         assert isinstance(results, list)
 
-    def test_search_limits_to_branch(self):
+    def test_search_limits_to_branch(self) -> None:
         """브랜치 범위 제한 검색"""
         branch1 = baker.make("novels.Branch")
         branch2 = baker.make("novels.Branch")
@@ -184,7 +185,7 @@ class TestAIService:
     @patch("apps.ai.services.AIUsageService")
     @patch("apps.ai.services.genai")
     @patch.object(SimilaritySearchService, "search_by_text")
-    def test_suggest_wiki(self, mock_search, mock_genai, mock_usage):
+    def test_suggest_wiki(self, mock_search: Any, mock_genai: Any, mock_usage: Any) -> None:
         """위키 제안"""
         mock_usage.return_value.can_use_ai.return_value = True
         mock_search.return_value = []
@@ -205,7 +206,7 @@ class TestAIService:
     @patch("apps.ai.services.AIUsageService")
     @patch("apps.ai.services.genai")
     @patch.object(SimilaritySearchService, "search_by_text")
-    def test_check_consistency(self, mock_search, mock_genai, mock_usage):
+    def test_check_consistency(self, mock_search: Any, mock_genai: Any, mock_usage: Any) -> None:
         """일관성 검사"""
         mock_usage.return_value.can_use_ai.return_value = True
         mock_search.return_value = []
@@ -225,7 +226,7 @@ class TestAIService:
     @patch("apps.ai.services.AIUsageService")
     @patch("apps.ai.services.genai")
     @patch.object(SimilaritySearchService, "search_by_text")
-    def test_ask(self, mock_search, mock_genai, mock_usage):
+    def test_ask(self, mock_search: Any, mock_genai: Any, mock_usage: Any) -> None:
         """RAG 기반 질문 응답"""
         mock_usage.return_value.can_use_ai.return_value = True
         mock_chunk = MagicMock()
@@ -245,7 +246,7 @@ class TestAIService:
         assert len(answer) > 0
 
     @patch("apps.ai.services.genai")
-    def test_ask_checks_usage_limit(self, mock_genai):
+    def test_ask_checks_usage_limit(self, mock_genai: Any) -> None:
         """AI 사용량 한도 검사"""
         branch = baker.make("novels.Branch")
         user = branch.author

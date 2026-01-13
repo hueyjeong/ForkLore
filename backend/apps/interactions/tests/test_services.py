@@ -28,7 +28,7 @@ from apps.users.models import User
 class TestAccessServiceCanAccessChapter:
     """Tests for AccessService.can_access_chapter()"""
 
-    def test_free_chapter_accessible_by_anyone(self):
+    def test_free_chapter_accessible_by_anyone(self) -> None:
         """FREE chapters should be accessible to anyone."""
         service = AccessService()
         user = baker.make(User)
@@ -38,7 +38,7 @@ class TestAccessServiceCanAccessChapter:
 
         assert result is True
 
-    def test_free_chapter_accessible_without_login(self):
+    def test_free_chapter_accessible_without_login(self) -> None:
         """FREE chapters should be accessible without login."""
         service = AccessService()
         chapter = baker.make(Chapter, access_type=AccessType.FREE, status=ChapterStatus.PUBLISHED)
@@ -47,7 +47,7 @@ class TestAccessServiceCanAccessChapter:
 
         assert result is True
 
-    def test_author_can_access_own_chapter(self):
+    def test_author_can_access_own_chapter(self) -> None:
         """Author should access their own SUBSCRIPTION chapters."""
         service = AccessService()
         author = baker.make(User)
@@ -63,7 +63,7 @@ class TestAccessServiceCanAccessChapter:
 
         assert result is True
 
-    def test_subscriber_can_access_subscription_chapter(self):
+    def test_subscriber_can_access_subscription_chapter(self) -> None:
         """User with active subscription can access SUBSCRIPTION chapters."""
         service = AccessService()
         user = baker.make(User)
@@ -83,7 +83,7 @@ class TestAccessServiceCanAccessChapter:
 
         assert result is True
 
-    def test_expired_subscription_cannot_access(self):
+    def test_expired_subscription_cannot_access(self) -> None:
         """User with expired subscription cannot access SUBSCRIPTION chapters."""
         service = AccessService()
         user = baker.make(User)
@@ -103,7 +103,7 @@ class TestAccessServiceCanAccessChapter:
 
         assert result is False
 
-    def test_purchased_chapter_accessible(self):
+    def test_purchased_chapter_accessible(self) -> None:
         """User who purchased the chapter can access it."""
         service = AccessService()
         user = baker.make(User)
@@ -118,7 +118,7 @@ class TestAccessServiceCanAccessChapter:
 
         assert result is True
 
-    def test_no_subscription_no_purchase_denied(self):
+    def test_no_subscription_no_purchase_denied(self) -> None:
         """User without subscription or purchase cannot access SUBSCRIPTION chapter."""
         service = AccessService()
         user = baker.make(User)
@@ -132,7 +132,7 @@ class TestAccessServiceCanAccessChapter:
 
         assert result is False
 
-    def test_unauthenticated_denied_for_subscription_chapter(self):
+    def test_unauthenticated_denied_for_subscription_chapter(self) -> None:
         """Unauthenticated user cannot access SUBSCRIPTION chapters."""
         service = AccessService()
         chapter = baker.make(
@@ -155,7 +155,7 @@ class TestAccessServiceCanAccessChapter:
 class TestSubscriptionServiceSubscribe:
     """Tests for SubscriptionService.subscribe()"""
 
-    def test_create_new_subscription(self):
+    def test_create_new_subscription(self) -> None:
         """Should create a new subscription for user."""
         service = SubscriptionService()
         user = baker.make(User)
@@ -168,7 +168,7 @@ class TestSubscriptionServiceSubscribe:
         assert subscription.status == SubscriptionStatus.ACTIVE
         assert subscription.expires_at > timezone.now()
 
-    def test_extend_existing_subscription(self):
+    def test_extend_existing_subscription(self) -> None:
         """Should extend existing active subscription."""
         service = SubscriptionService()
         user = baker.make(User)
@@ -190,7 +190,7 @@ class TestSubscriptionServiceSubscribe:
 class TestSubscriptionServiceCancel:
     """Tests for SubscriptionService.cancel()"""
 
-    def test_cancel_subscription(self):
+    def test_cancel_subscription(self) -> None:
         """Should cancel active subscription."""
         service = SubscriptionService()
         user = baker.make(User)
@@ -208,7 +208,7 @@ class TestSubscriptionServiceCancel:
         assert subscription.status == SubscriptionStatus.CANCELLED
         assert subscription.cancelled_at is not None
 
-    def test_cancel_no_subscription_returns_false(self):
+    def test_cancel_no_subscription_returns_false(self) -> None:
         """Should return False if no active subscription."""
         service = SubscriptionService()
         user = baker.make(User)
@@ -222,7 +222,7 @@ class TestSubscriptionServiceCancel:
 class TestSubscriptionServiceGetStatus:
     """Tests for SubscriptionService.get_status()"""
 
-    def test_get_active_subscription_status(self):
+    def test_get_active_subscription_status(self) -> None:
         """Should return active subscription details."""
         service = SubscriptionService()
         user = baker.make(User)
@@ -241,7 +241,7 @@ class TestSubscriptionServiceGetStatus:
         assert result["is_active"] is True
         assert result["plan_type"] == PlanType.PREMIUM
 
-    def test_get_status_no_subscription(self):
+    def test_get_status_no_subscription(self) -> None:
         """Should return None if no subscription."""
         service = SubscriptionService()
         user = baker.make(User)
@@ -250,7 +250,7 @@ class TestSubscriptionServiceGetStatus:
 
         assert result is None
 
-    def test_expired_subscription_updates_status(self):
+    def test_expired_subscription_updates_status(self) -> None:
         """Should update status to EXPIRED if expires_at passed."""
         service = SubscriptionService()
         user = baker.make(User)
@@ -276,7 +276,7 @@ class TestSubscriptionServiceGetStatus:
 class TestPurchaseServicePurchase:
     """Tests for PurchaseService.purchase()"""
 
-    def test_purchase_chapter(self):
+    def test_purchase_chapter(self) -> None:
         """Should create a purchase record."""
         service = PurchaseService()
         user = baker.make(User)
@@ -289,7 +289,7 @@ class TestPurchaseServicePurchase:
         assert purchase.chapter == chapter
         assert purchase.price_paid == 100
 
-    def test_purchase_duplicate_raises_error(self):
+    def test_purchase_duplicate_raises_error(self) -> None:
         """Should raise error if already purchased."""
         service = PurchaseService()
         user = baker.make(User)
@@ -299,7 +299,7 @@ class TestPurchaseServicePurchase:
         with pytest.raises(ValueError, match="이미 소장"):
             service.purchase(user=user, chapter=chapter)
 
-    def test_purchase_free_chapter_raises_error(self):
+    def test_purchase_free_chapter_raises_error(self) -> None:
         """Should raise error for FREE chapters."""
         service = PurchaseService()
         user = baker.make(User)
@@ -313,7 +313,7 @@ class TestPurchaseServicePurchase:
 class TestPurchaseServiceGetPurchaseList:
     """Tests for PurchaseService.get_purchase_list()"""
 
-    def test_get_purchase_list(self):
+    def test_get_purchase_list(self) -> None:
         """Should return all purchases for user."""
         service = PurchaseService()
         user = baker.make(User)
@@ -326,7 +326,7 @@ class TestPurchaseServiceGetPurchaseList:
 
         assert len(result) == 2
 
-    def test_get_purchase_list_excludes_other_users(self):
+    def test_get_purchase_list_excludes_other_users(self) -> None:
         """Should only return purchases for the specified user."""
         service = PurchaseService()
         user1 = baker.make(User)

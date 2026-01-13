@@ -9,6 +9,7 @@ Tests:
 """
 
 from datetime import timedelta
+from typing import Any
 
 import pytest
 from django.utils import timezone
@@ -29,7 +30,7 @@ from apps.novels.models import Branch
 class TestChapterCreateSerializer:
     """Tests for ChapterCreateSerializer."""
 
-    def test_valid_data(self):
+    def test_valid_data(self) -> None:
         """Should validate correct input data."""
         data = {
             "title": "Chapter 1",
@@ -42,7 +43,7 @@ class TestChapterCreateSerializer:
         assert serializer.validated_data["title"] == "Chapter 1"
         assert serializer.validated_data["content"] == "# Hello World\n\nThis is content."
 
-    def test_default_access_type(self):
+    def test_default_access_type(self) -> None:
         """Should default to FREE access type."""
         data = {"title": "Test", "content": "Content"}
 
@@ -51,7 +52,7 @@ class TestChapterCreateSerializer:
 
         assert serializer.validated_data.get("access_type", AccessType.FREE) == AccessType.FREE
 
-    def test_with_subscription_access_type(self):
+    def test_with_subscription_access_type(self) -> None:
         """Should accept SUBSCRIPTION access type with price."""
         data = {
             "title": "Premium Chapter",
@@ -66,7 +67,7 @@ class TestChapterCreateSerializer:
         assert serializer.validated_data["access_type"] == AccessType.SUBSCRIPTION
         assert serializer.validated_data["price"] == 100
 
-    def test_missing_title_is_invalid(self):
+    def test_missing_title_is_invalid(self) -> None:
         """Should reject data without title."""
         data = {"content": "Content only"}
 
@@ -75,7 +76,7 @@ class TestChapterCreateSerializer:
         assert not serializer.is_valid()
         assert "title" in serializer.errors
 
-    def test_missing_content_is_invalid(self):
+    def test_missing_content_is_invalid(self) -> None:
         """Should reject data without content."""
         data = {"title": "Title only"}
 
@@ -89,7 +90,7 @@ class TestChapterCreateSerializer:
 class TestChapterDetailSerializer:
     """Tests for ChapterDetailSerializer."""
 
-    def test_serializes_all_fields(self):
+    def test_serializes_all_fields(self) -> None:
         """Should serialize all chapter detail fields."""
         branch = baker.make(Branch)
         chapter = baker.make(
@@ -121,7 +122,7 @@ class TestChapterDetailSerializer:
         assert data["like_count"] == 10
         assert data["comment_count"] == 5
 
-    def test_includes_navigation_info(self):
+    def test_includes_navigation_info(self) -> None:
         """Should include prev/next chapter navigation."""
         branch = baker.make(Branch)
         baker.make(
@@ -158,7 +159,7 @@ class TestChapterDetailSerializer:
 class TestChapterListSerializer:
     """Tests for ChapterListSerializer."""
 
-    def test_serializes_summary_fields(self):
+    def test_serializes_summary_fields(self) -> None:
         """Should serialize only summary fields for list view."""
         branch = baker.make(Branch)
         chapter = baker.make(
@@ -190,7 +191,7 @@ class TestChapterListSerializer:
 class TestChapterUpdateSerializer:
     """Tests for ChapterUpdateSerializer."""
 
-    def test_partial_update_title_only(self):
+    def test_partial_update_title_only(self) -> None:
         """Should allow updating only title."""
         data = {"title": "New Title"}
 
@@ -199,7 +200,7 @@ class TestChapterUpdateSerializer:
         assert serializer.is_valid()
         assert serializer.validated_data["title"] == "New Title"
 
-    def test_partial_update_content_only(self):
+    def test_partial_update_content_only(self) -> None:
         """Should allow updating only content."""
         data = {"content": "New content"}
 
@@ -213,7 +214,7 @@ class TestChapterUpdateSerializer:
 class TestChapterScheduleSerializer:
     """Tests for ChapterScheduleSerializer."""
 
-    def test_valid_future_time(self):
+    def test_valid_future_time(self) -> None:
         """Should accept future scheduled_at time."""
         future_time = timezone.now() + timedelta(days=1)
         data = {"scheduled_at": future_time.isoformat()}
@@ -222,9 +223,10 @@ class TestChapterScheduleSerializer:
 
         assert serializer.is_valid()
 
-    def test_missing_scheduled_at_is_invalid(self):
+    def test_missing_scheduled_at_is_invalid(self) -> None:
         """Should reject data without scheduled_at."""
-        serializer = ChapterScheduleSerializer(data={})
+        data: dict[str, Any] = {}
+        serializer = ChapterScheduleSerializer(data=data)
 
         assert not serializer.is_valid()
         assert "scheduled_at" in serializer.errors

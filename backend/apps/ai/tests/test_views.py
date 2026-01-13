@@ -3,6 +3,7 @@ TDD: AI Views 테스트
 RED → GREEN → REFACTOR
 """
 
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -17,7 +18,7 @@ class TestAIViewSetBase:
     """Base test class with common setup."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         """Setup test fixtures."""
         self.client = APIClient()
         self.user = baker.make("users.User")
@@ -29,11 +30,11 @@ class TestAIViewSetBase:
 class TestWikiSuggestions(TestAIViewSetBase):
     """위키 제안 API 테스트"""
 
-    def get_url(self):
+    def get_url(self) -> str:
         return f"/api/v1/branches/{self.branch.id}/ai/wiki-suggestions/"
 
     @patch("apps.ai.views.AIService")
-    def test_wiki_suggestions_success(self, mock_service):
+    def test_wiki_suggestions_success(self, mock_service: Any) -> None:
         """위키 제안 성공"""
         mock_service.return_value.suggest_wiki.return_value = [
             {"name": "주인공", "description": "이야기의 주인공"}
@@ -49,7 +50,7 @@ class TestWikiSuggestions(TestAIViewSetBase):
         assert "data" in response.data
         assert isinstance(response.data["data"], list)
 
-    def test_wiki_suggestions_unauthorized(self):
+    def test_wiki_suggestions_unauthorized(self) -> None:
         """인증되지 않은 요청"""
         self.client.logout()
 
@@ -62,7 +63,7 @@ class TestWikiSuggestions(TestAIViewSetBase):
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     @patch("apps.ai.views.AIService")
-    def test_wiki_suggestions_text_too_short(self, mock_service):
+    def test_wiki_suggestions_text_too_short(self, mock_service: Any) -> None:
         """텍스트가 너무 짧은 경우"""
         response = self.client.post(
             self.get_url(),
@@ -73,7 +74,7 @@ class TestWikiSuggestions(TestAIViewSetBase):
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @patch("apps.ai.views.AIService")
-    def test_wiki_suggestions_rate_limit(self, mock_service):
+    def test_wiki_suggestions_rate_limit(self, mock_service: Any) -> None:
         """AI 사용량 한도 초과"""
         mock_service.return_value.suggest_wiki.side_effect = ValueError(
             "일일 AI 사용 한도를 초과했습니다."
@@ -87,7 +88,7 @@ class TestWikiSuggestions(TestAIViewSetBase):
 
         assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
 
-    def test_wiki_suggestions_wrong_branch(self):
+    def test_wiki_suggestions_wrong_branch(self) -> None:
         """다른 사용자의 브랜치에 접근"""
         other_user = baker.make("users.User")
         other_branch = baker.make("novels.Branch", author=other_user)
@@ -104,11 +105,11 @@ class TestWikiSuggestions(TestAIViewSetBase):
 class TestConsistencyCheck(TestAIViewSetBase):
     """일관성 검사 API 테스트"""
 
-    def get_url(self):
+    def get_url(self) -> str:
         return f"/api/v1/branches/{self.branch.id}/ai/consistency-check/"
 
     @patch("apps.ai.views.AIService")
-    def test_consistency_check_success(self, mock_service):
+    def test_consistency_check_success(self, mock_service: Any) -> None:
         """일관성 검사 성공"""
         chapter = baker.make("contents.Chapter", branch=self.branch, content="테스트 내용")
         mock_service.return_value.check_consistency.return_value = {
@@ -126,7 +127,7 @@ class TestConsistencyCheck(TestAIViewSetBase):
         assert "consistent" in response.data
 
     @patch("apps.ai.views.AIService")
-    def test_consistency_check_with_issues(self, mock_service):
+    def test_consistency_check_with_issues(self, mock_service: Any) -> None:
         """일관성 문제 발견"""
         chapter = baker.make("contents.Chapter", branch=self.branch, content="테스트 내용")
         mock_service.return_value.check_consistency.return_value = {
@@ -144,7 +145,7 @@ class TestConsistencyCheck(TestAIViewSetBase):
         assert response.data["consistent"] is False
         assert len(response.data["issues"]) == 2
 
-    def test_consistency_check_missing_chapter_id(self):
+    def test_consistency_check_missing_chapter_id(self) -> None:
         """chapter_id 누락"""
         response = self.client.post(
             self.get_url(),
@@ -158,11 +159,11 @@ class TestConsistencyCheck(TestAIViewSetBase):
 class TestAsk(TestAIViewSetBase):
     """RAG 질문응답 API 테스트"""
 
-    def get_url(self):
+    def get_url(self) -> str:
         return f"/api/v1/branches/{self.branch.id}/ai/ask/"
 
     @patch("apps.ai.views.AIService")
-    def test_ask_success(self, mock_service):
+    def test_ask_success(self, mock_service: Any) -> None:
         """질문 응답 성공"""
         mock_service.return_value.ask.return_value = "주인공의 이름은 홍길동입니다."
 
@@ -176,7 +177,7 @@ class TestAsk(TestAIViewSetBase):
         assert "answer" in response.data
         assert response.data["answer"] == "주인공의 이름은 홍길동입니다."
 
-    def test_ask_question_too_short(self):
+    def test_ask_question_too_short(self) -> None:
         """질문이 너무 짧은 경우"""
         response = self.client.post(
             self.get_url(),
@@ -187,7 +188,7 @@ class TestAsk(TestAIViewSetBase):
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @patch("apps.ai.views.AIService")
-    def test_ask_rate_limit(self, mock_service):
+    def test_ask_rate_limit(self, mock_service: Any) -> None:
         """AI 사용량 한도 초과"""
         mock_service.return_value.ask.side_effect = ValueError("일일 AI 사용 한도를 초과했습니다.")
 
@@ -203,11 +204,11 @@ class TestAsk(TestAIViewSetBase):
 class TestCreateChunks(TestAIViewSetBase):
     """청킹 태스크 API 테스트"""
 
-    def get_url(self):
+    def get_url(self) -> str:
         return f"/api/v1/branches/{self.branch.id}/ai/create-chunks/"
 
     @patch("apps.ai.views.create_branch_chunks")
-    def test_create_chunks_for_branch(self, mock_task):
+    def test_create_chunks_for_branch(self, mock_task: Any) -> None:
         """브랜치 전체 청킹"""
         mock_task.delay.return_value.id = "mock-task-id"
 
@@ -222,7 +223,7 @@ class TestCreateChunks(TestAIViewSetBase):
         mock_task.delay.assert_called_once_with(self.branch.id)
 
     @patch("apps.ai.views.create_chapter_chunks")
-    def test_create_chunks_for_chapter(self, mock_task):
+    def test_create_chunks_for_chapter(self, mock_task: Any) -> None:
         """특정 회차 청킹"""
         chapter = baker.make("contents.Chapter", branch=self.branch)
         mock_task.delay.return_value.id = "mock-task-id"

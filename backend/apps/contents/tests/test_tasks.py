@@ -20,7 +20,7 @@ from apps.novels.models import Branch
 class TestPublishScheduledChapters:
     """Tests for publish_scheduled_chapters task."""
 
-    def test_publishes_scheduled_chapters_past_time(self):
+    def test_publishes_scheduled_chapters_past_time(self) -> None:
         """Should publish chapters whose scheduled_at has passed."""
         branch = baker.make(Branch, chapter_count=0)
         past_time = timezone.now() - timedelta(hours=1)
@@ -39,7 +39,7 @@ class TestPublishScheduledChapters:
         assert chapter.published_at is not None
         assert result == 1
 
-    def test_does_not_publish_future_chapters(self):
+    def test_does_not_publish_future_chapters(self) -> None:
         """Should not publish chapters scheduled for the future."""
         future_time = timezone.now() + timedelta(hours=1)
 
@@ -56,7 +56,7 @@ class TestPublishScheduledChapters:
         assert chapter.published_at is None
         assert result == 0
 
-    def test_does_not_affect_draft_chapters(self):
+    def test_does_not_affect_draft_chapters(self) -> None:
         """Should not publish DRAFT chapters."""
         past_time = timezone.now() - timedelta(hours=1)
 
@@ -72,7 +72,7 @@ class TestPublishScheduledChapters:
         assert chapter.status == ChapterStatus.DRAFT
         assert result == 0
 
-    def test_increments_branch_chapter_count(self):
+    def test_increments_branch_chapter_count(self) -> None:
         """Should increment branch chapter_count when publishing."""
         branch = baker.make(Branch, chapter_count=5)
         past_time = timezone.now() - timedelta(hours=1)
@@ -89,7 +89,7 @@ class TestPublishScheduledChapters:
         branch.refresh_from_db()
         assert branch.chapter_count == 6
 
-    def test_publishes_multiple_chapters(self):
+    def test_publishes_multiple_chapters(self) -> None:
         """Should publish all ready chapters in one run."""
         branch = baker.make(Branch, chapter_count=0)
         past_time = timezone.now() - timedelta(hours=1)

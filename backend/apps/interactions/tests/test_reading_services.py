@@ -15,7 +15,7 @@ pytestmark = pytest.mark.django_db
 class TestReadingServiceRecordReading:
     """ReadingService.record_reading() 테스트"""
 
-    def test_record_reading_creates_log(self) -> None:
+    def test_record_reading_creates_log(self):
         """읽은 기록 생성"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -32,7 +32,7 @@ class TestReadingServiceRecordReading:
         assert float(log.progress) == 0.5
         assert log.is_completed is False
 
-    def test_record_reading_updates_existing(self) -> None:
+    def test_record_reading_updates_existing(self):
         """기존 기록 업데이트"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -55,7 +55,7 @@ class TestReadingServiceRecordReading:
         assert float(log2.progress) == 0.8
         assert ReadingLog.objects.filter(user=user, chapter=chapter).count() == 1
 
-    def test_record_reading_marks_completed(self) -> None:
+    def test_record_reading_marks_completed(self):
         """진행률 1.0이면 완독 처리"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -72,7 +72,7 @@ class TestReadingServiceRecordReading:
 class TestReadingServiceGetRecentReads:
     """ReadingService.get_recent_reads() 테스트"""
 
-    def test_get_recent_reads(self) -> None:
+    def test_get_recent_reads(self):
         """최근 읽은 목록 조회"""
         user = baker.make("users.User")
         chapters = baker.make("contents.Chapter", _quantity=5)
@@ -88,7 +88,7 @@ class TestReadingServiceGetRecentReads:
 
         assert len(result) == 3
 
-    def test_get_recent_reads_excludes_other_users(self) -> None:
+    def test_get_recent_reads_excludes_other_users(self):
         """다른 사용자 기록 제외"""
         user1 = baker.make("users.User")
         user2 = baker.make("users.User")
@@ -102,7 +102,7 @@ class TestReadingServiceGetRecentReads:
         assert len(result) == 1
         assert result[0].user == user1
 
-    def test_get_recent_reads_order_by_read_at(self) -> None:
+    def test_get_recent_reads_order_by_read_at(self):
         """읽은 시간 순 정렬"""
         user = baker.make("users.User")
         chapter1 = baker.make("contents.Chapter")
@@ -120,7 +120,7 @@ class TestReadingServiceGetRecentReads:
 class TestReadingServiceGetContinueReading:
     """ReadingService.get_continue_reading() 테스트"""
 
-    def test_get_continue_reading_per_branch(self) -> None:
+    def test_get_continue_reading_per_branch(self):
         """브랜치별 이어보기 정보"""
         user = baker.make("users.User")
         branch = baker.make("novels.Branch")
@@ -137,7 +137,7 @@ class TestReadingServiceGetContinueReading:
         assert result["chapter"].id == chapter2.id
         assert float(result["progress"]) == 0.5
 
-    def test_get_continue_reading_next_chapter(self) -> None:
+    def test_get_continue_reading_next_chapter(self):
         """완독 후 다음 회차 추천"""
         user = baker.make("users.User")
         branch = baker.make("novels.Branch")
@@ -152,7 +152,7 @@ class TestReadingServiceGetContinueReading:
         assert result["chapter"].id == chapter2.id
         assert result["progress"] == 0
 
-    def test_get_continue_reading_no_history(self) -> None:
+    def test_get_continue_reading_no_history(self):
         """읽은 기록 없으면 첫 회차"""
         user = baker.make("users.User")
         branch = baker.make("novels.Branch")
@@ -168,7 +168,7 @@ class TestReadingServiceGetContinueReading:
 class TestBookmarkServiceAdd:
     """BookmarkService.add_bookmark() 테스트"""
 
-    def test_add_bookmark(self) -> None:
+    def test_add_bookmark(self):
         """북마크 추가"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -186,7 +186,7 @@ class TestBookmarkServiceAdd:
         assert float(bookmark.scroll_position) == 0.3
         assert bookmark.note == "여기서 중요한 내용"
 
-    def test_add_bookmark_duplicate_updates(self) -> None:
+    def test_add_bookmark_duplicate_updates(self):
         """중복 북마크는 업데이트"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -212,7 +212,7 @@ class TestBookmarkServiceAdd:
 class TestBookmarkServiceRemove:
     """BookmarkService.remove_bookmark() 테스트"""
 
-    def test_remove_bookmark(self) -> None:
+    def test_remove_bookmark(self):
         """북마크 삭제"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -222,7 +222,7 @@ class TestBookmarkServiceRemove:
 
         assert not Bookmark.objects.filter(id=bookmark.id).exists()
 
-    def test_remove_nonexistent_bookmark_no_error(self) -> None:
+    def test_remove_nonexistent_bookmark_no_error(self):
         """존재하지 않는 북마크 삭제 시 에러 없음"""
         user = baker.make("users.User")
 
@@ -233,7 +233,7 @@ class TestBookmarkServiceRemove:
 class TestBookmarkServiceGetBookmarks:
     """BookmarkService.get_bookmarks() 테스트"""
 
-    def test_get_bookmarks(self) -> None:
+    def test_get_bookmarks(self):
         """북마크 목록 조회"""
         user = baker.make("users.User")
         chapters = baker.make("contents.Chapter", _quantity=3)
@@ -245,7 +245,7 @@ class TestBookmarkServiceGetBookmarks:
 
         assert len(result) == 3
 
-    def test_get_bookmarks_excludes_other_users(self) -> None:
+    def test_get_bookmarks_excludes_other_users(self):
         """다른 사용자 북마크 제외"""
         user1 = baker.make("users.User")
         user2 = baker.make("users.User")

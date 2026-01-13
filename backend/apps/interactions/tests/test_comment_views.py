@@ -16,7 +16,7 @@ pytestmark = pytest.mark.django_db
 class TestCommentListView:
     """GET /api/v1/chapters/{id}/comments 테스트"""
 
-    def test_list_comments(self) -> None:
+    def test_list_comments(self):
         """댓글 목록 조회"""
         chapter = baker.make("contents.Chapter")
         baker.make("interactions.Comment", chapter=chapter, _quantity=3)
@@ -29,7 +29,7 @@ class TestCommentListView:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == 3
 
-    def test_list_comments_by_paragraph(self) -> None:
+    def test_list_comments_by_paragraph(self):
         """문단별 댓글 필터링"""
         chapter = baker.make("contents.Chapter")
         baker.make("interactions.Comment", chapter=chapter, paragraph_index=3, _quantity=2)
@@ -47,7 +47,7 @@ class TestCommentListView:
 class TestCommentCreateView:
     """POST /api/v1/chapters/{id}/comments 테스트"""
 
-    def test_create_comment_requires_auth(self) -> None:
+    def test_create_comment_requires_auth(self):
         """인증 없이 댓글 작성 불가"""
         chapter = baker.make("contents.Chapter")
         client = APIClient()
@@ -57,7 +57,7 @@ class TestCommentCreateView:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_create_comment(self) -> None:
+    def test_create_comment(self):
         """댓글 작성"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -71,7 +71,7 @@ class TestCommentCreateView:
         assert response.status_code == status.HTTP_201_CREATED
         assert Comment.objects.filter(chapter=chapter, user=user).exists()
 
-    def test_create_paragraph_comment(self) -> None:
+    def test_create_paragraph_comment(self):
         """문단 댓글 작성"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -98,7 +98,7 @@ class TestCommentCreateView:
 class TestCommentUpdateView:
     """PATCH /api/v1/comments/{id} 테스트"""
 
-    def test_update_comment(self) -> None:
+    def test_update_comment(self):
         """댓글 수정"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment", user=user, content="원본")
@@ -113,7 +113,7 @@ class TestCommentUpdateView:
         comment.refresh_from_db()
         assert comment.content == "수정됨"
 
-    def test_update_comment_not_owner(self) -> None:
+    def test_update_comment_not_owner(self):
         """작성자 아니면 수정 불가"""
         user1 = baker.make("users.User")
         user2 = baker.make("users.User")
@@ -131,7 +131,7 @@ class TestCommentUpdateView:
 class TestCommentDeleteView:
     """DELETE /api/v1/comments/{id} 테스트"""
 
-    def test_delete_comment(self) -> None:
+    def test_delete_comment(self):
         """댓글 삭제"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment", user=user)
@@ -150,7 +150,7 @@ class TestCommentDeleteView:
 class TestCommentPinView:
     """POST/DELETE /api/v1/comments/{id}/pin 테스트"""
 
-    def test_pin_comment(self) -> None:
+    def test_pin_comment(self):
         """댓글 고정"""
         author = baker.make("users.User")
         branch = baker.make("novels.Branch", author=author)
@@ -167,7 +167,7 @@ class TestCommentPinView:
         comment.refresh_from_db()
         assert comment.is_pinned is True
 
-    def test_unpin_comment(self) -> None:
+    def test_unpin_comment(self):
         """댓글 고정 해제"""
         author = baker.make("users.User")
         branch = baker.make("novels.Branch", author=author)
@@ -188,7 +188,7 @@ class TestCommentPinView:
 class TestLikeView:
     """POST/DELETE /api/v1/comments/{id}/like 테스트"""
 
-    def test_like_comment(self) -> None:
+    def test_like_comment(self):
         """댓글 좋아요"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment", like_count=0)
@@ -204,7 +204,7 @@ class TestLikeView:
         comment.refresh_from_db()
         assert comment.like_count == 1
 
-    def test_unlike_comment(self) -> None:
+    def test_unlike_comment(self):
         """댓글 좋아요 취소"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment", like_count=0)
@@ -223,7 +223,7 @@ class TestLikeView:
         comment.refresh_from_db()
         assert comment.like_count == 0
 
-    def test_like_requires_auth(self) -> None:
+    def test_like_requires_auth(self):
         """좋아요는 인증 필요"""
         comment = baker.make("interactions.Comment")
 
@@ -238,7 +238,7 @@ class TestLikeView:
 class TestChapterLikeView:
     """POST/DELETE /api/v1/chapters/{id}/like 테스트"""
 
-    def test_like_chapter(self) -> None:
+    def test_like_chapter(self):
         """회차 좋아요"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")

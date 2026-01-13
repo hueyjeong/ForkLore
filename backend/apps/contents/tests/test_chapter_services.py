@@ -25,7 +25,7 @@ from apps.novels.models import Branch
 class TestChapterServiceCreate:
     """Tests for ChapterService.create()"""
 
-    def test_create_chapter_as_draft(self) -> None:
+    def test_create_chapter_as_draft(self):
         """Should create a chapter with DRAFT status by default."""
         service = ChapterService()
         branch = baker.make(Branch)
@@ -44,7 +44,7 @@ class TestChapterServiceCreate:
         assert chapter.chapter_number == 1
         assert chapter.published_at is None
 
-    def test_create_chapter_auto_increments_number(self) -> None:
+    def test_create_chapter_auto_increments_number(self):
         """Should auto-increment chapter_number within branch."""
         service = ChapterService()
         branch = baker.make(Branch)
@@ -55,7 +55,7 @@ class TestChapterServiceCreate:
 
         assert chapter.chapter_number == 3
 
-    def test_create_chapter_converts_markdown_to_html(self) -> None:
+    def test_create_chapter_converts_markdown_to_html(self):
         """Should convert markdown content to HTML."""
         service = ChapterService()
         branch = baker.make(Branch)
@@ -69,7 +69,7 @@ class TestChapterServiceCreate:
         assert "Heading</h1>" in chapter.content_html
         assert "<strong>Bold text</strong>" in chapter.content_html
 
-    def test_create_chapter_calculates_word_count(self) -> None:
+    def test_create_chapter_calculates_word_count(self):
         """Should calculate word count from content."""
         service = ChapterService()
         branch = baker.make(Branch)
@@ -83,7 +83,7 @@ class TestChapterServiceCreate:
         # Korean word count is character-based for Korean, word-based for English
         assert chapter.word_count > 0
 
-    def test_create_chapter_with_access_type(self) -> None:
+    def test_create_chapter_with_access_type(self):
         """Should set access_type and price when provided."""
         service = ChapterService()
         branch = baker.make(Branch)
@@ -104,7 +104,7 @@ class TestChapterServiceCreate:
 class TestChapterServiceUpdate:
     """Tests for ChapterService.update()"""
 
-    def test_update_chapter_content(self) -> None:
+    def test_update_chapter_content(self):
         """Should update chapter content and regenerate HTML."""
         service = ChapterService()
         chapter = baker.make(
@@ -124,7 +124,7 @@ class TestChapterServiceUpdate:
         assert updated.content == "# New Content"
         assert "New Content</h1>" in updated.content_html
 
-    def test_update_chapter_recalculates_word_count(self) -> None:
+    def test_update_chapter_recalculates_word_count(self):
         """Should recalculate word_count on content update."""
         service = ChapterService()
         chapter = baker.make(Chapter, content="Short", word_count=1)
@@ -136,7 +136,7 @@ class TestChapterServiceUpdate:
 
         assert updated.word_count > 1
 
-    def test_update_draft_chapter_only(self) -> None:
+    def test_update_draft_chapter_only(self):
         """Should raise error when trying to update published chapter content."""
         service = ChapterService()
         chapter = baker.make(
@@ -153,7 +153,7 @@ class TestChapterServiceUpdate:
 class TestChapterServicePublish:
     """Tests for ChapterService.publish()"""
 
-    def test_publish_draft_chapter(self) -> None:
+    def test_publish_draft_chapter(self):
         """Should change status to PUBLISHED and set published_at."""
         service = ChapterService()
         chapter = baker.make(Chapter, status=ChapterStatus.DRAFT)
@@ -163,7 +163,7 @@ class TestChapterServicePublish:
         assert published.status == ChapterStatus.PUBLISHED
         assert published.published_at is not None
 
-    def test_publish_scheduled_chapter(self) -> None:
+    def test_publish_scheduled_chapter(self):
         """Should publish a scheduled chapter."""
         service = ChapterService()
         chapter = baker.make(
@@ -176,7 +176,7 @@ class TestChapterServicePublish:
 
         assert published.status == ChapterStatus.PUBLISHED
 
-    def test_publish_already_published_raises_error(self) -> None:
+    def test_publish_already_published_raises_error(self):
         """Should raise error when chapter is already published."""
         service = ChapterService()
         chapter = baker.make(
@@ -188,7 +188,7 @@ class TestChapterServicePublish:
         with pytest.raises(ValueError, match="이미 발행"):
             service.publish(chapter=chapter)
 
-    def test_publish_increments_branch_chapter_count(self) -> None:
+    def test_publish_increments_branch_chapter_count(self):
         """Should increment branch.chapter_count when publishing."""
         service = ChapterService()
         branch = baker.make(Branch, chapter_count=5)
@@ -204,7 +204,7 @@ class TestChapterServicePublish:
 class TestChapterServiceSchedule:
     """Tests for ChapterService.schedule()"""
 
-    def test_schedule_chapter(self) -> None:
+    def test_schedule_chapter(self):
         """Should set status to SCHEDULED and scheduled_at."""
         service = ChapterService()
         chapter = baker.make(Chapter, status=ChapterStatus.DRAFT)
@@ -215,7 +215,7 @@ class TestChapterServiceSchedule:
         assert scheduled.status == ChapterStatus.SCHEDULED
         assert scheduled.scheduled_at == schedule_time
 
-    def test_schedule_past_time_raises_error(self) -> None:
+    def test_schedule_past_time_raises_error(self):
         """Should raise error when scheduling in the past."""
         service = ChapterService()
         chapter = baker.make(Chapter, status=ChapterStatus.DRAFT)
@@ -224,7 +224,7 @@ class TestChapterServiceSchedule:
         with pytest.raises(ValueError, match="과거"):
             service.schedule(chapter=chapter, scheduled_at=past_time)
 
-    def test_schedule_published_chapter_raises_error(self) -> None:
+    def test_schedule_published_chapter_raises_error(self):
         """Should raise error when scheduling already published chapter."""
         service = ChapterService()
         chapter = baker.make(
@@ -242,7 +242,7 @@ class TestChapterServiceSchedule:
 class TestChapterServiceRetrieve:
     """Tests for ChapterService.retrieve()"""
 
-    def test_retrieve_chapter_by_branch_and_number(self) -> None:
+    def test_retrieve_chapter_by_branch_and_number(self):
         """Should retrieve chapter by branch_id and chapter_number."""
         service = ChapterService()
         branch = baker.make(Branch)
@@ -252,7 +252,7 @@ class TestChapterServiceRetrieve:
 
         assert result == chapter
 
-    def test_retrieve_nonexistent_chapter_returns_none(self) -> None:
+    def test_retrieve_nonexistent_chapter_returns_none(self):
         """Should return None when chapter doesn't exist."""
         service = ChapterService()
         branch = baker.make(Branch)
@@ -266,7 +266,7 @@ class TestChapterServiceRetrieve:
 class TestChapterServiceList:
     """Tests for ChapterService.list()"""
 
-    def test_list_chapters_for_branch(self) -> None:
+    def test_list_chapters_for_branch(self):
         """Should return all chapters for a branch ordered by number."""
         service = ChapterService()
         branch = baker.make(Branch)
@@ -281,7 +281,7 @@ class TestChapterServiceList:
         assert result[1] == ch2
         assert result[2] == ch3
 
-    def test_list_excludes_other_branches(self) -> None:
+    def test_list_excludes_other_branches(self):
         """Should only return chapters for the specified branch."""
         service = ChapterService()
         branch1 = baker.make(Branch)
@@ -294,7 +294,7 @@ class TestChapterServiceList:
         assert len(result) == 1
         assert result[0] == ch1
 
-    def test_list_published_only(self) -> None:
+    def test_list_published_only(self):
         """Should filter to only published chapters when specified."""
         service = ChapterService()
         branch = baker.make(Branch)

@@ -9,8 +9,6 @@ Tests:
 - GET /users/me/wallet/transactions/ - Get full transaction history
 """
 
-from typing import Any
-
 import pytest
 from model_bakery import baker
 from rest_framework import status
@@ -21,26 +19,26 @@ from apps.interactions.services import WalletService
 from apps.users.models import User
 
 
-def get_tokens_for_user(user: User) -> dict[str, str]:
+def get_tokens_for_user(user):
     """Generate JWT tokens for a user."""
     refresh = RefreshToken.for_user(user)
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
 
 @pytest.fixture
-def user(db: Any) -> User:
+def user(db):
     """Create a regular user."""
     return baker.make(User)
 
 
 @pytest.fixture
-def admin_user(db: Any) -> User:
+def admin_user(db):
     """Create an admin user."""
     return baker.make(User, is_staff=True)
 
 
 @pytest.fixture
-def auth_client(user: User) -> APIClient:
+def auth_client(user):
     """Create authenticated client for regular user."""
     client = APIClient()
     tokens = get_tokens_for_user(user)
@@ -49,7 +47,7 @@ def auth_client(user: User) -> APIClient:
 
 
 @pytest.fixture
-def admin_client(admin_user: User) -> APIClient:
+def admin_client(admin_user):
     """Create authenticated client for admin user."""
     client = APIClient()
     tokens = get_tokens_for_user(admin_user)
@@ -58,7 +56,7 @@ def admin_client(admin_user: User) -> APIClient:
 
 
 @pytest.fixture
-def wallet_service() -> WalletService:
+def wallet_service():
     """Create WalletService instance."""
     return WalletService()
 
@@ -66,7 +64,7 @@ def wallet_service() -> WalletService:
 class TestWalletCharge:
     """Tests for POST /wallet/charge/"""
 
-    def test_charge_coins(self, auth_client: APIClient, user: User) -> None:
+    def test_charge_coins(self, auth_client, user):
         """Should charge coins to user's wallet."""
         url = "/api/v1/wallet/charge/"
         data = {"amount": 1000, "description": "Test charge"}
@@ -77,9 +75,7 @@ class TestWalletCharge:
         assert resp_data["success"] is True
         assert resp_data["data"]["balance"] == 1000
 
-    def test_charge_additional_coins(
-        self, auth_client: APIClient, user: User, wallet_service: WalletService
-    ) -> None:
+    def test_charge_additional_coins(self, auth_client, user, wallet_service):
         """Should add to existing balance."""
         wallet_service.charge(user=user, amount=500)
 
@@ -91,7 +87,7 @@ class TestWalletCharge:
         resp_data = response.json()
         assert resp_data["data"]["balance"] == 800
 
-    def test_charge_zero_fails(self, auth_client: APIClient) -> None:
+    def test_charge_zero_fails(self, auth_client):
         """Should reject zero amount."""
         url = "/api/v1/wallet/charge/"
         data = {"amount": 0}
@@ -99,7 +95,7 @@ class TestWalletCharge:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_charge_negative_fails(self, auth_client: APIClient) -> None:
+    def test_charge_negative_fails(self, auth_client):
         """Should reject negative amount."""
         url = "/api/v1/wallet/charge/"
         data = {"amount": -100}
@@ -107,7 +103,7 @@ class TestWalletCharge:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_charge_unauthenticated_fails(self) -> None:
+    def test_charge_unauthenticated_fails(self):
         """Should reject unauthenticated request."""
         client = APIClient()
         url = "/api/v1/wallet/charge/"
@@ -120,9 +116,7 @@ class TestWalletCharge:
 class TestWalletBalance:
     """Tests for GET /users/me/wallet/"""
 
-    def test_get_wallet_balance(
-        self, auth_client: APIClient, user: User, wallet_service: WalletService
-    ) -> None:
+    def test_get_wallet_balance(self, auth_client, user, wallet_service):
         """Should return wallet balance and recent transactions."""
         wallet_service.charge(user=user, amount=1000)
         wallet_service.spend(user=user, amount=300, description="Purchase")
@@ -137,7 +131,7 @@ class TestWalletBalance:
         assert "recentTransactions" in resp_data["data"]
         assert len(resp_data["data"]["recentTransactions"]) == 2
 
-    def test_get_wallet_no_wallet(self, auth_client: APIClient) -> None:
+    def test_get_wallet_no_wallet(self, auth_client):
         """Should return zero balance if no wallet."""
         url = "/api/v1/users/me/wallet/"
         response = auth_client.get(url)
@@ -147,7 +141,7 @@ class TestWalletBalance:
         assert resp_data["data"]["balance"] == 0
         assert resp_data["data"]["recentTransactions"] == []
 
-    def test_get_wallet_unauthenticated_fails(self) -> None:
+    def test_get_wallet_unauthenticated_fails(self):
         """Should reject unauthenticated request."""
         client = APIClient()
         url = "/api/v1/users/me/wallet/"
@@ -159,9 +153,7 @@ class TestWalletBalance:
 class TestWalletTransactions:
     """Tests for GET /users/me/wallet/transactions/"""
 
-    def test_get_transactions_list(
-        self, auth_client: APIClient, user: User, wallet_service: WalletService
-    ) -> None:
+    def test_get_transactions_list(self, auth_client, user, wallet_service):
         """Should return transaction list."""
         for _i in range(5):
             wallet_service.charge(user=user, amount=100)
@@ -174,7 +166,7 @@ class TestWalletTransactions:
         assert resp_data["success"] is True
         assert len(resp_data["data"]["results"]) == 5
 
-    def test_get_transactions_empty(self, auth_client: APIClient) -> None:
+    def test_get_transactions_empty(self, auth_client):
         """Should return empty list if no transactions."""
         url = "/api/v1/users/me/wallet/transactions/"
         response = auth_client.get(url)
@@ -183,9 +175,7 @@ class TestWalletTransactions:
         resp_data = response.json()
         assert resp_data["data"]["results"] == []
 
-    def test_get_transactions_with_pagination(
-        self, auth_client: APIClient, user: User, wallet_service: WalletService
-    ) -> None:
+    def test_get_transactions_with_pagination(self, auth_client, user, wallet_service):
         """Should paginate transaction list."""
         for _i in range(25):
             wallet_service.charge(user=user, amount=10)
@@ -198,7 +188,7 @@ class TestWalletTransactions:
         # Default pagination
         assert len(resp_data["data"]["results"]) <= 20
 
-    def test_get_transactions_unauthenticated_fails(self) -> None:
+    def test_get_transactions_unauthenticated_fails(self):
         """Should reject unauthenticated request."""
         client = APIClient()
         url = "/api/v1/users/me/wallet/transactions/"
@@ -210,7 +200,7 @@ class TestWalletTransactions:
 class TestAdminWalletAdjustment:
     """Tests for POST /admin/wallet/{user_id}/adjustment/"""
 
-    def test_admin_adjustment_positive(self, admin_client: APIClient, user: User, db: Any) -> None:
+    def test_admin_adjustment_positive(self, admin_client, user, db):
         """Admin should be able to add coins."""
         WalletService.charge(user=user, amount=1000)
 
@@ -225,7 +215,7 @@ class TestAdminWalletAdjustment:
         resp_data = response.json()
         assert resp_data["data"]["balance"] == 1500
 
-    def test_admin_adjustment_negative(self, admin_client: APIClient, user: User, db: Any) -> None:
+    def test_admin_adjustment_negative(self, admin_client, user, db):
         """Admin should be able to deduct coins."""
         WalletService.charge(user=user, amount=1000)
 
@@ -240,7 +230,7 @@ class TestAdminWalletAdjustment:
         resp_data = response.json()
         assert resp_data["data"]["balance"] == 700
 
-    def test_non_admin_cannot_adjust(self, auth_client: APIClient, user: User, db: Any) -> None:
+    def test_non_admin_cannot_adjust(self, auth_client, user, db):
         """Non-admin should be forbidden."""
         other_user = baker.make(User)
         WalletService.charge(user=other_user, amount=1000)
@@ -251,7 +241,7 @@ class TestAdminWalletAdjustment:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_adjustment_nonexistent_user_fails(self, admin_client: APIClient) -> None:
+    def test_adjustment_nonexistent_user_fails(self, admin_client):
         """Should return 404 for non-existent user."""
         url = "/api/v1/admin/wallet/99999/adjustment/"
         data = {"amount": 500}

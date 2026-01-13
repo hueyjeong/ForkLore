@@ -4,8 +4,6 @@ Tests for WalletService.
 TDD RED Phase: Tests written before implementation.
 """
 
-from typing import Any
-
 import pytest
 from model_bakery import baker
 
@@ -14,17 +12,16 @@ from apps.interactions.models import (
     TransactionType,
 )
 from apps.interactions.services import WalletService
-from apps.users.models import User
 
 
 @pytest.fixture
-def user(db: Any) -> User:
+def user(db):
     """Create a user."""
     return baker.make("users.User")
 
 
 @pytest.fixture
-def wallet_service() -> WalletService:
+def wallet_service():
     """Create WalletService instance."""
     return WalletService()
 
@@ -32,9 +29,7 @@ def wallet_service() -> WalletService:
 class TestWalletServiceCharge:
     """Tests for WalletService.charge method."""
 
-    def test_charge_creates_wallet_if_not_exists(
-        self, wallet_service: WalletService, user: User
-    ) -> None:
+    def test_charge_creates_wallet_if_not_exists(self, wallet_service, user):
         """Should create wallet automatically on first charge."""
         result = wallet_service.charge(
             user=user,
@@ -48,9 +43,7 @@ class TestWalletServiceCharge:
         assert result["transaction"].transaction_type == TransactionType.CHARGE
         assert result["transaction"].balance_after == 1000
 
-    def test_charge_updates_existing_wallet(
-        self, wallet_service: WalletService, user: User
-    ) -> None:
+    def test_charge_updates_existing_wallet(self, wallet_service, user):
         """Should update balance on existing wallet."""
         # First charge
         wallet_service.charge(user=user, amount=1000)
@@ -66,9 +59,7 @@ class TestWalletServiceCharge:
         assert result["transaction"].amount == 500
         assert result["transaction"].balance_after == 1500
 
-    def test_charge_creates_transaction_record(
-        self, wallet_service: WalletService, user: User
-    ) -> None:
+    def test_charge_creates_transaction_record(self, wallet_service, user):
         """Should create transaction record."""
         wallet_service.charge(user=user, amount=1000)
 
@@ -77,12 +68,12 @@ class TestWalletServiceCharge:
         assert transactions[0].transaction_type == TransactionType.CHARGE
         assert transactions[0].amount == 1000
 
-    def test_charge_zero_amount_fails(self, wallet_service: WalletService, user: User) -> None:
+    def test_charge_zero_amount_fails(self, wallet_service, user):
         """Should reject zero amount charge."""
         with pytest.raises(ValueError, match="충전 금액은 0보다 커야 합니다"):
             wallet_service.charge(user=user, amount=0)
 
-    def test_charge_negative_amount_fails(self, wallet_service: WalletService, user: User) -> None:
+    def test_charge_negative_amount_fails(self, wallet_service, user):
         """Should reject negative amount charge."""
         with pytest.raises(ValueError, match="충전 금액은 0보다 커야 합니다"):
             wallet_service.charge(user=user, amount=-100)
@@ -91,7 +82,7 @@ class TestWalletServiceCharge:
 class TestWalletServiceSpend:
     """Tests for WalletService.spend method."""
 
-    def test_spend_deducts_balance(self, wallet_service: WalletService, user: User) -> None:
+    def test_spend_deducts_balance(self, wallet_service, user):
         """Should deduct balance on spend."""
         wallet_service.charge(user=user, amount=1000)
 
@@ -106,7 +97,7 @@ class TestWalletServiceSpend:
         assert result["transaction"].transaction_type == TransactionType.SPEND
         assert result["transaction"].balance_after == 700
 
-    def test_spend_with_reference(self, wallet_service: WalletService, user: User, db: Any) -> None:
+    def test_spend_with_reference(self, wallet_service, user, db):
         """Should record reference info for purchases."""
         wallet_service.charge(user=user, amount=1000)
         chapter = baker.make("contents.Chapter")
@@ -122,28 +113,26 @@ class TestWalletServiceSpend:
         assert result["transaction"].reference_type == "chapter"
         assert result["transaction"].reference_id == chapter.id
 
-    def test_spend_insufficient_balance_fails(
-        self, wallet_service: WalletService, user: User
-    ) -> None:
+    def test_spend_insufficient_balance_fails(self, wallet_service, user):
         """Should fail if insufficient balance."""
         wallet_service.charge(user=user, amount=100)
 
         with pytest.raises(ValueError, match="잔액이 부족합니다"):
             wallet_service.spend(user=user, amount=500)
 
-    def test_spend_no_wallet_fails(self, wallet_service: WalletService, user: User) -> None:
+    def test_spend_no_wallet_fails(self, wallet_service, user):
         """Should fail if wallet doesn't exist."""
         with pytest.raises(ValueError, match="지갑이 존재하지 않습니다"):
             wallet_service.spend(user=user, amount=100)
 
-    def test_spend_zero_amount_fails(self, wallet_service: WalletService, user: User) -> None:
+    def test_spend_zero_amount_fails(self, wallet_service, user):
         """Should reject zero amount spend."""
         wallet_service.charge(user=user, amount=1000)
 
         with pytest.raises(ValueError, match="사용 금액은 0보다 커야 합니다"):
             wallet_service.spend(user=user, amount=0)
 
-    def test_spend_exact_balance(self, wallet_service: WalletService, user: User) -> None:
+    def test_spend_exact_balance(self, wallet_service, user):
         """Should allow spending exact balance amount."""
         wallet_service.charge(user=user, amount=500)
 
@@ -155,7 +144,7 @@ class TestWalletServiceSpend:
 class TestWalletServiceRefund:
     """Tests for WalletService.refund method."""
 
-    def test_refund_adds_balance(self, wallet_service: WalletService, user: User) -> None:
+    def test_refund_adds_balance(self, wallet_service, user):
         """Should add balance on refund."""
         wallet_service.charge(user=user, amount=1000)
         wallet_service.spend(user=user, amount=300)
@@ -171,9 +160,7 @@ class TestWalletServiceRefund:
         assert result["transaction"].transaction_type == TransactionType.REFUND
         assert result["transaction"].balance_after == 1000
 
-    def test_refund_with_reference(
-        self, wallet_service: WalletService, user: User, db: Any
-    ) -> None:
+    def test_refund_with_reference(self, wallet_service, user, db):
         """Should record reference info for refunds."""
         wallet_service.charge(user=user, amount=1000)
         chapter = baker.make("contents.Chapter")
@@ -199,7 +186,7 @@ class TestWalletServiceRefund:
 class TestWalletServiceAdjustment:
     """Tests for WalletService.adjustment method (admin only)."""
 
-    def test_adjustment_positive(self, wallet_service: WalletService, user: User) -> None:
+    def test_adjustment_positive(self, wallet_service, user):
         """Should add balance on positive adjustment."""
         wallet_service.charge(user=user, amount=1000)
 
@@ -213,7 +200,7 @@ class TestWalletServiceAdjustment:
         assert result["transaction"].transaction_type == TransactionType.ADJUSTMENT
         assert result["transaction"].amount == 500
 
-    def test_adjustment_negative(self, wallet_service: WalletService, user: User) -> None:
+    def test_adjustment_negative(self, wallet_service, user):
         """Should subtract balance on negative adjustment."""
         wallet_service.charge(user=user, amount=1000)
 
@@ -226,9 +213,7 @@ class TestWalletServiceAdjustment:
         assert result["wallet"].balance == 800
         assert result["transaction"].amount == -200
 
-    def test_adjustment_negative_below_zero_allowed(
-        self, wallet_service: WalletService, user: User
-    ) -> None:
+    def test_adjustment_negative_below_zero_allowed(self, wallet_service, user):
         """Admin adjustment can set balance below zero (for corrections)."""
         wallet_service.charge(user=user, amount=100)
 
@@ -244,7 +229,7 @@ class TestWalletServiceAdjustment:
 class TestWalletServiceGetBalance:
     """Tests for WalletService.get_balance method."""
 
-    def test_get_balance(self, wallet_service: WalletService, user: User) -> None:
+    def test_get_balance(self, wallet_service, user):
         """Should return current balance."""
         wallet_service.charge(user=user, amount=1000)
         wallet_service.spend(user=user, amount=300)
@@ -253,7 +238,7 @@ class TestWalletServiceGetBalance:
 
         assert balance == 700
 
-    def test_get_balance_no_wallet(self, wallet_service: WalletService, user: User) -> None:
+    def test_get_balance_no_wallet(self, wallet_service, user):
         """Should return 0 if no wallet."""
         balance = wallet_service.get_balance(user=user)
 
@@ -263,7 +248,7 @@ class TestWalletServiceGetBalance:
 class TestWalletServiceGetTransactions:
     """Tests for WalletService.get_transactions method."""
 
-    def test_get_transactions(self, wallet_service: WalletService, user: User) -> None:
+    def test_get_transactions(self, wallet_service, user):
         """Should return transaction list."""
         wallet_service.charge(user=user, amount=1000)
         wallet_service.spend(user=user, amount=300)
@@ -276,7 +261,7 @@ class TestWalletServiceGetTransactions:
         assert transactions[0].transaction_type == TransactionType.CHARGE  # Most recent
         assert transactions[1].transaction_type == TransactionType.SPEND
 
-    def test_get_transactions_with_limit(self, wallet_service: WalletService, user: User) -> None:
+    def test_get_transactions_with_limit(self, wallet_service, user):
         """Should limit transaction list."""
         for _i in range(10):
             wallet_service.charge(user=user, amount=100)
@@ -285,7 +270,7 @@ class TestWalletServiceGetTransactions:
 
         assert len(transactions) == 5
 
-    def test_get_transactions_no_wallet(self, wallet_service: WalletService, user: User) -> None:
+    def test_get_transactions_no_wallet(self, wallet_service, user):
         """Should return empty list if no wallet."""
         transactions = wallet_service.get_transactions(user=user)
 
@@ -295,9 +280,7 @@ class TestWalletServiceGetTransactions:
 class TestCoinTransactionImmutability:
     """Tests for transaction immutability (INSERT ONLY policy)."""
 
-    def test_transaction_cannot_be_updated(
-        self, wallet_service: WalletService, user: User, db: Any
-    ) -> None:
+    def test_transaction_cannot_be_updated(self, wallet_service, user, db):
         """Transactions should not be updatable."""
         wallet_service.charge(user=user, amount=1000)
         tx = CoinTransaction.objects.first()
@@ -312,9 +295,7 @@ class TestCoinTransactionImmutability:
         tx.refresh_from_db()
         # If we add DB-level protection, this would fail
 
-    def test_transaction_cannot_be_deleted(
-        self, wallet_service: WalletService, user: User, db: Any
-    ) -> None:
+    def test_transaction_cannot_be_deleted(self, wallet_service, user, db):
         """Transactions should not be deletable via service."""
         wallet_service.charge(user=user, amount=1000)
 
@@ -327,9 +308,7 @@ class TestCoinTransactionImmutability:
 class TestWalletConcurrency:
     """Tests for wallet concurrency (select_for_update)."""
 
-    def test_concurrent_spend_prevents_overdraft(
-        self, wallet_service: WalletService, user: User, db: Any
-    ) -> None:
+    def test_concurrent_spend_prevents_overdraft(self, wallet_service, user, db):
         """
         Concurrent spend operations should not overdraft.
 

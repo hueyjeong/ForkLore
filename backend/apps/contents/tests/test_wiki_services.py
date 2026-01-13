@@ -16,7 +16,7 @@ pytestmark = pytest.mark.django_db
 class TestWikiServiceCreate:
     """WikiService.create() 테스트"""
 
-    def test_create_wiki_entry(self) -> None:
+    def test_create_wiki_entry(self):
         """위키 생성"""
         user = baker.make("users.User")
         branch = baker.make("novels.Branch", author=user)
@@ -37,7 +37,7 @@ class TestWikiServiceCreate:
         assert wiki.first_appearance == 1
         assert wiki.hidden_note == "비밀 노트"
 
-    def test_create_wiki_entry_with_initial_snapshot(self) -> None:
+    def test_create_wiki_entry_with_initial_snapshot(self):
         """위키 생성 시 초기 스냅샷 생성"""
         user = baker.make("users.User")
         branch = baker.make("novels.Branch", author=user)
@@ -56,7 +56,7 @@ class TestWikiServiceCreate:
         assert snapshot.contributor == user
         assert snapshot.contributor_type == "USER"
 
-    def test_create_wiki_entry_only_author(self) -> None:
+    def test_create_wiki_entry_only_author(self):
         """브랜치 작가만 위키 생성 가능"""
         author = baker.make("users.User")
         other_user = baker.make("users.User")
@@ -69,7 +69,7 @@ class TestWikiServiceCreate:
                 name="캐릭터",
             )
 
-    def test_create_wiki_duplicate_name_error(self) -> None:
+    def test_create_wiki_duplicate_name_error(self):
         """같은 브랜치에서 중복 이름 오류"""
         branch = baker.make("novels.Branch")
         user = branch.author
@@ -83,7 +83,7 @@ class TestWikiServiceCreate:
 class TestWikiServiceUpdate:
     """WikiService.update() 테스트"""
 
-    def test_update_wiki_entry(self) -> None:
+    def test_update_wiki_entry(self):
         """위키 업데이트"""
         branch = baker.make("novels.Branch")
         wiki = baker.make("contents.WikiEntry", branch=branch, name="캐릭터")
@@ -99,7 +99,7 @@ class TestWikiServiceUpdate:
         assert updated.name == "수정된 캐릭터"
         assert updated.image_url == "https://example.com/new.jpg"
 
-    def test_update_wiki_only_author(self) -> None:
+    def test_update_wiki_only_author(self):
         """브랜치 작가만 위키 수정 가능"""
         author = baker.make("users.User")
         other_user = baker.make("users.User")
@@ -113,7 +113,7 @@ class TestWikiServiceUpdate:
 class TestWikiServiceRetrieve:
     """WikiService.retrieve() 테스트"""
 
-    def test_retrieve_wiki_entry(self) -> None:
+    def test_retrieve_wiki_entry(self):
         """위키 조회"""
         wiki = baker.make("contents.WikiEntry", name="테스트 캐릭터")
 
@@ -122,7 +122,7 @@ class TestWikiServiceRetrieve:
         assert result.id == wiki.id
         assert result.name == "테스트 캐릭터"
 
-    def test_retrieve_nonexistent_wiki(self) -> None:
+    def test_retrieve_nonexistent_wiki(self):
         """존재하지 않는 위키 조회"""
         with pytest.raises(ValueError) as exc_info:
             WikiService.retrieve(wiki_id=99999)
@@ -132,7 +132,7 @@ class TestWikiServiceRetrieve:
 class TestWikiServiceList:
     """WikiService.list() 테스트"""
 
-    def test_list_wiki_entries_by_branch(self) -> None:
+    def test_list_wiki_entries_by_branch(self):
         """브랜치별 위키 목록"""
         branch = baker.make("novels.Branch")
         wiki1 = baker.make("contents.WikiEntry", branch=branch, name="A캐릭터")
@@ -145,7 +145,7 @@ class TestWikiServiceList:
         assert wiki1 in result
         assert wiki2 in result
 
-    def test_list_wiki_entries_with_tag_filter(self) -> None:
+    def test_list_wiki_entries_with_tag_filter(self):
         """태그로 필터링"""
         branch = baker.make("novels.Branch")
         tag = baker.make("contents.WikiTagDefinition", branch=branch, name="인물")
@@ -168,7 +168,7 @@ class TestWikiServiceList:
 class TestWikiServiceDelete:
     """WikiService.delete() 테스트"""
 
-    def test_delete_wiki_entry(self) -> None:
+    def test_delete_wiki_entry(self):
         """위키 삭제"""
         branch = baker.make("novels.Branch")
         wiki = baker.make("contents.WikiEntry", branch=branch)
@@ -180,7 +180,7 @@ class TestWikiServiceDelete:
 
         assert not WikiEntry.objects.filter(id=wiki.id).exists()
 
-    def test_delete_wiki_only_author(self) -> None:
+    def test_delete_wiki_only_author(self):
         """브랜치 작가만 위키 삭제 가능"""
         author = baker.make("users.User")
         other_user = baker.make("users.User")
@@ -194,7 +194,7 @@ class TestWikiServiceDelete:
 class TestWikiServiceTagManagement:
     """WikiService 태그 관리 테스트"""
 
-    def test_add_tags_to_wiki(self) -> None:
+    def test_add_tags_to_wiki(self):
         """위키에 태그 추가"""
         branch = baker.make("novels.Branch")
         wiki = baker.make("contents.WikiEntry", branch=branch)
@@ -206,7 +206,7 @@ class TestWikiServiceTagManagement:
 
         assert wiki.tags.count() == 2
 
-    def test_set_tags_replaces_existing(self) -> None:
+    def test_set_tags_replaces_existing(self):
         """태그 설정 시 기존 태그 교체"""
         branch = baker.make("novels.Branch")
         wiki = baker.make("contents.WikiEntry", branch=branch)
@@ -227,7 +227,7 @@ class TestWikiServiceTagManagement:
 class TestWikiTagDefinitionService:
     """WikiTagDefinitionService 테스트"""
 
-    def test_create_tag_definition(self) -> None:
+    def test_create_tag_definition(self):
         """태그 정의 생성"""
         branch = baker.make("novels.Branch")
         user = branch.author
@@ -245,7 +245,7 @@ class TestWikiTagDefinitionService:
         assert tag.name == "인물"
         assert tag.color == "#FF5733"
 
-    def test_list_tag_definitions(self) -> None:
+    def test_list_tag_definitions(self):
         """브랜치별 태그 목록"""
         branch = baker.make("novels.Branch")
         baker.make("contents.WikiTagDefinition", branch=branch, name="인물", display_order=1)
@@ -257,7 +257,7 @@ class TestWikiTagDefinitionService:
         assert result[0].name == "인물"
         assert result[1].name == "장소"
 
-    def test_delete_tag_definition(self) -> None:
+    def test_delete_tag_definition(self):
         """태그 삭제"""
         branch = baker.make("novels.Branch")
         tag = baker.make("contents.WikiTagDefinition", branch=branch, name="인물")
@@ -273,7 +273,7 @@ class TestWikiTagDefinitionService:
 class TestWikiSnapshotService:
     """WikiService 스냅샷 관련 테스트"""
 
-    def test_add_snapshot(self) -> None:
+    def test_add_snapshot(self):
         """스냅샷 추가"""
         branch = baker.make("novels.Branch")
         wiki = baker.make("contents.WikiEntry", branch=branch)
@@ -292,7 +292,7 @@ class TestWikiSnapshotService:
         assert snapshot.valid_from_chapter == 5
         assert snapshot.contributor == user
 
-    def test_get_snapshot_for_chapter_exact_match(self) -> None:
+    def test_get_snapshot_for_chapter_exact_match(self):
         """정확히 일치하는 회차의 스냅샷 반환"""
         wiki = baker.make("contents.WikiEntry")
         baker.make("contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=1, content="초기")
@@ -306,7 +306,7 @@ class TestWikiSnapshotService:
         assert result.content == "회차5"
         assert result.valid_from_chapter == 5
 
-    def test_get_snapshot_for_chapter_returns_latest_valid(self) -> None:
+    def test_get_snapshot_for_chapter_returns_latest_valid(self):
         """해당 회차 이하 중 가장 최신 스냅샷 반환"""
         wiki = baker.make("contents.WikiEntry")
         baker.make("contents.WikiSnapshot", wiki_entry=wiki, valid_from_chapter=1, content="초기")
@@ -321,7 +321,7 @@ class TestWikiSnapshotService:
         assert result.content == "회차5"
         assert result.valid_from_chapter == 5
 
-    def test_get_snapshot_for_chapter_no_spoiler(self) -> None:
+    def test_get_snapshot_for_chapter_no_spoiler(self):
         """미래 회차의 스냅샷은 반환하지 않음 (스포일러 방지)"""
         wiki = baker.make("contents.WikiEntry")
         baker.make(
@@ -333,7 +333,7 @@ class TestWikiSnapshotService:
 
         assert result is None
 
-    def test_get_snapshot_for_chapter_with_initial(self) -> None:
+    def test_get_snapshot_for_chapter_with_initial(self):
         """초기 스냅샷(0회차)이 있으면 항상 폴백"""
         wiki = baker.make("contents.WikiEntry")
         baker.make(
@@ -349,7 +349,7 @@ class TestWikiSnapshotService:
         assert result.content == "초기 설정"
         assert result.valid_from_chapter == 0
 
-    def test_get_wiki_with_context(self) -> None:
+    def test_get_wiki_with_context(self):
         """문맥 인식 위키 조회 - 특정 회차 기준"""
         branch = baker.make("novels.Branch")
         wiki = baker.make("contents.WikiEntry", branch=branch, name="캐릭터")
@@ -370,7 +370,7 @@ class TestWikiSnapshotService:
 class TestWikiServiceFork:
     """WikiService.fork_wiki_entries() 테스트"""
 
-    def test_fork_wiki_entries(self) -> None:
+    def test_fork_wiki_entries(self):
         """브랜치 포크 시 위키 복사"""
         source_branch = baker.make("novels.Branch")
         wiki1 = baker.make(
@@ -420,7 +420,7 @@ class TestWikiServiceFork:
         # 스냅샷도 복사되었는지 확인
         assert forked1.snapshots.count() == 2
 
-    def test_fork_wiki_entries_includes_tags(self) -> None:
+    def test_fork_wiki_entries_includes_tags(self):
         """포크 시 태그 정의도 복사"""
         source_branch = baker.make("novels.Branch")
         tag1 = baker.make(
@@ -450,7 +450,7 @@ class TestWikiServiceFork:
         forked_wiki = WikiEntry.objects.filter(branch=target_branch, name="캐릭터").first()
         assert forked_wiki.tags.count() == 1
 
-    def test_fork_empty_branch(self) -> None:
+    def test_fork_empty_branch(self):
         """위키가 없는 브랜치 포크"""
         source_branch = baker.make("novels.Branch")
         target_branch = baker.make("novels.Branch")

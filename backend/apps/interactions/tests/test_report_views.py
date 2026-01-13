@@ -9,39 +9,36 @@ Tests:
 - PATCH /admin/reports/{id}/ - Resolve/Reject report (admin only)
 """
 
-from typing import Any
-
 import pytest
 from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.contents.models import Chapter
-from apps.interactions.models import Comment, Report, ReportReason, ReportStatus
+from apps.interactions.models import Report, ReportReason, ReportStatus
 from apps.users.models import User
 
 
-def get_tokens_for_user(user: User) -> dict[str, str]:
+def get_tokens_for_user(user):
     """Generate JWT tokens for a user."""
     refresh = RefreshToken.for_user(user)
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
 
 @pytest.fixture
-def user(db: Any) -> User:
+def user(db):
     """Create a regular user."""
     return baker.make(User)
 
 
 @pytest.fixture
-def admin_user(db: Any) -> User:
+def admin_user(db):
     """Create an admin user."""
     return baker.make(User, is_staff=True)
 
 
 @pytest.fixture
-def auth_client(user: User) -> APIClient:
+def auth_client(user):
     """Create authenticated client for regular user."""
     client = APIClient()
     tokens = get_tokens_for_user(user)
@@ -50,7 +47,7 @@ def auth_client(user: User) -> APIClient:
 
 
 @pytest.fixture
-def admin_client(admin_user: User) -> APIClient:
+def admin_client(admin_user):
     """Create authenticated client for admin user."""
     client = APIClient()
     tokens = get_tokens_for_user(admin_user)
@@ -59,13 +56,13 @@ def admin_client(admin_user: User) -> APIClient:
 
 
 @pytest.fixture
-def chapter(db: Any) -> Chapter:
+def chapter(db):
     """Create a chapter."""
     return baker.make("contents.Chapter")
 
 
 @pytest.fixture
-def comment(db: Any, chapter: Chapter) -> Comment:
+def comment(db, chapter):
     """Create a comment."""
     return baker.make("interactions.Comment", chapter=chapter)
 
@@ -73,7 +70,7 @@ def comment(db: Any, chapter: Chapter) -> Comment:
 class TestReportCreate:
     """Tests for POST /reports/"""
 
-    def test_create_report_for_comment(self, auth_client: APIClient, comment: Comment) -> None:
+    def test_create_report_for_comment(self, auth_client, comment):
         """Should create a report for a comment."""
         url = "/api/v1/reports/"
         data = {
@@ -90,7 +87,7 @@ class TestReportCreate:
         assert resp_data["data"]["reason"] == "ABUSE"
         assert resp_data["data"]["status"] == "PENDING"
 
-    def test_create_report_for_chapter(self, auth_client: APIClient, chapter: Chapter) -> None:
+    def test_create_report_for_chapter(self, auth_client, chapter):
         """Should create a report for a chapter."""
         url = "/api/v1/reports/"
         data = {
@@ -103,9 +100,7 @@ class TestReportCreate:
 
         assert response.status_code == status.HTTP_201_CREATED
 
-    def test_create_report_without_description(
-        self, auth_client: APIClient, comment: Comment
-    ) -> None:
+    def test_create_report_without_description(self, auth_client, comment):
         """Should create a report without description."""
         url = "/api/v1/reports/"
         data = {
@@ -117,9 +112,7 @@ class TestReportCreate:
 
         assert response.status_code == status.HTTP_201_CREATED
 
-    def test_create_report_duplicate_fails(
-        self, auth_client: APIClient, user: User, comment: Comment
-    ) -> None:
+    def test_create_report_duplicate_fails(self, auth_client, user, comment):
         """Should prevent duplicate reports from same user."""
         # Create first report directly
         from django.contrib.contenttypes.models import ContentType
@@ -144,7 +137,7 @@ class TestReportCreate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_create_report_unauthenticated_fails(self, comment: Comment) -> None:
+    def test_create_report_unauthenticated_fails(self, comment):
         """Should reject unauthenticated requests."""
         client = APIClient()
         url = "/api/v1/reports/"
@@ -157,7 +150,7 @@ class TestReportCreate:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_create_report_invalid_target_type_fails(self, auth_client: APIClient) -> None:
+    def test_create_report_invalid_target_type_fails(self, auth_client):
         """Should reject invalid target type."""
         url = "/api/v1/reports/"
         data = {
@@ -169,7 +162,7 @@ class TestReportCreate:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_create_report_nonexistent_target_fails(self, auth_client: APIClient) -> None:
+    def test_create_report_nonexistent_target_fails(self, auth_client):
         """Should reject non-existent target."""
         url = "/api/v1/reports/"
         data = {
@@ -186,9 +179,7 @@ class TestReportCreate:
 class TestAdminReportList:
     """Tests for GET /admin/reports/"""
 
-    def test_admin_list_reports(
-        self, admin_client: APIClient, admin_user: User, user: User, comment: Comment, db: Any
-    ) -> None:
+    def test_admin_list_reports(self, admin_client, admin_user, user, comment, db):
         """Admin should see all reports."""
         from django.contrib.contenttypes.models import ContentType
 
@@ -209,9 +200,7 @@ class TestAdminReportList:
         assert resp_data["success"] is True
         assert len(resp_data["data"]["results"]) == 1
 
-    def test_admin_list_filter_by_status(
-        self, admin_client: APIClient, admin_user: User, user: User, chapter: Chapter, db: Any
-    ) -> None:
+    def test_admin_list_filter_by_status(self, admin_client, admin_user, user, chapter, db):
         """Admin should filter reports by status."""
         from django.contrib.contenttypes.models import ContentType
 
@@ -244,7 +233,7 @@ class TestAdminReportList:
         assert len(resp_data["data"]["results"]) == 1
         assert resp_data["data"]["results"][0]["status"] == "PENDING"
 
-    def test_non_admin_cannot_list_reports(self, auth_client: APIClient) -> None:
+    def test_non_admin_cannot_list_reports(self, auth_client):
         """Non-admin users should be forbidden."""
         url = "/api/v1/admin/reports/"
         response = auth_client.get(url)
@@ -255,9 +244,7 @@ class TestAdminReportList:
 class TestAdminReportResolve:
     """Tests for PATCH /admin/reports/{id}/"""
 
-    def test_admin_resolve_report(
-        self, admin_client: APIClient, admin_user: User, user: User, comment: Comment, db: Any
-    ) -> None:
+    def test_admin_resolve_report(self, admin_client, admin_user, user, comment, db):
         """Admin should resolve a report."""
         from django.contrib.contenttypes.models import ContentType
 
@@ -282,9 +269,7 @@ class TestAdminReportResolve:
         assert resp_data["data"]["status"] == "RESOLVED"
         assert resp_data["data"]["resolutionNote"] == "Content has been removed"
 
-    def test_admin_reject_report(
-        self, admin_client: APIClient, admin_user: User, user: User, comment: Comment, db: Any
-    ) -> None:
+    def test_admin_reject_report(self, admin_client, admin_user, user, comment, db):
         """Admin should reject a report."""
         from django.contrib.contenttypes.models import ContentType
 
@@ -308,9 +293,7 @@ class TestAdminReportResolve:
         resp_data = response.json()
         assert resp_data["data"]["status"] == "REJECTED"
 
-    def test_non_admin_cannot_resolve_report(
-        self, auth_client: APIClient, user: User, comment: Comment, db: Any
-    ) -> None:
+    def test_non_admin_cannot_resolve_report(self, auth_client, user, comment, db):
         """Non-admin users should be forbidden."""
         from django.contrib.contenttypes.models import ContentType
 
@@ -330,9 +313,7 @@ class TestAdminReportResolve:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_resolve_already_resolved_fails(
-        self, admin_client: APIClient, admin_user: User, user: User, comment: Comment, db: Any
-    ) -> None:
+    def test_resolve_already_resolved_fails(self, admin_client, admin_user, user, comment, db):
         """Should fail if report is already resolved."""
         from django.contrib.contenttypes.models import ContentType
         from django.utils import timezone
@@ -354,7 +335,7 @@ class TestAdminReportResolve:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_resolve_nonexistent_report_fails(self, admin_client: APIClient) -> None:
+    def test_resolve_nonexistent_report_fails(self, admin_client):
         """Should return 404 for non-existent report."""
         url = "/api/v1/admin/reports/99999/"
         data = {"action": "resolve"}
@@ -362,9 +343,7 @@ class TestAdminReportResolve:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_invalid_action_fails(
-        self, admin_client: APIClient, admin_user: User, user: User, comment: Comment, db: Any
-    ) -> None:
+    def test_invalid_action_fails(self, admin_client, admin_user, user, comment, db):
         """Should fail with invalid action."""
         from django.contrib.contenttypes.models import ContentType
 

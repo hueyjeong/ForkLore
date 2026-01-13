@@ -16,7 +16,7 @@ pytestmark = pytest.mark.django_db
 class TestMapServiceCreate:
     """MapService.create() 테스트"""
 
-    def test_create_map(self) -> None:
+    def test_create_map(self):
         """지도 생성"""
         user = baker.make("users.User")
         branch = baker.make("novels.Branch", author=user)
@@ -37,7 +37,7 @@ class TestMapServiceCreate:
         assert map_obj.width == 1920
         assert map_obj.height == 1080
 
-    def test_create_map_only_author(self) -> None:
+    def test_create_map_only_author(self):
         """브랜치 작가만 지도 생성 가능"""
         author = baker.make("users.User")
         other_user = baker.make("users.User")
@@ -52,7 +52,7 @@ class TestMapServiceCreate:
                 height=600,
             )
 
-    def test_create_map_duplicate_name_error(self) -> None:
+    def test_create_map_duplicate_name_error(self):
         """같은 브랜치에서 중복 이름 오류"""
         branch = baker.make("novels.Branch")
         user = branch.author
@@ -62,7 +62,7 @@ class TestMapServiceCreate:
             MapService.create(branch_id=branch.id, user=user, name="지도A", width=800, height=600)
         assert "이미 존재하는" in str(exc_info.value)
 
-    def test_create_map_branch_not_found(self) -> None:
+    def test_create_map_branch_not_found(self):
         """존재하지 않는 브랜치"""
         user = baker.make("users.User")
 
@@ -74,7 +74,7 @@ class TestMapServiceCreate:
 class TestMapServiceUpdate:
     """MapService.update() 테스트"""
 
-    def test_update_map(self) -> None:
+    def test_update_map(self):
         """지도 업데이트"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch, name="원래 지도", width=800, height=600)
@@ -90,7 +90,7 @@ class TestMapServiceUpdate:
         assert updated.name == "수정된 지도"
         assert updated.description == "새로운 설명"
 
-    def test_update_map_only_author(self) -> None:
+    def test_update_map_only_author(self):
         """브랜치 작가만 수정 가능"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch)
@@ -103,7 +103,7 @@ class TestMapServiceUpdate:
 class TestMapServiceRetrieve:
     """MapService.retrieve() 테스트"""
 
-    def test_retrieve_map(self) -> None:
+    def test_retrieve_map(self):
         """지도 조회"""
         map_obj = baker.make("contents.Map", name="테스트 지도")
 
@@ -112,7 +112,7 @@ class TestMapServiceRetrieve:
         assert result.id == map_obj.id
         assert result.name == "테스트 지도"
 
-    def test_retrieve_map_not_found(self) -> None:
+    def test_retrieve_map_not_found(self):
         """존재하지 않는 지도"""
         with pytest.raises(ValueError) as exc_info:
             MapService.retrieve(99999)
@@ -122,7 +122,7 @@ class TestMapServiceRetrieve:
 class TestMapServiceList:
     """MapService.list() 테스트"""
 
-    def test_list_maps(self) -> None:
+    def test_list_maps(self):
         """브랜치의 지도 목록"""
         branch = baker.make("novels.Branch")
         baker.make("contents.Map", branch=branch, name="지도A")
@@ -133,7 +133,7 @@ class TestMapServiceList:
 
         assert maps.count() == 2
 
-    def test_list_maps_empty(self) -> None:
+    def test_list_maps_empty(self):
         """지도 없는 브랜치"""
         branch = baker.make("novels.Branch")
 
@@ -145,7 +145,7 @@ class TestMapServiceList:
 class TestMapServiceDelete:
     """MapService.delete() 테스트"""
 
-    def test_delete_map(self) -> None:
+    def test_delete_map(self):
         """지도 삭제"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch)
@@ -155,7 +155,7 @@ class TestMapServiceDelete:
 
         assert not Map.objects.filter(id=map_obj.id).exists()
 
-    def test_delete_map_only_author(self) -> None:
+    def test_delete_map_only_author(self):
         """브랜치 작가만 삭제 가능"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch)
@@ -168,7 +168,7 @@ class TestMapServiceDelete:
 class TestMapServiceCreateSnapshot:
     """MapService.create_snapshot() 테스트"""
 
-    def test_create_snapshot(self) -> None:
+    def test_create_snapshot(self):
         """스냅샷 생성"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch)
@@ -186,7 +186,7 @@ class TestMapServiceCreateSnapshot:
         assert snapshot.valid_from_chapter == 1
         assert snapshot.base_image_url == "https://example.com/map.png"
 
-    def test_create_snapshot_duplicate_chapter_error(self) -> None:
+    def test_create_snapshot_duplicate_chapter_error(self):
         """같은 회차에 중복 스냅샷 오류"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch)
@@ -201,7 +201,7 @@ class TestMapServiceCreateSnapshot:
 class TestMapServiceAddLayer:
     """MapService.add_layer() 테스트"""
 
-    def test_add_layer(self) -> None:
+    def test_add_layer(self):
         """레이어 추가"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch)
@@ -226,7 +226,7 @@ class TestMapServiceAddLayer:
 class TestMapServiceAddObject:
     """MapService.add_object() 테스트"""
 
-    def test_add_object(self) -> None:
+    def test_add_object(self):
         """오브젝트 추가"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch)
@@ -249,7 +249,7 @@ class TestMapServiceAddObject:
         assert obj.coordinates == {"x": 100, "y": 200}
         assert obj.label == "수도"
 
-    def test_add_object_with_wiki_link(self) -> None:
+    def test_add_object_with_wiki_link(self):
         """위키 연결된 오브젝트 추가"""
         branch = baker.make("novels.Branch")
         map_obj = baker.make("contents.Map", branch=branch)
@@ -273,7 +273,7 @@ class TestMapServiceAddObject:
 class TestMapServiceGetForChapter:
     """MapService.get_for_chapter() 테스트 - 문맥 인식 조회"""
 
-    def test_get_for_chapter_exact_match(self) -> None:
+    def test_get_for_chapter_exact_match(self):
         """정확한 회차 스냅샷 조회"""
         map_obj = baker.make("contents.Map")
         snapshot1 = baker.make("contents.MapSnapshot", map=map_obj, valid_from_chapter=1)
@@ -283,7 +283,7 @@ class TestMapServiceGetForChapter:
 
         assert result["snapshot"].id == snapshot1.id
 
-    def test_get_for_chapter_latest_valid(self) -> None:
+    def test_get_for_chapter_latest_valid(self):
         """현재 회차 이하의 가장 최신 스냅샷"""
         map_obj = baker.make("contents.Map")
         baker.make("contents.MapSnapshot", map=map_obj, valid_from_chapter=1)
@@ -294,7 +294,7 @@ class TestMapServiceGetForChapter:
 
         assert result["snapshot"].id == snapshot5.id
 
-    def test_get_for_chapter_no_valid_snapshot(self) -> None:
+    def test_get_for_chapter_no_valid_snapshot(self):
         """유효한 스냅샷 없음"""
         map_obj = baker.make("contents.Map")
         baker.make("contents.MapSnapshot", map=map_obj, valid_from_chapter=5)
@@ -303,7 +303,7 @@ class TestMapServiceGetForChapter:
 
         assert result["snapshot"] is None
 
-    def test_get_for_chapter_with_layers_and_objects(self) -> None:
+    def test_get_for_chapter_with_layers_and_objects(self):
         """레이어와 오브젝트 포함 조회"""
         map_obj = baker.make("contents.Map")
         snapshot = baker.make("contents.MapSnapshot", map=map_obj, valid_from_chapter=1)
@@ -323,7 +323,7 @@ class TestMapServiceGetForChapter:
 class TestMapServiceFork:
     """MapService.fork_maps() 테스트"""
 
-    def test_fork_maps(self) -> None:
+    def test_fork_maps(self):
         """지도 포크"""
         source_branch = baker.make("novels.Branch")
         target_branch = baker.make("novels.Branch")

@@ -20,7 +20,7 @@ pytestmark = pytest.mark.django_db
 class TestCommentServiceCreate:
     """CommentService.create() 테스트"""
 
-    def test_create_comment(self) -> None:
+    def test_create_comment(self):
         """댓글 생성"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -36,7 +36,7 @@ class TestCommentServiceCreate:
         assert comment.chapter == chapter
         assert comment.content == "테스트 댓글입니다."
 
-    def test_create_reply(self) -> None:
+    def test_create_reply(self):
         """대댓글 생성"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -51,7 +51,7 @@ class TestCommentServiceCreate:
 
         assert reply.parent == parent
 
-    def test_create_paragraph_comment(self) -> None:
+    def test_create_paragraph_comment(self):
         """문단 댓글 생성"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -71,7 +71,7 @@ class TestCommentServiceCreate:
         assert comment.selection_end == 50
         assert comment.quoted_text == "인용된 텍스트"
 
-    def test_create_comment_invalid_selection(self) -> None:
+    def test_create_comment_invalid_selection(self):
         """selection_start >= selection_end 시 에러"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -89,7 +89,7 @@ class TestCommentServiceCreate:
 class TestCommentServiceUpdate:
     """CommentService.update() 테스트"""
 
-    def test_update_comment(self) -> None:
+    def test_update_comment(self):
         """댓글 수정"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment", user=user, content="원본")
@@ -102,7 +102,7 @@ class TestCommentServiceUpdate:
 
         assert updated.content == "수정됨"
 
-    def test_update_comment_not_owner(self) -> None:
+    def test_update_comment_not_owner(self):
         """작성자 아니면 수정 불가"""
         user1 = baker.make("users.User")
         user2 = baker.make("users.User")
@@ -119,7 +119,7 @@ class TestCommentServiceUpdate:
 class TestCommentServiceDelete:
     """CommentService.delete() 테스트"""
 
-    def test_delete_comment_soft(self) -> None:
+    def test_delete_comment_soft(self):
         """댓글 소프트 삭제"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment", user=user)
@@ -129,7 +129,7 @@ class TestCommentServiceDelete:
         comment.refresh_from_db()
         assert comment.deleted_at is not None
 
-    def test_delete_comment_not_owner(self) -> None:
+    def test_delete_comment_not_owner(self):
         """작성자 아니면 삭제 불가"""
         user1 = baker.make("users.User")
         user2 = baker.make("users.User")
@@ -142,7 +142,7 @@ class TestCommentServiceDelete:
 class TestCommentServiceList:
     """CommentService.list() 테스트"""
 
-    def test_list_comments_by_chapter(self) -> None:
+    def test_list_comments_by_chapter(self):
         """회차별 댓글 목록"""
         chapter = baker.make("contents.Chapter")
         baker.make("interactions.Comment", chapter=chapter, _quantity=3)
@@ -152,7 +152,7 @@ class TestCommentServiceList:
 
         assert len(comments) == 3
 
-    def test_list_comments_by_paragraph(self) -> None:
+    def test_list_comments_by_paragraph(self):
         """문단별 댓글 목록"""
         chapter = baker.make("contents.Chapter")
         baker.make("interactions.Comment", chapter=chapter, paragraph_index=3, _quantity=2)
@@ -162,7 +162,7 @@ class TestCommentServiceList:
 
         assert len(comments) == 2
 
-    def test_list_excludes_deleted(self) -> None:
+    def test_list_excludes_deleted(self):
         """소프트 삭제된 댓글 제외"""
         chapter = baker.make("contents.Chapter")
         user = baker.make("users.User")
@@ -179,7 +179,7 @@ class TestCommentServiceList:
 class TestCommentServicePin:
     """CommentService.pin/unpin() 테스트"""
 
-    def test_pin_comment_by_author(self) -> None:
+    def test_pin_comment_by_author(self):
         """작가가 댓글 고정"""
         author = baker.make("users.User")
         branch = baker.make("novels.Branch", author=author)
@@ -190,7 +190,7 @@ class TestCommentServicePin:
 
         assert pinned.is_pinned is True
 
-    def test_pin_comment_not_author(self) -> None:
+    def test_pin_comment_not_author(self):
         """작가 아니면 고정 불가"""
         author = baker.make("users.User")
         other = baker.make("users.User")
@@ -201,7 +201,7 @@ class TestCommentServicePin:
         with pytest.raises(PermissionError):
             CommentService.pin(comment_id=comment.id, user=other)
 
-    def test_unpin_comment(self) -> None:
+    def test_unpin_comment(self):
         """댓글 고정 해제"""
         author = baker.make("users.User")
         branch = baker.make("novels.Branch", author=author)
@@ -221,7 +221,7 @@ class TestCommentServicePin:
 class TestLikeServiceToggle:
     """LikeService.toggle() 테스트"""
 
-    def test_like_comment(self) -> None:
+    def test_like_comment(self):
         """댓글 좋아요"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment")
@@ -231,7 +231,7 @@ class TestLikeServiceToggle:
         assert result["liked"] is True
         assert Like.objects.filter(user=user).count() == 1
 
-    def test_unlike_comment(self) -> None:
+    def test_unlike_comment(self):
         """댓글 좋아요 취소"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment")
@@ -244,7 +244,7 @@ class TestLikeServiceToggle:
         assert result["liked"] is False
         assert Like.objects.filter(user=user).count() == 0
 
-    def test_like_chapter(self) -> None:
+    def test_like_chapter(self):
         """회차 좋아요"""
         user = baker.make("users.User")
         chapter = baker.make("contents.Chapter")
@@ -253,7 +253,7 @@ class TestLikeServiceToggle:
 
         assert result["liked"] is True
 
-    def test_like_updates_like_count(self) -> None:
+    def test_like_updates_like_count(self):
         """좋아요 시 like_count 업데이트"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment", like_count=0)
@@ -263,7 +263,7 @@ class TestLikeServiceToggle:
         comment.refresh_from_db()
         assert comment.like_count == 1
 
-    def test_unlike_updates_like_count(self) -> None:
+    def test_unlike_updates_like_count(self):
         """좋아요 취소 시 like_count 업데이트"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment", like_count=0)
@@ -282,7 +282,7 @@ class TestLikeServiceToggle:
 class TestLikeServiceGetLikeStatus:
     """LikeService.get_like_status() 테스트"""
 
-    def test_get_like_status_liked(self) -> None:
+    def test_get_like_status_liked(self):
         """좋아요 상태 조회 - 좋아요함"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment")
@@ -292,7 +292,7 @@ class TestLikeServiceGetLikeStatus:
 
         assert status is True
 
-    def test_get_like_status_not_liked(self) -> None:
+    def test_get_like_status_not_liked(self):
         """좋아요 상태 조회 - 좋아요 안함"""
         user = baker.make("users.User")
         comment = baker.make("interactions.Comment")

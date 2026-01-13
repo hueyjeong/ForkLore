@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
+from common.pagination import StandardPagination
 from .models import Novel, Branch, BranchLinkRequest, BranchVisibility, LinkRequestStatus
 from .services import NovelService, BranchService, BranchLinkService
 from .serializers import (
@@ -58,8 +59,26 @@ class NovelViewSet(viewsets.ViewSet):
         sort = request.query_params.get("sort", "latest")
 
         novels = self.service.list(filters=filters if filters else None, sort=sort)
-        serializer = NovelListSerializer(novels, many=True)
 
+        # Apply pagination
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(novels, request)
+        if page is not None:
+            serializer = NovelListSerializer(page, many=True)
+            return Response(
+                {
+                    "success": True,
+                    "message": None,
+                    "data": {
+                        "results": serializer.data,
+                        "count": paginator.page.paginator.count,
+                        "next": paginator.get_next_link(),
+                        "previous": paginator.get_previous_link(),
+                    },
+                }
+            )
+
+        serializer = NovelListSerializer(novels, many=True)
         return Response({"success": True, "message": None, "data": {"results": serializer.data}})
 
     def retrieve(self, request, pk=None):

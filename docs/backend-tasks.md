@@ -1,7 +1,7 @@
 # 🔧 ForkLore 백엔드 태스크 (Django)
 
 **작성일**: 2026.01.13  
-**문서 버전**: v3.1 (누락 도메인: 댓글/신고/코인/AI한도 추가)
+**문서 버전**: v3.2 (PERT 차트 동기화 + 응답래퍼/camelCase 반영)
 
 ---
 
@@ -29,8 +29,10 @@
 |   | ├─ ⬜ `common/models.py` - BaseModel (created_at, updated_at) | 🟢 | 0.5h |
 |   | ├─ ⬜ `common/exceptions.py` - 커스텀 예외 핸들러 | 🟢 | 0.5h |
 |   | └─ ⬜ `common/pagination.py` - StandardPagination | 🟢 | 0.5h |
-| ⬜ | **DRF 설정** | 🟡 | 1h |
+| ⬜ | **DRF 설정** | 🟡 | 2h |
 |   | ├─ ⬜ REST_FRAMEWORK 설정 (인증, 페이지네이션, 예외 핸들러) | 🟢 | 0.5h |
+|   | ├─ ⬜ **`common/renderers.py` - StandardJSONRenderer (응답 래퍼)** | 🟡 | 1h |
+|   | ├─ ⬜ **djangorestframework-camel-case 설정 (JSON camelCase)** | 🟢 | 0.5h |
 |   | └─ ⬜ drf-spectacular 설정 (OpenAPI 3.1) | 🟢 | 0.5h |
 | ⬜ | **pytest-django 설정** | 🟢 | 0.5h |
 |   | ├─ ⬜ pytest.ini 및 conftest.py 구성 | 🟢 | 0.5h |

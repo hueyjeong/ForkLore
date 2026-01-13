@@ -9,11 +9,13 @@ Endpoints:
 """
 
 import logging
+from typing import Any
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -88,7 +90,7 @@ class AIViewSet(GenericViewSet):
         return branch
 
     @action(detail=False, methods=["post"], url_path="wiki-suggestions")
-    def wiki_suggestions(self, request, **kwargs):
+    def wiki_suggestions(self, request: Request, **kwargs: Any) -> Response:
         """위키 제안 API."""
         branch_pk = kwargs.get("branch_pk")
         branch = self.get_branch(branch_pk)
@@ -120,7 +122,7 @@ class AIViewSet(GenericViewSet):
             )
 
     @action(detail=False, methods=["post"], url_path="consistency-check")
-    def consistency_check(self, request, **kwargs):
+    def consistency_check(self, request: Request, **kwargs: Any) -> Response:
         """일관성 검사 API."""
         branch_pk = kwargs.get("branch_pk")
         branch = self.get_branch(branch_pk)
@@ -155,7 +157,7 @@ class AIViewSet(GenericViewSet):
             )
 
     @action(detail=False, methods=["post"], url_path="ask")
-    def ask(self, request, **kwargs):
+    def ask(self, request: Request, **kwargs: Any) -> Response:
         """RAG 질문응답 API."""
         branch_pk = kwargs.get("branch_pk")
         branch = self.get_branch(branch_pk)
@@ -190,7 +192,7 @@ class AIViewSet(GenericViewSet):
             )
 
     @action(detail=False, methods=["post"], url_path="create-chunks")
-    def create_chunks(self, request, **kwargs):
+    def create_chunks(self, request: Request, **kwargs: Any) -> Response:
         """청킹 태스크 생성 API."""
         branch_pk = kwargs.get("branch_pk")
         branch = self.get_branch(branch_pk)

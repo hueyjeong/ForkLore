@@ -22,12 +22,13 @@ from apps.interactions.models import (
     Subscription,
     SubscriptionStatus,
 )
+from apps.users.models import User
 
 
 class AccessService:
     """Service for checking chapter access permissions."""
 
-    def can_access_chapter(self, user, chapter: Chapter) -> bool:
+    def can_access_chapter(self, user: User, chapter: Chapter) -> bool:
         """
         Check if a user can access a chapter.
 
@@ -38,7 +39,7 @@ class AccessService:
         4. Purchased chapter allows access
 
         Args:
-            user: User instance or None
+            user instance or None
             chapter: Chapter to check access for
 
         Returns:
@@ -66,7 +67,7 @@ class AccessService:
 
         return False
 
-    def _has_active_subscription(self, user) -> bool:
+    def _has_active_subscription(self, user: User) -> bool:
         """Check if user has an active, non-expired subscription."""
         return Subscription.objects.filter(
             user=user,
@@ -74,7 +75,7 @@ class AccessService:
             expires_at__gt=timezone.now(),
         ).exists()
 
-    def _has_purchased(self, user, chapter: Chapter) -> bool:
+    def _has_purchased(self, user: User, chapter: Chapter) -> bool:
         """Check if user has purchased the chapter."""
         return Purchase.objects.filter(user=user, chapter=chapter).exists()
 
@@ -84,7 +85,7 @@ class SubscriptionService:
 
     def subscribe(
         self,
-        user,
+        user: User,
         plan_type: str = PlanType.BASIC,
         days: int = 30,
         payment_id: str = "",
@@ -96,7 +97,7 @@ class SubscriptionService:
         Otherwise, creates a new subscription starting now.
 
         Args:
-            user: User instance
+            user instance
             plan_type: BASIC or PREMIUM
             days: Number of days to subscribe
             payment_id: Payment reference ID
@@ -131,7 +132,7 @@ class SubscriptionService:
                 status=SubscriptionStatus.ACTIVE,
             )
 
-    def cancel(self, user) -> bool:
+    def cancel(self, user: User) -> bool:
         """
         Cancel user's active subscription.
 
@@ -139,7 +140,7 @@ class SubscriptionService:
         Subscription remains valid until expires_at.
 
         Args:
-            user: User instance
+            user instance
 
         Returns:
             True if cancelled, False if no active subscription
@@ -158,14 +159,14 @@ class SubscriptionService:
         subscription.save()
         return True
 
-    def get_status(self, user) -> dict[str, Any] | None:
+    def get_status(self, user: User) -> dict[str, Any] | None:
         """
         Get user's subscription status.
 
         Also updates status to EXPIRED if expires_at has passed.
 
         Args:
-            user: User instance
+            user instance
 
         Returns:
             Dict with subscription info or None if no subscription
@@ -201,12 +202,12 @@ class SubscriptionService:
 class PurchaseService:
     """Service for managing chapter purchases."""
 
-    def purchase(self, user, chapter: Chapter) -> Purchase:
+    def purchase(self, user: User, chapter: Chapter) -> Purchase:
         """
         Purchase a chapter for permanent access.
 
         Args:
-            user: User instance
+            user instance
             chapter: Chapter to purchase
 
         Returns:
@@ -227,12 +228,12 @@ class PurchaseService:
             price_paid=chapter.price,
         )
 
-    def get_purchase_list(self, user) -> QuerySet[Purchase]:
+    def get_purchase_list(self, user: User) -> QuerySet[Purchase]:
         """
         Get all purchases for a user.
 
         Args:
-            user: User instance
+            user instance
 
         Returns:
             QuerySet of Purchase instances
@@ -244,12 +245,12 @@ class ReadingService:
     """Service for managing reading logs."""
 
     @staticmethod
-    def record_reading(user, chapter_id: int, progress: float):
+    def record_reading(user: User, chapter_id: int, progress: float) -> Any:
         """
         Record or update reading progress for a chapter.
 
         Args:
-            user: User instance
+            user instance
             chapter_id: ID of chapter being read
             progress: Reading progress (0.0 to 1.0)
 
@@ -273,12 +274,12 @@ class ReadingService:
         return log
 
     @staticmethod
-    def get_recent_reads(user, limit: int = 20):
+    def get_recent_reads(user: User, limit: int = 20) -> QuerySet:
         """
         Get recently read chapters for a user.
 
         Args:
-            user: User instance
+            user instance
             limit: Maximum number of results
 
         Returns:
@@ -293,7 +294,7 @@ class ReadingService:
         )
 
     @staticmethod
-    def get_continue_reading(user, branch_id: int) -> dict[str, Any]:
+    def get_continue_reading(user: User, branch_id: int) -> dict[str, Any]:
         """
         Get continue reading info for a specific branch.
 
@@ -303,7 +304,7 @@ class ReadingService:
         3. If no history, return first chapter
 
         Args:
-            user: User instance
+            user instance
             branch_id: ID of branch
 
         Returns:
@@ -360,12 +361,14 @@ class BookmarkService:
     """Service for managing bookmarks."""
 
     @staticmethod
-    def add_bookmark(user, chapter_id: int, scroll_position: float = 0, note: str = ""):
+    def add_bookmark(
+        user: User, chapter_id: int, scroll_position: float = 0, note: str = ""
+    ) -> Any:
         """
         Add or update a bookmark for a chapter.
 
         Args:
-            user: User instance
+            user instance
             chapter_id: ID of chapter to bookmark
             scroll_position: Scroll position (0.0 to 1.0)
             note: Optional note
@@ -389,12 +392,12 @@ class BookmarkService:
         return bookmark
 
     @staticmethod
-    def remove_bookmark(user, chapter_id: int) -> None:
+    def remove_bookmark(user: User, chapter_id: int) -> None:
         """
         Remove a bookmark.
 
         Args:
-            user: User instance
+            user instance
             chapter_id: ID of chapter to remove bookmark from
         """
         from apps.interactions.models import Bookmark
@@ -402,12 +405,12 @@ class BookmarkService:
         Bookmark.objects.filter(user=user, chapter_id=chapter_id).delete()
 
     @staticmethod
-    def get_bookmarks(user):
+    def get_bookmarks(user: User) -> QuerySet:
         """
         Get all bookmarks for a user.
 
         Args:
-            user: User instance
+            user instance
 
         Returns:
             QuerySet of Bookmark instances
@@ -426,7 +429,7 @@ class CommentService:
 
     @staticmethod
     def create(
-        user,
+        user: User,
         chapter_id: int,
         content: str,
         parent_id: int = None,
@@ -435,12 +438,12 @@ class CommentService:
         selection_start: int = None,
         selection_end: int = None,
         quoted_text: str = "",
-    ):
+    ) -> Any:
         """
         Create a new comment.
 
         Args:
-            user: User instance
+            user instance
             chapter_id: ID of chapter to comment on
             content: Comment content
             parent_id: Parent comment ID for replies
@@ -481,13 +484,13 @@ class CommentService:
         return comment
 
     @staticmethod
-    def update(comment_id: int, user, content: str = None, is_spoiler: bool = None):
+    def update(comment_id: int, user: User, content: str = None, is_spoiler: bool = None) -> Any:
         """
         Update a comment.
 
         Args:
             comment_id: ID of comment to update
-            user: User instance (must be owner)
+            user instance (must be owner)
             content: New content
             is_spoiler: New spoiler status
 
@@ -513,13 +516,13 @@ class CommentService:
         return comment
 
     @staticmethod
-    def delete(comment_id: int, user):
+    def delete(comment_id: int, user: User) -> None:
         """
         Soft delete a comment.
 
         Args:
             comment_id: ID of comment to delete
-            user: User instance (must be owner)
+            user instance (must be owner)
 
         Raises:
             PermissionError: If user is not the owner
@@ -537,7 +540,7 @@ class CommentService:
         comment.save()
 
     @staticmethod
-    def list(chapter_id: int, paragraph_index: int = None):
+    def list(chapter_id: int, paragraph_index: int = None) -> list:
         """
         List comments for a chapter.
 
@@ -565,13 +568,13 @@ class CommentService:
         return list(queryset)
 
     @staticmethod
-    def pin(comment_id: int, user):
+    def pin(comment_id: int, user: User) -> Any:
         """
         Pin a comment (author only).
 
         Args:
             comment_id: ID of comment to pin
-            user: User instance (must be branch author)
+            user instance (must be branch author)
 
         Returns:
             Pinned Comment instance
@@ -591,13 +594,13 @@ class CommentService:
         return comment
 
     @staticmethod
-    def unpin(comment_id: int, user):
+    def unpin(comment_id: int, user: User) -> Any:
         """
         Unpin a comment (author only).
 
         Args:
             comment_id: ID of comment to unpin
-            user: User instance (must be branch author)
+            user instance (must be branch author)
 
         Returns:
             Unpinned Comment instance
@@ -621,12 +624,12 @@ class LikeService:
     """Service for managing likes."""
 
     @staticmethod
-    def toggle(user, target) -> dict[str, Any]:
+    def toggle(user: User, target: Any) -> dict[str, Any]:
         """
         Toggle like on a target (comment, chapter, etc.).
 
         Args:
-            user: User instance
+            user instance
             target: Model instance to like (Comment, Chapter, etc.)
 
         Returns:
@@ -665,12 +668,12 @@ class LikeService:
         }
 
     @staticmethod
-    def get_like_status(user, target) -> bool:
+    def get_like_status(user: User, target: Any) -> bool:
         """
         Check if user has liked a target.
 
         Args:
-            user: User instance
+            user instance
             target: Model instance to check
 
         Returns:
@@ -695,12 +698,12 @@ class ReportService:
     """Service for managing reports."""
 
     @staticmethod
-    def create_report(reporter, target, reason: str, description: str = "") -> "Report":
+    def create_report(reporter: User, target: Any, reason: str, description: str = "") -> "Report":
         """
         Create a report for a target (comment, chapter, etc.).
 
         Args:
-            reporter: User submitting the report
+            reporter submitting the report
             target: Model instance to report (Comment, Chapter, etc.)
             reason: ReportReason value
             description: Optional detailed description
@@ -735,7 +738,7 @@ class ReportService:
         )
 
     @staticmethod
-    def admin_resolve(report_id: int, resolver, note: str = "") -> "Report":
+    def admin_resolve(report_id: int, resolver: User, note: str = "") -> "Report":
         """
         Resolve a report (admin only).
 
@@ -770,7 +773,7 @@ class ReportService:
         return report
 
     @staticmethod
-    def admin_reject(report_id: int, resolver, note: str = "") -> "Report":
+    def admin_reject(report_id: int, resolver: User, note: str = "") -> "Report":
         """
         Reject a report (admin only).
 
@@ -848,7 +851,7 @@ class WalletService:
 
     @staticmethod
     def charge(
-        user,
+        user: User,
         amount: int,
         description: str = "",
     ) -> dict:
@@ -858,7 +861,7 @@ class WalletService:
         Creates wallet if it doesn't exist.
 
         Args:
-            user: User instance
+            user instance
             amount: Amount to charge (must be positive)
             description: Optional description
 
@@ -899,7 +902,7 @@ class WalletService:
 
     @staticmethod
     def spend(
-        user,
+        user: User,
         amount: int,
         description: str = "",
         reference_type: str = "",
@@ -909,7 +912,7 @@ class WalletService:
         Spend coins from user's wallet.
 
         Args:
-            user: User instance
+            user instance
             amount: Amount to spend (must be positive)
             description: Optional description
             reference_type: Type of related entity (e.g., 'chapter')
@@ -957,7 +960,7 @@ class WalletService:
 
     @staticmethod
     def refund(
-        user,
+        user: User,
         amount: int,
         description: str = "",
         reference_type: str = "",
@@ -967,7 +970,7 @@ class WalletService:
         Refund coins to user's wallet.
 
         Args:
-            user: User instance
+            user instance
             amount: Amount to refund (must be positive)
             description: Optional description
             reference_type: Type of related entity
@@ -1011,7 +1014,7 @@ class WalletService:
 
     @staticmethod
     def adjustment(
-        user,
+        user: User,
         amount: int,
         description: str = "",
     ) -> dict:
@@ -1021,7 +1024,7 @@ class WalletService:
         Can be positive or negative. Allows balance to go below zero.
 
         Args:
-            user: User instance
+            user instance
             amount: Amount to adjust (can be negative)
             description: Required description for audit
 
@@ -1054,12 +1057,12 @@ class WalletService:
         return {"wallet": wallet, "transaction": tx}
 
     @staticmethod
-    def get_balance(user) -> int:
+    def get_balance(user: User) -> int:
         """
         Get current wallet balance.
 
         Args:
-            user: User instance
+            user instance
 
         Returns:
             Current balance, or 0 if no wallet
@@ -1073,12 +1076,12 @@ class WalletService:
             return 0
 
     @staticmethod
-    def get_transactions(user, limit: int = 20) -> list:
+    def get_transactions(user: User, limit: int = 20) -> list:
         """
         Get recent transactions for user.
 
         Args:
-            user: User instance
+            user instance
             limit: Maximum number of transactions
 
         Returns:
@@ -1106,7 +1109,7 @@ class AIUsageService:
 
     def increment(
         self,
-        user,
+        user: User,
         action_type: str,
         token_count: int = 0,
     ) -> "AIUsageLog":
@@ -1116,7 +1119,7 @@ class AIUsageService:
         Creates or updates the usage log for today.
 
         Args:
-            user: User instance
+            user instance
             action_type: AIActionType value
             token_count: Optional token count to add
 
@@ -1153,14 +1156,14 @@ class AIUsageService:
 
     def get_daily_usage(
         self,
-        user,
+        user: User,
         action_type: str = None,
     ) -> int:
         """
         Get today's usage count for a user.
 
         Args:
-            user: User instance
+            user instance
             action_type: Optional AIActionType to filter by.
                         If None, returns total across all action types.
 
@@ -1185,7 +1188,7 @@ class AIUsageService:
 
     def can_use_ai(
         self,
-        user,
+        user: User,
         action_type: str,
     ) -> bool:
         """
@@ -1194,7 +1197,7 @@ class AIUsageService:
         Compares current usage against tier-based daily limit.
 
         Args:
-            user: User instance
+            user instance
             action_type: AIActionType value
 
         Returns:
@@ -1205,12 +1208,12 @@ class AIUsageService:
 
         return current_usage < limit
 
-    def get_user_tier(self, user) -> str:
+    def get_user_tier(self, user: User) -> str:
         """
         Get user's current subscription tier.
 
         Args:
-            user: User instance
+            user instance
 
         Returns:
             "FREE", "BASIC", or "PREMIUM"
@@ -1238,12 +1241,12 @@ class AIUsageService:
 
         return "FREE"
 
-    def get_daily_limit(self, user) -> int:
+    def get_daily_limit(self, user: User) -> int:
         """
         Get user's daily AI usage limit.
 
         Args:
-            user: User instance
+            user instance
 
         Returns:
             Daily limit based on tier
@@ -1253,14 +1256,14 @@ class AIUsageService:
 
     def get_remaining_quota(
         self,
-        user,
+        user: User,
         action_type: str,
     ) -> int:
         """
         Get remaining quota for today.
 
         Args:
-            user: User instance
+            user instance
             action_type: AIActionType value
 
         Returns:
@@ -1271,12 +1274,12 @@ class AIUsageService:
 
         return max(0, limit - current_usage)
 
-    def get_usage_status(self, user) -> dict:
+    def get_usage_status(self, user: User) -> dict:
         """
         Get complete usage status for a user.
 
         Args:
-            user: User instance
+            user instance
 
         Returns:
             Dict with tier, limits, and usage by action type

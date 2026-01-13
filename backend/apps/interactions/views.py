@@ -12,6 +12,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.contents.models import Chapter
@@ -65,7 +66,7 @@ class SubscriptionViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
 
-    def create(self, request):
+    def create(self, request: Request) -> Response:
         """Create or extend subscription."""
         serializer = SubscriptionCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -91,7 +92,7 @@ class SubscriptionViewSet(viewsets.ViewSet):
         tags=["Subscriptions"],
     )
     @action(detail=False, methods=["delete"], url_path="current")
-    def cancel_current(self, request):
+    def cancel_current(self, request: Request) -> Response:
         """Cancel current subscription."""
         service = SubscriptionService()
         result = service.cancel(user=request.user)
@@ -113,7 +114,7 @@ class SubscriptionViewSet(viewsets.ViewSet):
         tags=["Subscriptions"],
     )
     @action(detail=False, methods=["get"], url_path="status")
-    def subscription_status(self, request):
+    def subscription_status(self, request: Request) -> Response:
         """Get subscription status."""
         service = SubscriptionService()
         result = service.get_status(user=request.user)
@@ -147,7 +148,7 @@ class PurchaseViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardPagination
 
-    def list(self, request):
+    def list(self, request: Request) -> Response:
         """List user's purchases."""
         service = PurchaseService()
         purchases = service.get_purchase_list(user=request.user)
@@ -174,7 +175,7 @@ class ChapterPurchaseViewSet(viewsets.ViewSet):
         description="회차를 소장 구매합니다.",
         tags=["Purchases"],
     )
-    def create(self, request, chapter_pk=None):
+    def create(self, request: Request, chapter_pk: int | None = None) -> Response:
         """Purchase a chapter."""
         try:
             chapter = Chapter.objects.get(pk=chapter_pk)
@@ -225,12 +226,12 @@ class ChapterCommentViewSet(viewsets.ViewSet):
 
     pagination_class = StandardPagination
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action == "create":
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, chapter_pk=None):
+    def list(self, request: Request, chapter_pk: int | None = None) -> Response:
         """List comments for a chapter."""
         paragraph_index = request.query_params.get("paragraph_index")
         paragraph_index = int(paragraph_index) if paragraph_index else None
@@ -246,7 +247,7 @@ class ChapterCommentViewSet(viewsets.ViewSet):
 
         return paginator.get_paginated_response(serializer.data)
 
-    def create(self, request, chapter_pk=None):
+    def create(self, request: Request, chapter_pk: int | None = None) -> Response:
         """Create a new comment."""
         serializer = CommentCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -298,7 +299,7 @@ class CommentDetailViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
 
-    def partial_update(self, request, pk=None):
+    def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a comment."""
         serializer = CommentUpdateSerializer(data=request.data, partial=True)
         if not serializer.is_valid():
@@ -327,7 +328,7 @@ class CommentDetailViewSet(viewsets.ViewSet):
         response_serializer = CommentSerializer(comment)
         return Response(response_serializer.data)
 
-    def destroy(self, request, pk=None):
+    def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a comment."""
         try:
             CommentService.delete(comment_id=pk, user=request.user)
@@ -350,7 +351,7 @@ class CommentDetailViewSet(viewsets.ViewSet):
         tags=["Comments"],
     )
     @action(detail=True, methods=["post", "delete"])
-    def pin(self, request, pk=None):
+    def pin(self, request: Request, pk: int | None = None) -> Response:
         """Pin or unpin a comment."""
         try:
             if request.method == "POST":
@@ -377,7 +378,7 @@ class CommentDetailViewSet(viewsets.ViewSet):
         tags=["Comments"],
     )
     @action(detail=True, methods=["post", "delete"])
-    def like(self, request, pk=None):
+    def like(self, request: Request, pk: int | None = None) -> Response:
         """Like or unlike a comment."""
         try:
             comment = Comment.objects.get(pk=pk)
@@ -408,7 +409,7 @@ class ChapterLikeViewSet(viewsets.ViewSet):
         description="회차에 좋아요를 누르거나 취소합니다.",
         tags=["Chapters"],
     )
-    def create(self, request, chapter_pk=None):
+    def create(self, request: Request, chapter_pk: int | None = None) -> Response:
         """Like or unlike a chapter."""
         try:
             chapter = Chapter.objects.get(pk=chapter_pk)
@@ -445,7 +446,7 @@ class ReportViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
 
-    def create(self, request):
+    def create(self, request: Request) -> Response:
         """Create a new report."""
         serializer = ReportCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -504,7 +505,7 @@ class AdminReportViewSet(viewsets.ViewSet):
     permission_classes = [IsAdminUser]
     pagination_class = StandardPagination
 
-    def list(self, request):
+    def list(self, request: Request) -> Response:
         """List all reports."""
         status_filter = request.query_params.get("status")
 
@@ -519,7 +520,7 @@ class AdminReportViewSet(viewsets.ViewSet):
 
         return paginator.get_paginated_response(serializer.data)
 
-    def partial_update(self, request, pk=None):
+    def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Process a report (resolve/reject)."""
         serializer = ReportActionSerializer(data=request.data)
         if not serializer.is_valid():
@@ -593,7 +594,7 @@ class WalletChargeViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
 
-    def create(self, request):
+    def create(self, request: Request) -> Response:
         """Charge coins to user's wallet."""
         serializer = WalletChargeSerializer(data=request.data)
         if not serializer.is_valid():
@@ -643,7 +644,7 @@ class UserWalletViewSet(viewsets.ViewSet):
         description="잔액과 최근 거래 내역을 조회합니다.",
         tags=["Wallet"],
     )
-    def retrieve(self, request):
+    def retrieve(self, request: Request) -> Response:
         """Get wallet balance and recent transactions."""
         balance = WalletService.get_balance(user=request.user)
         transactions = WalletService.get_transactions(user=request.user, limit=5)
@@ -665,7 +666,7 @@ class UserWalletViewSet(viewsets.ViewSet):
         tags=["Wallet"],
     )
     @action(detail=False, methods=["get"], url_path="transactions")
-    def transactions(self, request):
+    def transactions(self, request: Request) -> Response:
         """Get full transaction history with pagination."""
         from apps.interactions.models import CoinTransaction, Wallet
 
@@ -699,7 +700,7 @@ class AdminWalletAdjustmentViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAdminUser]
 
-    def create(self, request, user_pk=None):
+    def create(self, request: Request, user_pk: int | None = None) -> Response:
         """Adjust user's wallet balance."""
         from apps.users.models import User
 
@@ -760,7 +761,7 @@ class UserAIUsageViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=["get"], url_path="", url_name="usage-status")
-    def usage_status(self, request):
+    def usage_status(self, request: Request) -> Response:
         """Get AI usage status for current user."""
         from apps.interactions.serializers import AIUsageStatusSerializer
         from apps.interactions.services import AIUsageService
@@ -796,7 +797,7 @@ class AIUsageViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=["post"], url_path="check-limit", url_name="check-limit")
-    def check_limit(self, request):
+    def check_limit(self, request: Request) -> Response:
         """Check if user can use AI."""
         from apps.interactions.serializers import (
             AIUsageCheckLimitSerializer,
@@ -836,7 +837,7 @@ class AIUsageViewSet(viewsets.ViewSet):
         return Response(response_data)
 
     @action(detail=False, methods=["post"], url_path="record-usage", url_name="record-usage")
-    def record_usage(self, request):
+    def record_usage(self, request: Request) -> Response:
         """Record AI usage."""
         from apps.interactions.serializers import (
             AIUsageRecordSerializer,

@@ -25,6 +25,7 @@ except ImportError:
 from apps.ai.models import ChapterChunk
 from apps.contents.models import Chapter, WikiEntry
 from apps.interactions.services import AIUsageService
+from apps.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -119,12 +120,12 @@ class TextChunker:
 class EmbeddingService:
     """Gemini 임베딩 서비스."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.model = "models/text-embedding-004"
         self.dimension = 3072
         self._configure_api()
 
-    def _configure_api(self):
+    def _configure_api(self) -> None:
         """Gemini API 설정."""
         if genai:
             api_key = getattr(settings, "GEMINI_API_KEY", None)
@@ -185,7 +186,7 @@ class EmbeddingService:
 class ChunkingService:
     """회차 청킹 서비스."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.embedding_service = EmbeddingService()
         self.max_chunk_size = 1000
         self.overlap = 100
@@ -252,7 +253,7 @@ class ChunkingService:
 class SimilaritySearchService:
     """pgvector 기반 유사도 검색 서비스."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.embedding_service = EmbeddingService()
 
     def search_by_text(
@@ -322,28 +323,28 @@ class SimilaritySearchService:
 class AIService:
     """AI 기능 서비스 (위키 제안, 일관성 검사, RAG 질문응답)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.search_service = SimilaritySearchService()
         self.model_name = "gemini-1.5-flash"
         self._configure_api()
 
-    def _configure_api(self):
+    def _configure_api(self) -> None:
         """Gemini API 설정."""
         if genai:
             api_key = getattr(settings, "GEMINI_API_KEY", None)
             if api_key:
                 genai.configure(api_key=api_key)
 
-    def _check_usage_limit(self, user, action_type: str) -> None:
+    def _check_usage_limit(self, user: User, action_type: str) -> None:
         """AI 사용량 한도 확인."""
         if not AIUsageService().can_use_ai(user, action_type):
             raise ValueError("일일 AI 사용 한도를 초과했습니다.")
 
-    def _record_usage(self, user, action_type: str, token_count: int = 0) -> None:
+    def _record_usage(self, user: User, action_type: str, token_count: int = 0) -> None:
         """AI 사용량 기록."""
         AIUsageService().increment(user=user, action_type=action_type, token_count=token_count)
 
-    def _get_generative_model(self):
+    def _get_generative_model(self) -> Any:
         """Gemini 생성 모델 반환."""
         if not genai:
             raise ValueError("google-generativeai not installed")
@@ -352,7 +353,7 @@ class AIService:
     def suggest_wiki(
         self,
         branch_id: int,
-        user,
+        user: User,
         text: str,
     ) -> list[dict[str, Any]]:
         """
@@ -414,7 +415,7 @@ JSON 형식으로 응답해주세요:
         self,
         branch_id: int,
         chapter_id: int,
-        user,
+        user: User,
     ) -> dict[str, Any]:
         """
         회차의 설정 일관성을 검사합니다.
@@ -484,7 +485,7 @@ JSON 형식으로 응답해주세요:
     def ask(
         self,
         branch_id: int,
-        user,
+        user: User,
         question: str,
     ) -> str:
         """

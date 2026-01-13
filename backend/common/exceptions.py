@@ -1,10 +1,11 @@
-from rest_framework.views import exception_handler
-from rest_framework.response import Response
-from rest_framework import status
+from typing import Any
+
 from django.utils import timezone
+from rest_framework import status
+from rest_framework.views import exception_handler
 
 
-def custom_exception_handler(exc, context):
+def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Any:
     response = exception_handler(exc, context)
 
     if response is not None:
@@ -19,7 +20,7 @@ def custom_exception_handler(exc, context):
     return response
 
 
-def _extract_message(data):
+def _extract_message(data: Any) -> str | None:
     if isinstance(data, dict):
         if "detail" in data:
             return str(data["detail"])
@@ -37,14 +38,14 @@ def _extract_message(data):
 
 
 class BusinessException(Exception):
-    def __init__(self, message, status_code=status.HTTP_400_BAD_REQUEST):
+    def __init__(self, message: str, status_code: int = status.HTTP_400_BAD_REQUEST) -> None:
         self.message = message
         self.status_code = status_code
         super().__init__(message)
 
 
 class EntityNotFoundException(BusinessException):
-    def __init__(self, entity_name, entity_id=None):
+    def __init__(self, entity_name: str, entity_id: Any = None) -> None:
         message = f"{entity_name}을(를) 찾을 수 없습니다."
         if entity_id:
             message = f"{entity_name}(ID: {entity_id})을(를) 찾을 수 없습니다."
@@ -52,10 +53,10 @@ class EntityNotFoundException(BusinessException):
 
 
 class ForbiddenException(BusinessException):
-    def __init__(self, message="접근 권한이 없습니다."):
+    def __init__(self, message: str = "접근 권한이 없습니다.") -> None:
         super().__init__(message, status.HTTP_403_FORBIDDEN)
 
 
 class UnauthorizedException(BusinessException):
-    def __init__(self, message="인증이 필요합니다."):
+    def __init__(self, message: str = "인증이 필요합니다.") -> None:
         super().__init__(message, status.HTTP_401_UNAUTHORIZED)

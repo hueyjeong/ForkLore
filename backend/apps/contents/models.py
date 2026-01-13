@@ -46,7 +46,7 @@ class Chapter(BaseModel):
         unique_together = ["branch", "chapter_number"]
         ordering = ["chapter_number"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.branch.name} - {self.chapter_number}화: {self.title}"
 
 
@@ -75,7 +75,7 @@ class WikiTagDefinition(BaseModel):
         unique_together = [["branch", "name"]]
         ordering = ["display_order", "name"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.branch.name} - {self.name}"
 
 
@@ -116,7 +116,7 @@ class WikiEntry(BaseModel):
         unique_together = [["branch", "name"]]
         ordering = ["name"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.branch.name} - {self.name}"
 
 
@@ -148,7 +148,7 @@ class WikiSnapshot(BaseModel):
         unique_together = [["wiki_entry", "valid_from_chapter"]]
         ordering = ["valid_from_chapter"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.wiki_entry.name} - 회차 {self.valid_from_chapter}~"
 
 
@@ -198,7 +198,7 @@ class Map(BaseModel):
         unique_together = [["branch", "name"]]
         ordering = ["name"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.branch.name} - {self.name}"
 
 
@@ -217,7 +217,7 @@ class MapSnapshot(BaseModel):
         unique_together = [["map", "valid_from_chapter"]]
         ordering = ["valid_from_chapter"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.map.name} - 회차 {self.valid_from_chapter}~"
 
 
@@ -240,7 +240,7 @@ class MapLayer(BaseModel):
         verbose_name_plural = "지도 레이어들"
         ordering = ["z_index", "name"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.snapshot.map.name} - {self.name}"
 
 
@@ -273,5 +273,5 @@ class MapObject(BaseModel):
         verbose_name_plural = "지도 오브젝트들"
         ordering = ["id"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.layer.name} - {self.label or self.object_type}"

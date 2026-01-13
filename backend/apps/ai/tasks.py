@@ -5,7 +5,7 @@ Background tasks for computationally intensive AI operations.
 
 import logging
 
-from celery import shared_task
+from celery import Task, shared_task
 
 from apps.ai.services import ChunkingService
 from apps.contents.models import Chapter
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
     retry_backoff=True,
     retry_kwargs={"max_retries": 3},
 )
-def create_chapter_chunks(self, chapter_id: int) -> dict:
+def create_chapter_chunks(self: Task, chapter_id: int) -> dict:
     """
     Create chunks for a chapter asynchronously.
 
@@ -58,7 +58,7 @@ def create_chapter_chunks(self, chapter_id: int) -> dict:
     retry_backoff=True,
     retry_kwargs={"max_retries": 3},
 )
-def create_branch_chunks(self, branch_id: int) -> dict:
+def create_branch_chunks(self: Task, branch_id: int) -> dict:
     """
     Create chunks for all chapters in a branch.
 

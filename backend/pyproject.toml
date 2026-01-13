@@ -51,8 +51,12 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "C4"]
-ignore = ["E501"]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "ANN"]
+ignore = ["E501", "ANN101", "ANN102", "ANN401"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["apps", "config", "common"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = ["ANN"]
+"**/migrations/**/*.py" = ["ANN"]

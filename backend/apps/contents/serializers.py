@@ -75,7 +75,7 @@ class ChapterDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_prev_chapter(self, obj):
+    def get_prev_chapter(self, obj: Chapter) -> dict | None:
         """Get previous chapter navigation info."""
         prev_chapter = (
             Chapter.objects.filter(
@@ -90,7 +90,7 @@ class ChapterDetailSerializer(serializers.ModelSerializer):
             return ChapterNavSerializer(prev_chapter).data
         return None
 
-    def get_next_chapter(self, obj):
+    def get_next_chapter(self, obj: Chapter) -> dict | None:
         """Get next chapter navigation info."""
         next_chapter = (
             Chapter.objects.filter(
@@ -240,7 +240,7 @@ class WikiEntryDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_snapshot(self, obj):
+    def get_snapshot(self, obj: WikiEntry) -> dict | None:
         """Get context-aware snapshot if chapter is specified."""
         chapter = self.context.get("chapter")
         if chapter is not None:
@@ -403,7 +403,7 @@ class MapDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_snapshot(self, obj):
+    def get_snapshot(self, obj: Map) -> dict | None:
         """Get context-aware snapshot if chapter is specified."""
         chapter = self.context.get("chapter")
         if chapter is not None:

@@ -14,7 +14,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.contents.map_services import MapService
 from apps.contents.models import (
@@ -57,12 +59,12 @@ from common.pagination import StandardPagination
 class IsBranchAuthor:
     """Permission check for branch author."""
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, view: APIView) -> bool:
         if request.method in ("GET", "HEAD", "OPTIONS"):
             return True
-        return request.user and request.user.is_authenticated
+        return bool(request.user and request.user.is_authenticated)
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request: Request, view: APIView, obj: Chapter) -> bool:
         if request.method in ("GET", "HEAD", "OPTIONS"):
             return True
         # obj is Chapter
@@ -98,12 +100,12 @@ class ChapterViewSet(viewsets.ViewSet):
 
     pagination_class = StandardPagination
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["create"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, branch_pk=None):
+    def list(self, request: Request, branch_pk: int | None = None) -> Response:
         """List chapters for a branch."""
         service = ChapterService()
 
@@ -125,7 +127,9 @@ class ChapterViewSet(viewsets.ViewSet):
 
         return paginator.get_paginated_response(serializer.data)
 
-    def retrieve(self, request, branch_pk=None, pk=None):
+    def retrieve(
+        self, request: Request, branch_pk: int | None = None, pk: int | None = None
+    ) -> Response:
         """Get chapter detail by chapter_number."""
         service = ChapterService()
 
@@ -156,7 +160,7 @@ class ChapterViewSet(viewsets.ViewSet):
         serializer = ChapterDetailSerializer(chapter)
         return Response(serializer.data)
 
-    def create(self, request, branch_pk=None):
+    def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new chapter."""
         # Get branch and verify ownership
         try:
@@ -222,23 +226,23 @@ class ChapterDetailViewSet(viewsets.ViewSet):
     - POST /chapters/{id}/schedule/ - Schedule chapter
     """
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["retrieve"]:
             return [AllowAny()]
         return [IsAuthenticated()]
 
-    def _get_chapter(self, pk):
+    def _get_chapter(self, pk: int | None) -> Chapter | None:
         """Helper to get chapter by ID."""
         try:
             return Chapter.objects.select_related("branch").get(pk=pk)
         except Chapter.DoesNotExist:
             return None
 
-    def _check_author(self, chapter, user):
+    def _check_author(self, chapter: Chapter, user: object) -> bool:
         """Check if user is the branch author."""
         return chapter.branch.author == user
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request: Request, pk: int | None = None) -> Response:
         """Get chapter by ID."""
         chapter = self._get_chapter(pk)
         if not chapter:
@@ -250,7 +254,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         serializer = ChapterDetailSerializer(chapter)
         return Response(serializer.data)
 
-    def partial_update(self, request, pk=None):
+    def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a chapter."""
         chapter = self._get_chapter(pk)
         if not chapter:
@@ -284,7 +288,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         response_serializer = ChapterDetailSerializer(updated)
         return Response(response_serializer.data)
 
-    def destroy(self, request, pk=None):
+    def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a chapter."""
         chapter = self._get_chapter(pk)
         if not chapter:
@@ -308,7 +312,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         tags=["Chapters"],
     )
     @action(detail=True, methods=["post"])
-    def publish(self, request, pk=None):
+    def publish(self, request: Request, pk: int | None = None) -> Response:
         """Publish a draft chapter."""
         chapter = self._get_chapter(pk)
         if not chapter:
@@ -341,7 +345,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         tags=["Chapters"],
     )
     @action(detail=True, methods=["post"])
-    def schedule(self, request, pk=None):
+    def schedule(self, request: Request, pk: int | None = None) -> Response:
         """Schedule a chapter for future publication."""
         chapter = self._get_chapter(pk)
         if not chapter:
@@ -384,7 +388,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         tags=["Reading"],
     )
     @action(detail=True, methods=["post", "delete"], permission_classes=[IsAuthenticated])
-    def bookmark(self, request, pk=None):
+    def bookmark(self, request: Request, pk: int | None = None) -> Response:
         """Add or remove a bookmark."""
         from apps.interactions.serializers import BookmarkCreateSerializer, BookmarkSerializer
         from apps.interactions.services import BookmarkService
@@ -426,7 +430,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         url_path="reading-progress",
         permission_classes=[IsAuthenticated],
     )
-    def reading_progress(self, request, pk=None):
+    def reading_progress(self, request: Request, pk: int | None = None) -> Response:
         """Record reading progress."""
         from apps.interactions.serializers import ReadingLogSerializer, ReadingProgressSerializer
         from apps.interactions.services import ReadingService
@@ -481,12 +485,12 @@ class WikiEntryViewSet(viewsets.ViewSet):
 
     pagination_class = StandardPagination
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["create"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, branch_pk=None):
+    def list(self, request: Request, branch_pk: int | None = None) -> Response:
         """List wiki entries for a branch."""
         tag_id = request.query_params.get("tag")
         tag_id = int(tag_id) if tag_id else None
@@ -499,7 +503,7 @@ class WikiEntryViewSet(viewsets.ViewSet):
 
         return paginator.get_paginated_response(serializer.data)
 
-    def create(self, request, branch_pk=None):
+    def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new wiki entry."""
         serializer = WikiEntryCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -564,12 +568,12 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
     - PUT /wikis/{id}/tags/ - Update wiki tags
     """
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["retrieve"]:
             return [AllowAny()]
         return [IsAuthenticated()]
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request: Request, pk: int | None = None) -> Response:
         """Get wiki detail, optionally with context-aware snapshot."""
         chapter = request.query_params.get("chapter")
         chapter = int(chapter) if chapter else None
@@ -585,7 +589,7 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
         serializer = WikiEntryDetailSerializer(wiki, context={"chapter": chapter})
         return Response({"success": True, "data": serializer.data})
 
-    def partial_update(self, request, pk=None):
+    def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a wiki entry."""
         serializer = WikiEntryUpdateSerializer(data=request.data, partial=True)
         if not serializer.is_valid():
@@ -614,7 +618,7 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
         response_serializer = WikiEntryDetailSerializer(wiki)
         return Response({"success": True, "data": response_serializer.data})
 
-    def destroy(self, request, pk=None):
+    def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a wiki entry."""
         try:
             WikiService.delete(wiki_id=pk, user=request.user)
@@ -637,7 +641,7 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
         tags=["Wiki"],
     )
     @action(detail=True, methods=["put"])
-    def tags(self, request, pk=None):
+    def tags(self, request: Request, pk: int | None = None) -> Response:
         """Update wiki tags."""
         serializer = WikiTagUpdateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -688,18 +692,18 @@ class WikiTagViewSet(viewsets.ViewSet):
     - POST /branches/{branch_id}/wiki-tags/ - Create tag
     """
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["create"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, branch_pk=None):
+    def list(self, request: Request, branch_pk: int | None = None) -> Response:
         """List tag definitions for a branch."""
         tags = WikiService.list_tags(branch_id=branch_pk)
         serializer = WikiTagDefinitionSerializer(tags, many=True)
         return Response({"success": True, "data": serializer.data})
 
-    def create(self, request, branch_pk=None):
+    def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new tag definition."""
         serializer = WikiTagDefinitionCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -742,7 +746,7 @@ class WikiTagDetailViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
 
-    def destroy(self, request, pk=None):
+    def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a tag definition."""
         try:
             WikiService.delete_tag(tag_id=pk, user=request.user)
@@ -781,12 +785,12 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
     - POST /wikis/{wiki_id}/snapshots/ - Create snapshot
     """
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["create"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, wiki_pk=None):
+    def list(self, request: Request, wiki_pk: int | None = None) -> Response:
         """List snapshots for a wiki."""
         try:
             wiki = WikiService.retrieve(wiki_id=wiki_pk)
@@ -799,7 +803,7 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
         serializer = WikiSnapshotSerializer(wiki.snapshots.all(), many=True)
         return Response({"success": True, "data": serializer.data})
 
-    def create(self, request, wiki_pk=None):
+    def create(self, request: Request, wiki_pk: int | None = None) -> Response:
         """Create a new snapshot."""
         serializer = WikiSnapshotCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -861,12 +865,12 @@ class MapViewSet(viewsets.ViewSet):
 
     pagination_class = StandardPagination
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["create"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, branch_pk=None):
+    def list(self, request: Request, branch_pk: int | None = None) -> Response:
         """List maps for a branch."""
         maps = MapService.list(branch_id=branch_pk)
 
@@ -876,7 +880,7 @@ class MapViewSet(viewsets.ViewSet):
 
         return paginator.get_paginated_response(serializer.data)
 
-    def create(self, request, branch_pk=None):
+    def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new map."""
         serializer = MapCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -936,12 +940,12 @@ class MapDetailViewSet(viewsets.ViewSet):
     - DELETE /maps/{id}/ - Delete map
     """
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["retrieve"]:
             return [AllowAny()]
         return [IsAuthenticated()]
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, request: Request, pk: int | None = None) -> Response:
         """Get map detail, optionally with context-aware snapshot."""
         chapter = request.query_params.get("currentChapter")
         chapter = int(chapter) if chapter else None
@@ -957,7 +961,7 @@ class MapDetailViewSet(viewsets.ViewSet):
         serializer = MapDetailSerializer(map_obj, context={"chapter": chapter})
         return Response({"success": True, "data": serializer.data})
 
-    def partial_update(self, request, pk=None):
+    def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a map."""
         serializer = MapUpdateSerializer(data=request.data, partial=True)
         if not serializer.is_valid():
@@ -986,7 +990,7 @@ class MapDetailViewSet(viewsets.ViewSet):
         response_serializer = MapDetailSerializer(map_obj)
         return Response({"success": True, "data": response_serializer.data})
 
-    def destroy(self, request, pk=None):
+    def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a map."""
         try:
             MapService.delete(map_id=pk, user=request.user)
@@ -1025,12 +1029,12 @@ class MapSnapshotViewSet(viewsets.ViewSet):
     - POST /maps/{map_id}/snapshots/ - Create snapshot
     """
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["create"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, map_pk=None):
+    def list(self, request: Request, map_pk: int | None = None) -> Response:
         """List snapshots for a map."""
         try:
             map_obj = MapService.retrieve(map_id=map_pk)
@@ -1043,7 +1047,7 @@ class MapSnapshotViewSet(viewsets.ViewSet):
         serializer = MapSnapshotSerializer(map_obj.snapshots.all(), many=True)
         return Response({"success": True, "data": serializer.data})
 
-    def create(self, request, map_pk=None):
+    def create(self, request: Request, map_pk: int | None = None) -> Response:
         """Create a new map snapshot."""
         serializer = MapSnapshotCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -1097,12 +1101,12 @@ class MapLayerViewSet(viewsets.ViewSet):
     - POST /snapshots/{snapshot_id}/layers/ - Create layer
     """
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["create"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, snapshot_pk=None):
+    def list(self, request: Request, snapshot_pk: int | None = None) -> Response:
         """List layers for a snapshot."""
         try:
             snapshot = MapSnapshot.objects.prefetch_related("layers").get(id=snapshot_pk)
@@ -1115,7 +1119,7 @@ class MapLayerViewSet(viewsets.ViewSet):
         serializer = MapLayerSerializer(snapshot.layers.all(), many=True)
         return Response({"success": True, "data": serializer.data})
 
-    def create(self, request, snapshot_pk=None):
+    def create(self, request: Request, snapshot_pk: int | None = None) -> Response:
         """Create a new layer."""
         serializer = MapLayerCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -1169,12 +1173,12 @@ class MapObjectViewSet(viewsets.ViewSet):
     - POST /layers/{layer_id}/objects/ - Create object
     """
 
-    def get_permissions(self):
+    def get_permissions(self) -> list:
         if self.action in ["create"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
-    def list(self, request, layer_pk=None):
+    def list(self, request: Request, layer_pk: int | None = None) -> Response:
         """List objects for a layer."""
         try:
             layer = MapLayer.objects.prefetch_related("map_objects").get(id=layer_pk)
@@ -1187,7 +1191,7 @@ class MapObjectViewSet(viewsets.ViewSet):
         serializer = MapObjectSerializer(layer.map_objects.all(), many=True)
         return Response({"success": True, "data": serializer.data})
 
-    def create(self, request, layer_pk=None):
+    def create(self, request: Request, layer_pk: int | None = None) -> Response:
         """Create a new object."""
         serializer = MapObjectCreateSerializer(data=request.data)
         if not serializer.is_valid():

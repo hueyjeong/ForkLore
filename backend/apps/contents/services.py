@@ -22,6 +22,7 @@ from apps.contents.models import (
     WikiTagDefinition,
 )
 from apps.novels.models import Branch
+from apps.users.models import User
 
 
 class ChapterService:
@@ -29,7 +30,7 @@ class ChapterService:
 
     def create(
         self,
-        branch,
+        branch: Branch,
         title: str,
         content: str,
         access_type: str = AccessType.FREE,
@@ -230,7 +231,7 @@ class WikiService:
     """Service for managing wiki entries and tags."""
 
     @staticmethod
-    def _check_branch_author(branch: Branch, user) -> None:
+    def _check_branch_author(branch: Branch, user: User) -> None:
         """Check if user is the branch author."""
         if branch.author_id != user.id:
             raise PermissionDenied("브랜치 작가만 수정할 수 있습니다.")
@@ -238,7 +239,7 @@ class WikiService:
     @staticmethod
     def create(
         branch_id: int,
-        user,
+        user: User,
         name: str,
         image_url: str = "",
         first_appearance: int | None = None,
@@ -301,7 +302,7 @@ class WikiService:
     @staticmethod
     def update(
         wiki_id: int,
-        user,
+        user: User,
         name: str | None = None,
         image_url: str | None = None,
         first_appearance: int | None = None,
@@ -394,7 +395,7 @@ class WikiService:
         return qs.order_by("name")
 
     @staticmethod
-    def delete(wiki_id: int, user) -> None:
+    def delete(wiki_id: int, user: User) -> None:
         """
         Delete a wiki entry.
 
@@ -415,7 +416,7 @@ class WikiService:
         wiki.delete()
 
     @staticmethod
-    def update_tags(wiki_id: int, user, tag_ids: builtins.list[int]) -> WikiEntry:
+    def update_tags(wiki_id: int, user: User, tag_ids: builtins.list[int]) -> WikiEntry:
         """
         Update tags for a wiki entry.
 
@@ -448,7 +449,7 @@ class WikiService:
     @staticmethod
     def create_tag(
         branch_id: int,
-        user,
+        user: User,
         name: str,
         color: str = "",
         icon: str = "",
@@ -502,7 +503,7 @@ class WikiService:
         )
 
     @staticmethod
-    def delete_tag(tag_id: int, user) -> None:
+    def delete_tag(tag_id: int, user: User) -> None:
         """
         Delete a tag definition.
 
@@ -526,7 +527,7 @@ class WikiService:
     @staticmethod
     def add_snapshot(
         wiki_id: int,
-        user,
+        user: User,
         content: str,
         valid_from_chapter: int,
     ) -> WikiSnapshot:
@@ -626,7 +627,7 @@ class WikiService:
     def fork_wiki_entries(
         source_branch_id: int,
         target_branch_id: int,
-        user,
+        user: User,
     ) -> builtins.list[WikiEntry]:
         """
         Fork all wiki entries from source branch to target branch.

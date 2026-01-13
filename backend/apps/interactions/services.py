@@ -412,3 +412,270 @@ class BookmarkService:
             .select_related("chapter", "chapter__branch", "chapter__branch__novel")
             .order_by("-created_at")
         )
+
+
+class CommentService:
+    """Service for managing comments."""
+
+    @staticmethod
+    def create(
+        user,
+        chapter_id: int,
+        content: str,
+        parent_id: int = None,
+        is_spoiler: bool = False,
+        paragraph_index: int = None,
+        selection_start: int = None,
+        selection_end: int = None,
+        quoted_text: str = "",
+    ):
+        """
+        Create a new comment.
+
+        Args:
+            user: User instance
+            chapter_id: ID of chapter to comment on
+            content: Comment content
+            parent_id: Parent comment ID for replies
+            is_spoiler: Whether comment contains spoilers
+            paragraph_index: Index of paragraph for paragraph comments
+            selection_start: Start of text selection
+            selection_end: End of text selection
+            quoted_text: Quoted text from chapter
+
+        Returns:
+            Comment instance
+
+        Raises:
+            ValueError: If selection_start >= selection_end
+        """
+        from apps.interactions.models import Comment
+        from apps.contents.models import Chapter
+
+        # Validate selection range
+        if selection_start is not None and selection_end is not None:
+            if selection_start >= selection_end:
+                raise ValueError("selection_start must be less than selection_end")
+
+        chapter = Chapter.objects.get(id=chapter_id)
+        parent = Comment.objects.get(id=parent_id) if parent_id else None
+
+        comment = Comment.objects.create(
+            user=user,
+            chapter=chapter,
+            parent=parent,
+            content=content,
+            is_spoiler=is_spoiler,
+            paragraph_index=paragraph_index,
+            selection_start=selection_start,
+            selection_end=selection_end,
+            quoted_text=quoted_text,
+        )
+        return comment
+
+    @staticmethod
+    def update(comment_id: int, user, content: str = None, is_spoiler: bool = None):
+        """
+        Update a comment.
+
+        Args:
+            comment_id: ID of comment to update
+            user: User instance (must be owner)
+            content: New content
+            is_spoiler: New spoiler status
+
+        Returns:
+            Updated Comment instance
+
+        Raises:
+            PermissionError: If user is not the owner
+        """
+        from apps.interactions.models import Comment
+
+        comment = Comment.objects.get(id=comment_id)
+
+        if comment.user != user:
+            raise PermissionError("댓글 작성자만 수정할 수 있습니다.")
+
+        if content is not None:
+            comment.content = content
+        if is_spoiler is not None:
+            comment.is_spoiler = is_spoiler
+
+        comment.save()
+        return comment
+
+    @staticmethod
+    def delete(comment_id: int, user):
+        """
+        Soft delete a comment.
+
+        Args:
+            comment_id: ID of comment to delete
+            user: User instance (must be owner)
+
+        Raises:
+            PermissionError: If user is not the owner
+        """
+        from apps.interactions.models import Comment
+        from django.utils import timezone
+
+        comment = Comment.objects.get(id=comment_id)
+
+        if comment.user != user:
+            raise PermissionError("댓글 작성자만 삭제할 수 있습니다.")
+
+        comment.deleted_at = timezone.now()
+        comment.save()
+
+    @staticmethod
+    def list(chapter_id: int, paragraph_index: int = None):
+        """
+        List comments for a chapter.
+
+        Args:
+            chapter_id: ID of chapter
+            paragraph_index: Filter by paragraph index
+
+        Returns:
+            QuerySet of Comment instances
+        """
+        from apps.interactions.models import Comment
+
+        queryset = (
+            Comment.objects.filter(
+                chapter_id=chapter_id,
+                deleted_at__isnull=True,
+            )
+            .select_related("user", "parent")
+            .order_by("-created_at")
+        )
+
+        if paragraph_index is not None:
+            queryset = queryset.filter(paragraph_index=paragraph_index)
+
+        return list(queryset)
+
+    @staticmethod
+    def pin(comment_id: int, user):
+        """
+        Pin a comment (author only).
+
+        Args:
+            comment_id: ID of comment to pin
+            user: User instance (must be branch author)
+
+        Returns:
+            Pinned Comment instance
+
+        Raises:
+            PermissionError: If user is not the branch author
+        """
+        from apps.interactions.models import Comment
+
+        comment = Comment.objects.select_related("chapter__branch").get(id=comment_id)
+
+        if comment.chapter.branch.author != user:
+            raise PermissionError("작가만 댓글을 고정할 수 있습니다.")
+
+        comment.is_pinned = True
+        comment.save()
+        return comment
+
+    @staticmethod
+    def unpin(comment_id: int, user):
+        """
+        Unpin a comment (author only).
+
+        Args:
+            comment_id: ID of comment to unpin
+            user: User instance (must be branch author)
+
+        Returns:
+            Unpinned Comment instance
+
+        Raises:
+            PermissionError: If user is not the branch author
+        """
+        from apps.interactions.models import Comment
+
+        comment = Comment.objects.select_related("chapter__branch").get(id=comment_id)
+
+        if comment.chapter.branch.author != user:
+            raise PermissionError("작가만 댓글 고정을 해제할 수 있습니다.")
+
+        comment.is_pinned = False
+        comment.save()
+        return comment
+
+
+class LikeService:
+    """Service for managing likes."""
+
+    @staticmethod
+    def toggle(user, target) -> Dict[str, Any]:
+        """
+        Toggle like on a target (comment, chapter, etc.).
+
+        Args:
+            user: User instance
+            target: Model instance to like (Comment, Chapter, etc.)
+
+        Returns:
+            Dict with 'liked' (bool) and 'like_count' (int)
+        """
+        from apps.interactions.models import Like
+        from django.contrib.contenttypes.models import ContentType
+
+        content_type = ContentType.objects.get_for_model(target)
+
+        like, created = Like.objects.get_or_create(
+            user=user,
+            content_type=content_type,
+            object_id=target.id,
+        )
+
+        if not created:
+            # Already liked, so unlike
+            like.delete()
+            liked = False
+        else:
+            liked = True
+
+        # Update like_count if target has it
+        if hasattr(target, "like_count"):
+            if liked:
+                target.like_count += 1
+            else:
+                target.like_count = max(0, target.like_count - 1)
+            target.save(update_fields=["like_count", "updated_at"])
+
+        return {
+            "liked": liked,
+            "like_count": getattr(target, "like_count", None),
+        }
+
+    @staticmethod
+    def get_like_status(user, target) -> bool:
+        """
+        Check if user has liked a target.
+
+        Args:
+            user: User instance
+            target: Model instance to check
+
+        Returns:
+            True if liked, False otherwise
+        """
+        from apps.interactions.models import Like
+        from django.contrib.contenttypes.models import ContentType
+
+        if not user or not user.is_authenticated:
+            return False
+
+        content_type = ContentType.objects.get_for_model(target)
+        return Like.objects.filter(
+            user=user,
+            content_type=content_type,
+            object_id=target.id,
+        ).exists()

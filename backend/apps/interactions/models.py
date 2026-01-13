@@ -100,8 +100,44 @@ class Comment(SoftDeleteModel):
     is_pinned = models.BooleanField("고정 여부", default=False)
     like_count = models.IntegerField("좋아요 수", default=0)
 
+    # Paragraph comment fields
+    paragraph_index = models.IntegerField("문단 인덱스", null=True, blank=True)
+    selection_start = models.IntegerField("선택 시작", null=True, blank=True)
+    selection_end = models.IntegerField("선택 끝", null=True, blank=True)
+    quoted_text = models.TextField("인용 텍스트", blank=True)
+
     class Meta:
         db_table = "comments"
         verbose_name = "댓글"
         verbose_name_plural = "댓글들"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["chapter", "paragraph_index"]),
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.selection_start is not None and self.selection_end is not None:
+            if self.selection_start >= self.selection_end:
+                raise ValidationError("selection_start must be less than selection_end")
+
+
+class Like(BaseModel):
+    """Like model with GenericForeignKey for polymorphic likes."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="likes"
+    )
+    # Generic relation fields
+    content_type = models.ForeignKey("contenttypes.ContentType", on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+
+    class Meta:
+        db_table = "likes"
+        verbose_name = "좋아요"
+        verbose_name_plural = "좋아요들"
+        unique_together = ["user", "content_type", "object_id"]
+        indexes = [
+            models.Index(fields=["content_type", "object_id"]),
+        ]

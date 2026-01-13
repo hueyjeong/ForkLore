@@ -9,7 +9,16 @@ Contains serializers for:
 from rest_framework import serializers
 
 from apps.contents.serializers import ChapterListSerializer
-from .models import Subscription, Purchase, PlanType, SubscriptionStatus, ReadingLog, Bookmark
+from .models import (
+    Subscription,
+    Purchase,
+    PlanType,
+    SubscriptionStatus,
+    ReadingLog,
+    Bookmark,
+    Comment,
+    Like,
+)
 
 
 # =============================================================================
@@ -167,3 +176,84 @@ class BookmarkSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
+
+
+# =============================================================================
+# Comment Serializers
+# =============================================================================
+
+
+class UserBriefSerializer(serializers.Serializer):
+    """Brief user info for comments."""
+
+    id = serializers.IntegerField(read_only=True)
+    nickname = serializers.CharField(read_only=True)
+    profile_image = serializers.CharField(read_only=True, allow_null=True)
+
+
+class CommentCreateSerializer(serializers.Serializer):
+    """Serializer for creating a comment."""
+
+    content = serializers.CharField(max_length=5000)
+    is_spoiler = serializers.BooleanField(default=False)
+    parent_id = serializers.IntegerField(required=False, allow_null=True)
+    paragraph_index = serializers.IntegerField(required=False, allow_null=True)
+    selection_start = serializers.IntegerField(required=False, allow_null=True)
+    selection_end = serializers.IntegerField(required=False, allow_null=True)
+    quoted_text = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate(self, data):
+        start = data.get("selection_start")
+        end = data.get("selection_end")
+        if start is not None and end is not None and start >= end:
+            raise serializers.ValidationError("selection_start must be less than selection_end")
+        return data
+
+
+class CommentUpdateSerializer(serializers.Serializer):
+    """Serializer for updating a comment."""
+
+    content = serializers.CharField(max_length=5000, required=False)
+    is_spoiler = serializers.BooleanField(required=False)
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Serializer for comment."""
+
+    user = UserBriefSerializer(read_only=True)
+    reply_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = [
+            "id",
+            "user",
+            "content",
+            "is_spoiler",
+            "is_pinned",
+            "like_count",
+            "paragraph_index",
+            "selection_start",
+            "selection_end",
+            "quoted_text",
+            "parent_id",
+            "reply_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_reply_count(self, obj):
+        return obj.replies.filter(deleted_at__isnull=True).count()
+
+
+# =============================================================================
+# Like Serializers
+# =============================================================================
+
+
+class LikeToggleResponseSerializer(serializers.Serializer):
+    """Serializer for like toggle response."""
+
+    liked = serializers.BooleanField(read_only=True)
+    like_count = serializers.IntegerField(read_only=True, allow_null=True)

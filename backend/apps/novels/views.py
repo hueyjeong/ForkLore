@@ -1,139 +1,451 @@
 """
-Views for Novel API.
+Views for novels app.
 
-Endpoints:
-- POST /api/v1/novels - Create novel
-- GET /api/v1/novels - List novels
-- GET /api/v1/novels/{id} - Retrieve novel
-- PATCH /api/v1/novels/{id} - Update novel
-- DELETE /api/v1/novels/{id} - Delete novel
+Contains ViewSets for:
+- Novel: CRUD operations
+- Branch: List, Retrieve, Fork, Visibility, Vote, Link Request
+- BranchLinkRequest: Review (approve/reject)
 """
 
-from rest_framework import viewsets, status
+from django.db import IntegrityError
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 from common.pagination import StandardPagination
-from common.permissions import IsOwnerOrReadOnly
-
-from .models import Novel
-from .services import NovelService
+from .models import Novel, Branch, BranchLinkRequest, BranchVisibility, LinkRequestStatus
+from .services import NovelService, BranchService, BranchLinkService
 from .serializers import (
     NovelCreateSerializer,
     NovelDetailSerializer,
     NovelListSerializer,
     NovelUpdateSerializer,
+    BranchCreateSerializer,
+    BranchDetailSerializer,
+    BranchListSerializer,
+    BranchVisibilityUpdateSerializer,
+    BranchLinkRequestCreateSerializer,
+    BranchLinkRequestReviewSerializer,
+    BranchLinkRequestSerializer,
 )
 
 
 @extend_schema_view(
+    list=extend_schema(summary="소설 목록 조회"),
+    retrieve=extend_schema(summary="소설 상세 조회"),
+    create=extend_schema(summary="소설 생성"),
+    partial_update=extend_schema(summary="소설 수정"),
+    destroy=extend_schema(summary="소설 삭제"),
+)
+class NovelViewSet(viewsets.ViewSet):
+    """ViewSet for Novel CRUD operations."""
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.service = NovelService()
+
+    def list(self, request):
+        """List novels with optional filtering and sorting."""
+        filters = {}
+        if "genre" in request.query_params:
+            filters["genre"] = request.query_params["genre"]
+        if "status" in request.query_params:
+            filters["status"] = request.query_params["status"]
+
+        sort = request.query_params.get("sort", "latest")
+
+        novels = self.service.list(filters=filters if filters else None, sort=sort)
+
+        # Apply pagination
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(novels, request)
+        if page is not None:
+            serializer = NovelListSerializer(page, many=True)
+            return Response(
+                {
+                    "success": True,
+                    "message": None,
+                    "data": {
+                        "results": serializer.data,
+                        "count": paginator.page.paginator.count,
+                        "next": paginator.get_next_link(),
+                        "previous": paginator.get_previous_link(),
+                    },
+                }
+            )
+
+        serializer = NovelListSerializer(novels, many=True)
+        return Response({"success": True, "message": None, "data": {"results": serializer.data}})
+
+    def retrieve(self, request, pk=None):
+        """Retrieve a single novel."""
+        try:
+            novel = self.service.retrieve(novel_id=pk)
+            serializer = NovelDetailSerializer(novel)
+            return Response({"success": True, "message": None, "data": serializer.data})
+        except Novel.DoesNotExist:
+            return Response(
+                {"success": False, "message": "소설을 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def create(self, request):
+        """Create a new novel."""
+        serializer = NovelCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효하지 않은 데이터", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            novel = self.service.create(author=request.user, data=serializer.validated_data)
+            return Response(
+                {"success": True, "message": None, "data": NovelDetailSerializer(novel).data},
+                status=status.HTTP_201_CREATED,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    def partial_update(self, request, pk=None):
+        """Update a novel."""
+        serializer = NovelUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효하지 않은 데이터", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            novel = self.service.update(
+                novel_id=pk, author=request.user, data=serializer.validated_data
+            )
+            return Response(
+                {"success": True, "message": None, "data": NovelDetailSerializer(novel).data}
+            )
+        except Novel.DoesNotExist:
+            return Response(
+                {"success": False, "message": "소설을 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except PermissionError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+    def destroy(self, request, pk=None):
+        """Delete a novel."""
+        try:
+            self.service.delete(novel_id=pk, author=request.user)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Novel.DoesNotExist:
+            return Response(
+                {"success": False, "message": "소설을 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except PermissionError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+
+@extend_schema_view(
     list=extend_schema(
-        summary="소설 목록 조회",
-        description="공개된 소설 목록을 조회합니다.",
+        summary="브랜치 목록 조회",
         parameters=[
-            OpenApiParameter(name="genre", description="장르 필터"),
-            OpenApiParameter(name="status", description="상태 필터"),
-            OpenApiParameter(name="sort", description="정렬 (popular, latest, likes)"),
+            OpenApiParameter(name="visibility", type=str, description="Filter by visibility"),
+            OpenApiParameter(name="sort", type=str, description="Sort by: votes, latest, views"),
         ],
     ),
-    retrieve=extend_schema(summary="소설 상세 조회"),
-    create=extend_schema(
-        summary="소설 생성", description="소설 생성 시 메인 브랜치가 자동 생성됩니다."
-    ),
-    partial_update=extend_schema(summary="소설 수정"),
-    destroy=extend_schema(summary="소설 삭제 (소프트)"),
+    retrieve=extend_schema(summary="브랜치 상세 조회"),
 )
-class NovelViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Novel CRUD operations.
-    """
+class BranchViewSet(viewsets.ViewSet):
+    """ViewSet for Branch operations."""
 
-    queryset = Novel.objects.filter(deleted_at__isnull=True)
-    pagination_class = StandardPagination
-    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def get_serializer_class(self):
-        if self.action == "create":
-            return NovelCreateSerializer
-        elif self.action == "list":
-            return NovelListSerializer
-        elif self.action in ["update", "partial_update"]:
-            return NovelUpdateSerializer
-        return NovelDetailSerializer
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.service = BranchService()
+        self.link_service = BranchLinkService()
 
-    def get_queryset(self):
-        """Apply filters and sorting."""
-        queryset = super().get_queryset()
+    def list(self, request, novel_pk=None):
+        """List branches for a novel."""
+        visibility = request.query_params.get("visibility")
+        sort = request.query_params.get("sort", "latest")
 
-        # Filters
-        genre = self.request.query_params.get("genre")
-        novel_status = self.request.query_params.get("status")
+        branches = self.service.list(novel_id=novel_pk, visibility=visibility, sort=sort)
+        serializer = BranchListSerializer(branches, many=True)
 
-        if genre:
-            queryset = queryset.filter(genre=genre)
-        if novel_status:
-            queryset = queryset.filter(status=novel_status)
+        return Response({"success": True, "message": None, "data": {"results": serializer.data}})
 
-        # Sorting
-        sort = self.request.query_params.get("sort", "latest")
-        if sort == "popular":
-            queryset = queryset.order_by("-total_view_count")
-        elif sort == "likes":
-            queryset = queryset.order_by("-total_like_count")
-        else:  # latest
-            queryset = queryset.order_by("-created_at")
-
-        return queryset
-
-    def create(self, request, *args, **kwargs):
-        """Create a new novel with automatic main branch creation."""
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        service = NovelService()
-        novel = service.create(author=request.user, data=serializer.validated_data)
-
-        output_serializer = NovelDetailSerializer(novel)
-        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
-
-    def update(self, request, *args, **kwargs):
-        """Update a novel (author only)."""
-        partial = kwargs.pop("partial", False)
-        instance = self.get_object()
-
-        # Permission check
-        if instance.author != request.user:
+    def create(self, request, novel_pk=None):
+        """Fork a new branch."""
+        serializer = BranchCreateSerializer(data=request.data)
+        if not serializer.is_valid():
             return Response(
-                {"detail": "소설 수정 권한이 없습니다."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"success": False, "message": "유효하지 않은 데이터", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-
-        service = NovelService()
-        novel = service.update(
-            novel_id=instance.id,
-            author=request.user,
-            data=serializer.validated_data,
-        )
-
-        output_serializer = NovelDetailSerializer(novel)
-        return Response(output_serializer.data)
-
-    def destroy(self, request, *args, **kwargs):
-        """Soft-delete a novel (author only)."""
-        instance = self.get_object()
-
-        # Permission check
-        if instance.author != request.user:
+        parent_branch_id = request.data.get("parent_branch_id")
+        if not parent_branch_id:
             return Response(
-                {"detail": "소설 삭제 권한이 없습니다."},
-                status=status.HTTP_403_FORBIDDEN,
+                {"success": False, "message": "parent_branch_id는 필수입니다.", "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        service = NovelService()
-        service.delete(novel_id=instance.id, author=request.user)
+        try:
+            branch = self.service.fork(
+                novel_id=novel_pk,
+                parent_branch_id=parent_branch_id,
+                author=request.user,
+                data=serializer.validated_data,
+            )
+            return Response(
+                {"success": True, "message": None, "data": BranchDetailSerializer(branch).data},
+                status=status.HTTP_201_CREATED,
+            )
+        except PermissionError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except (Novel.DoesNotExist, Branch.DoesNotExist):
+            return Response(
+                {"success": False, "message": "소설 또는 브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    @action(detail=False, methods=["get"], url_path="main")
+    def main(self, request, novel_pk=None):
+        """Get main branch of a novel."""
+        try:
+            branch = self.service.get_main_branch(novel_id=novel_pk)
+            return Response(
+                {"success": True, "message": None, "data": BranchDetailSerializer(branch).data}
+            )
+        except Branch.DoesNotExist:
+            return Response(
+                {"success": False, "message": "메인 브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def retrieve(self, request, pk=None, novel_pk=None):
+        """Retrieve a single branch."""
+        try:
+            branch = self.service.retrieve(branch_id=pk)
+            return Response(
+                {"success": True, "message": None, "data": BranchDetailSerializer(branch).data}
+            )
+        except Branch.DoesNotExist:
+            return Response(
+                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+
+class BranchDetailViewSet(viewsets.ViewSet):
+    """ViewSet for single branch operations (visibility, vote, link-request)."""
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.service = BranchService()
+        self.link_service = BranchLinkService()
+
+    def retrieve(self, request, pk=None):
+        """Retrieve a single branch."""
+        try:
+            branch = self.service.retrieve(branch_id=pk)
+            return Response(
+                {"success": True, "message": None, "data": BranchDetailSerializer(branch).data}
+            )
+        except Branch.DoesNotExist:
+            return Response(
+                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    @action(
+        detail=True, methods=["patch"], url_path="visibility", permission_classes=[IsAuthenticated]
+    )
+    def visibility(self, request, pk=None):
+        """Update branch visibility."""
+        serializer = BranchVisibilityUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효하지 않은 데이터", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            branch = self.service.update_visibility(
+                branch_id=pk,
+                author=request.user,
+                visibility=serializer.validated_data["visibility"],
+            )
+            return Response(
+                {"success": True, "message": None, "data": BranchDetailSerializer(branch).data}
+            )
+        except Branch.DoesNotExist:
+            return Response(
+                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except PermissionError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(
+        detail=True,
+        methods=["post", "delete"],
+        url_path="vote",
+        permission_classes=[IsAuthenticated],
+    )
+    def vote(self, request, pk=None):
+        """Add or remove a vote."""
+        try:
+            if request.method == "POST":
+                self.service.vote(branch_id=pk, user=request.user)
+                return Response(
+                    {"success": True, "message": "투표 완료", "data": None},
+                    status=status.HTTP_201_CREATED,
+                )
+            else:  # DELETE
+                result = self.service.unvote(branch_id=pk, user=request.user)
+                if result:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response(
+                    {"success": False, "message": "투표 기록이 없습니다.", "data": None},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        except Branch.DoesNotExist:
+            return Response(
+                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except IntegrityError:
+            return Response(
+                {"success": False, "message": "이미 투표하셨습니다.", "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(
+        detail=True, methods=["post"], url_path="link-request", permission_classes=[IsAuthenticated]
+    )
+    def link_request(self, request, pk=None):
+        """Create a link request."""
+        serializer = BranchLinkRequestCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효하지 않은 데이터", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            link_request = self.link_service.request_link(
+                branch_id=pk,
+                requester=request.user,
+                message=serializer.validated_data.get("request_message", ""),
+            )
+            return Response(
+                {
+                    "success": True,
+                    "message": None,
+                    "data": BranchLinkRequestSerializer(link_request).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Branch.DoesNotExist:
+            return Response(
+                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except PermissionError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+class LinkRequestViewSet(viewsets.ViewSet):
+    """ViewSet for BranchLinkRequest operations."""
+
+    permission_classes = [IsAuthenticated]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.service = BranchLinkService()
+
+    def partial_update(self, request, pk=None):
+        """Review (approve/reject) a link request."""
+        serializer = BranchLinkRequestReviewSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효하지 않은 데이터", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        status_value = serializer.validated_data["status"]
+        comment = serializer.validated_data.get("review_comment", "")
+
+        try:
+            if status_value == LinkRequestStatus.APPROVED:
+                link_request = self.service.approve_link(
+                    request_id=pk, reviewer=request.user, comment=comment
+                )
+            else:
+                link_request = self.service.reject_link(
+                    request_id=pk, reviewer=request.user, comment=comment
+                )
+
+            return Response(
+                {
+                    "success": True,
+                    "message": None,
+                    "data": BranchLinkRequestSerializer(link_request).data,
+                }
+            )
+        except BranchLinkRequest.DoesNotExist:
+            return Response(
+                {"success": False, "message": "연결 요청을 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except PermissionError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

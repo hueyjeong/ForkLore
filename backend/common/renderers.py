@@ -15,10 +15,8 @@ Standard Response Format:
 }
 """
 
-from typing import Any
-
-from django.utils import timezone
 from djangorestframework_camel_case.render import CamelCaseJSONRenderer
+from django.utils import timezone
 
 
 class StandardJSONRenderer(CamelCaseJSONRenderer):
@@ -31,12 +29,7 @@ class StandardJSONRenderer(CamelCaseJSONRenderer):
     handled by custom_exception_handler in common/exceptions.py.
     """
 
-    def render(
-        self,
-        data: Any,
-        accepted_media_type: str | None = None,
-        renderer_context: dict[str, Any] | None = None,
-    ) -> Any:
+    def render(self, data, accepted_media_type=None, renderer_context=None):
         # Handle missing context
         if renderer_context is None:
             return super().render(data, accepted_media_type, renderer_context)

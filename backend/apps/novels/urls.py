@@ -12,11 +12,11 @@ Endpoints:
 - /link-requests/{id}/ - Review link request
 """
 
-from django.urls import include, path
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 
-from .views import BranchDetailViewSet, BranchViewSet, LinkRequestViewSet, NovelViewSet
+from .views import NovelViewSet, BranchViewSet, BranchDetailViewSet, LinkRequestViewSet
 
 # Main router for novels
 router = DefaultRouter()
@@ -26,9 +26,9 @@ router.register(r"novels", NovelViewSet, basename="novel")
 novels_router = routers.NestedDefaultRouter(router, r"novels", lookup="novel")
 novels_router.register(r"branches", BranchViewSet, basename="novel-branches")
 
-# Standalone router for branch details (exported for nested routers)
-branches_router = DefaultRouter()
-branches_router.register(r"branches", BranchDetailViewSet, basename="branch")
+# Standalone router for branch details
+branch_router = DefaultRouter()
+branch_router.register(r"branches", BranchDetailViewSet, basename="branch")
 
 # Standalone router for link requests
 link_request_router = DefaultRouter()
@@ -37,6 +37,6 @@ link_request_router.register(r"link-requests", LinkRequestViewSet, basename="lin
 urlpatterns = [
     path("", include(router.urls)),
     path("", include(novels_router.urls)),
-    path("", include(branches_router.urls)),
+    path("", include(branch_router.urls)),
     path("", include(link_request_router.urls)),
 ]

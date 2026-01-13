@@ -4,8 +4,9 @@ Implements business logic separate from views/serializers.
 """
 
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.exceptions import TokenError
+from django.db import IntegrityError
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 User = get_user_model()
 
@@ -80,8 +81,8 @@ class AuthService:
         """
         try:
             user = User.objects.get(email=email)
-        except User.DoesNotExist as e:
-            raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다.") from e
+        except User.DoesNotExist:
+            raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다.")
 
         if not user.check_password(password):
             raise ValueError("이메일 또는 비밀번호가 올바르지 않습니다.")
@@ -118,8 +119,8 @@ class AuthService:
             token = RefreshToken(refresh_token)
             token.blacklist()
             return True
-        except TokenError as e:
-            raise ValueError("유효하지 않은 토큰입니다.") from e
+        except TokenError:
+            raise ValueError("유효하지 않은 토큰입니다.")
 
     @staticmethod
     def refresh(refresh_token: str) -> dict:
@@ -140,8 +141,8 @@ class AuthService:
             return {
                 "access": str(token.access_token),
             }
-        except TokenError as e:
-            raise ValueError("유효하지 않은 토큰입니다.") from e
+        except TokenError:
+            raise ValueError("유효하지 않은 토큰입니다.")
 
 
 class UserService:

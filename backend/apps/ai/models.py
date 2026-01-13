@@ -1,5 +1,4 @@
 from django.db import models
-
 from common.models import BaseModel
 
 try:
@@ -14,7 +13,7 @@ class ChapterChunk(BaseModel):
     content = models.TextField("내용")
 
     if VectorField:
-        embedding = VectorField(dimensions=3072, null=True, blank=True)
+        embedding = VectorField(dimensions=3072)
     else:
         embedding = models.BinaryField("임베딩", null=True, blank=True)
 

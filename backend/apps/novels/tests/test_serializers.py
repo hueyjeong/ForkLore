@@ -2,28 +2,25 @@
 TDD Tests for Novel Serializers.
 """
 
-from typing import Any
-
 import pytest
 from model_bakery import baker
 
-from apps.novels.models import AgeRating, Genre, Novel
+from apps.novels.models import Novel, Branch, Genre, AgeRating, NovelStatus
 from apps.novels.serializers import (
     NovelCreateSerializer,
     NovelDetailSerializer,
     NovelListSerializer,
     NovelUpdateSerializer,
 )
-from apps.users.models import User
 
 
 @pytest.fixture
-def author(db: Any) -> User:
+def author(db):
     return baker.make("users.User", email="author@test.com", nickname="author", role="AUTHOR")
 
 
 @pytest.fixture
-def novel_with_branch(db: Any, author: User) -> Novel:
+def novel_with_branch(db, author):
     novel = baker.make("novels.Novel", author=author, title="테스트 소설", genre=Genre.FANTASY)
     baker.make(
         "novels.Branch",
@@ -39,7 +36,7 @@ def novel_with_branch(db: Any, author: User) -> Novel:
 class TestNovelCreateSerializer:
     """소설 생성 Serializer 테스트"""
 
-    def test_valid_data(self, db: Any) -> None:
+    def test_valid_data(self, db):
         """유효한 데이터로 생성"""
         data = {
             "title": "새로운 소설",
@@ -53,7 +50,7 @@ class TestNovelCreateSerializer:
         assert serializer.is_valid(), serializer.errors
         assert serializer.validated_data["title"] == "새로운 소설"
 
-    def test_missing_title_invalid(self, db: Any) -> None:
+    def test_missing_title_invalid(self, db):
         """제목 누락 시 에러"""
         data = {
             "description": "설명만",
@@ -65,7 +62,7 @@ class TestNovelCreateSerializer:
         assert not serializer.is_valid()
         assert "title" in serializer.errors
 
-    def test_missing_genre_invalid(self, db: Any) -> None:
+    def test_missing_genre_invalid(self, db):
         """장르 누락 시 에러"""
         data = {
             "title": "제목만",
@@ -76,7 +73,7 @@ class TestNovelCreateSerializer:
         assert not serializer.is_valid()
         assert "genre" in serializer.errors
 
-    def test_optional_fields_defaults(self, db: Any) -> None:
+    def test_optional_fields_defaults(self, db):
         """선택 필드 기본값"""
         data = {
             "title": "기본값 테스트",
@@ -93,7 +90,7 @@ class TestNovelCreateSerializer:
 class TestNovelDetailSerializer:
     """소설 상세 Serializer 테스트"""
 
-    def test_serializes_all_fields(self, novel_with_branch: Novel, author: User) -> None:
+    def test_serializes_all_fields(self, novel_with_branch, author):
         """모든 필드 직렬화"""
         serializer = NovelDetailSerializer(novel_with_branch)
         data = serializer.data
@@ -105,7 +102,7 @@ class TestNovelDetailSerializer:
         assert data["author"]["id"] == author.id
         assert data["author"]["nickname"] == author.nickname
 
-    def test_includes_aggregate_fields(self, novel_with_branch: Novel) -> None:
+    def test_includes_aggregate_fields(self, novel_with_branch):
         """집계 필드 포함"""
         novel_with_branch.total_view_count = 100
         novel_with_branch.total_like_count = 50
@@ -117,7 +114,7 @@ class TestNovelDetailSerializer:
         assert data["total_view_count"] == 100
         assert data["total_like_count"] == 50
 
-    def test_includes_branch_count(self, novel_with_branch: Novel) -> None:
+    def test_includes_branch_count(self, novel_with_branch):
         """브랜치 수 포함"""
         serializer = NovelDetailSerializer(novel_with_branch)
         data = serializer.data
@@ -129,7 +126,7 @@ class TestNovelDetailSerializer:
 class TestNovelListSerializer:
     """소설 목록 Serializer 테스트"""
 
-    def test_serializes_summary_fields(self, novel_with_branch: Novel, author: User) -> None:
+    def test_serializes_summary_fields(self, novel_with_branch, author):
         """요약 필드만 직렬화"""
         serializer = NovelListSerializer(novel_with_branch)
         data = serializer.data
@@ -141,7 +138,7 @@ class TestNovelListSerializer:
         # 목록에서는 author 요약 정보만
         assert data["author"]["nickname"] == author.nickname
 
-    def test_excludes_full_description(self, novel_with_branch: Novel) -> None:
+    def test_excludes_full_description(self, novel_with_branch):
         """긴 설명은 제외 또는 축약"""
         novel_with_branch.description = "A" * 1000
         novel_with_branch.save()
@@ -156,7 +153,7 @@ class TestNovelListSerializer:
 class TestNovelUpdateSerializer:
     """소설 수정 Serializer 테스트"""
 
-    def test_partial_update(self, db: Any) -> None:
+    def test_partial_update(self, db):
         """부분 수정 가능"""
         data = {"title": "수정된 제목"}
 
@@ -165,7 +162,7 @@ class TestNovelUpdateSerializer:
         assert serializer.is_valid()
         assert serializer.validated_data["title"] == "수정된 제목"
 
-    def test_cannot_update_author(self, db: Any, author: User) -> None:
+    def test_cannot_update_author(self, db, author):
         """작가 변경 불가"""
         other = baker.make("users.User")
         data = {"author": other.id}

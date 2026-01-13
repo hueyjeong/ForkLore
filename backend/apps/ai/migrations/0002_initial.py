@@ -5,25 +5,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+
     initial = True
 
     dependencies = [
-        ("ai", "0001_initial"),
-        ("contents", "0001_initial"),
+        ('ai', '0001_initial'),
+        ('contents', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="chapterchunk",
-            name="chapter",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="chunks",
-                to="contents.chapter",
-            ),
+            model_name='chapterchunk',
+            name='chapter',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='chunks', to='contents.chapter'),
         ),
         migrations.AlterUniqueTogether(
-            name="chapterchunk",
-            unique_together={("chapter", "chunk_index")},
+            name='chapterchunk',
+            unique_together={('chapter', 'chunk_index')},
         ),
     ]

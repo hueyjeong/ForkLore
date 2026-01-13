@@ -7,6 +7,8 @@ doesn't exist yet.
 
 import json
 
+import pytest
+from django.utils import timezone
 from rest_framework.response import Response
 
 
@@ -131,6 +133,7 @@ class TestStandardJSONRenderer:
 
         parsed = json.loads(result)
         # Should be able to parse as ISO format
+        from datetime import datetime
 
         timestamp = parsed["timestamp"]
         # Remove timezone info for parsing

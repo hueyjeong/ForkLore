@@ -1,7 +1,6 @@
-from django.conf import settings
 from django.db import models
-
-from common.models import BaseModel, SoftDeleteModel
+from django.conf import settings
+from common.models import SoftDeleteModel, BaseModel
 
 
 class Genre(models.TextChoices):
@@ -60,7 +59,7 @@ class Novel(SoftDeleteModel):
         verbose_name_plural = "소설들"
         ordering = ["-created_at"]
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.title
 
 
@@ -130,7 +129,7 @@ class Branch(SoftDeleteModel):
             )
         ]
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"{self.novel.title} - {self.name}"
 
 

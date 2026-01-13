@@ -7,35 +7,33 @@ RED-GREEN-REFACTOR:
 3. Refactor
 """
 
-from typing import Any
-
 import pytest
+from django.db import IntegrityError
 from model_bakery import baker
 
-from apps.novels.models import AgeRating, Branch, BranchType, Genre, Novel, NovelStatus
+from apps.novels.models import Novel, Branch, BranchType, Genre, AgeRating, NovelStatus
 from apps.novels.services import NovelService
-from apps.users.models import User
 
 
 @pytest.fixture
-def novel_service() -> NovelService:
+def novel_service():
     return NovelService()
 
 
 @pytest.fixture
-def author(db: Any) -> User:
+def author(db):
     return baker.make("users.User", email="author@test.com", nickname="author", role="AUTHOR")
 
 
 @pytest.fixture
-def other_author(db: Any) -> User:
+def other_author(db):
     return baker.make("users.User", email="other@test.com", nickname="other", role="AUTHOR")
 
 
 class TestNovelServiceCreate:
     """소설 생성 서비스 테스트"""
 
-    def test_create_novel_success(self, novel_service: NovelService, author: User) -> None:
+    def test_create_novel_success(self, novel_service, author):
         """소설 생성 시 메인 브랜치도 자동 생성"""
         data = {
             "title": "테스트 소설",
@@ -63,7 +61,7 @@ class TestNovelServiceCreate:
         assert main_branch.branch_type == BranchType.MAIN
         assert main_branch.visibility == "PUBLIC"
 
-    def test_create_novel_with_all_fields(self, novel_service: NovelService, author: User) -> None:
+    def test_create_novel_with_all_fields(self, novel_service, author):
         """모든 필드를 포함한 소설 생성"""
         data = {
             "title": "완전한 소설",
@@ -80,7 +78,7 @@ class TestNovelServiceCreate:
         assert novel.age_rating == AgeRating.AGE_15
         assert novel.allow_branching is False
 
-    def test_create_novel_requires_title(self, novel_service: NovelService, author: User) -> None:
+    def test_create_novel_requires_title(self, novel_service, author):
         """제목 없이 소설 생성 시 에러"""
         data = {
             "description": "설명만",
@@ -94,7 +92,7 @@ class TestNovelServiceCreate:
 class TestNovelServiceList:
     """소설 목록 조회 서비스 테스트"""
 
-    def test_list_novels_returns_queryset(self, novel_service: NovelService, author: User) -> None:
+    def test_list_novels_returns_queryset(self, novel_service, author):
         """소설 목록 조회 - 삭제되지 않은 소설만 반환"""
         novel1 = baker.make("novels.Novel", author=author, title="소설1")
         novel2 = baker.make("novels.Novel", author=author, title="소설2")
@@ -108,7 +106,7 @@ class TestNovelServiceList:
         assert novel2 in novels
         assert deleted_novel not in novels
 
-    def test_list_novels_filter_by_genre(self, novel_service: NovelService, author: User) -> None:
+    def test_list_novels_filter_by_genre(self, novel_service, author):
         """장르 필터링"""
         fantasy = baker.make("novels.Novel", author=author, genre=Genre.FANTASY)
         romance = baker.make("novels.Novel", author=author, genre=Genre.ROMANCE)
@@ -119,17 +117,17 @@ class TestNovelServiceList:
         assert fantasy in novels
         assert romance not in novels
 
-    def test_list_novels_filter_by_status(self, novel_service: NovelService, author: User) -> None:
+    def test_list_novels_filter_by_status(self, novel_service, author):
         """상태 필터링"""
         ongoing = baker.make("novels.Novel", author=author, status=NovelStatus.ONGOING)
-        baker.make("novels.Novel", author=author, status=NovelStatus.COMPLETED)
+        completed = baker.make("novels.Novel", author=author, status=NovelStatus.COMPLETED)
 
         novels = novel_service.list(filters={"status": NovelStatus.ONGOING})
 
         assert novels.count() == 1
         assert ongoing in novels
 
-    def test_list_novels_sort_by_popular(self, novel_service: NovelService, author: User) -> None:
+    def test_list_novels_sort_by_popular(self, novel_service, author):
         """인기순 정렬 (총 조회수 기준)"""
         novel1 = baker.make("novels.Novel", author=author, total_view_count=100)
         novel2 = baker.make("novels.Novel", author=author, total_view_count=500)
@@ -142,7 +140,7 @@ class TestNovelServiceList:
         assert novels_list[1] == novel1
         assert novels_list[2] == novel3
 
-    def test_list_novels_sort_by_latest(self, novel_service: NovelService, author: User) -> None:
+    def test_list_novels_sort_by_latest(self, novel_service, author):
         """최신순 정렬"""
         novels = novel_service.list(sort="latest")
 
@@ -153,7 +151,7 @@ class TestNovelServiceList:
 class TestNovelServiceRetrieve:
     """소설 상세 조회 서비스 테스트"""
 
-    def test_retrieve_novel_success(self, novel_service: NovelService, author: User) -> None:
+    def test_retrieve_novel_success(self, novel_service, author):
         """소설 상세 조회"""
         novel = baker.make("novels.Novel", author=author, title="조회할 소설")
 
@@ -162,9 +160,7 @@ class TestNovelServiceRetrieve:
         assert result == novel
         assert result.title == "조회할 소설"
 
-    def test_retrieve_deleted_novel_raises_error(
-        self, novel_service: NovelService, author: User
-    ) -> None:
+    def test_retrieve_deleted_novel_raises_error(self, novel_service, author):
         """삭제된 소설 조회 시 에러"""
         novel = baker.make("novels.Novel", author=author)
         novel.soft_delete()
@@ -172,9 +168,7 @@ class TestNovelServiceRetrieve:
         with pytest.raises(Novel.DoesNotExist):
             novel_service.retrieve(novel_id=novel.id)
 
-    def test_retrieve_nonexistent_novel_raises_error(
-        self, novel_service: NovelService, db: Any
-    ) -> None:
+    def test_retrieve_nonexistent_novel_raises_error(self, novel_service, db):
         """존재하지 않는 소설 조회 시 에러"""
         with pytest.raises(Novel.DoesNotExist):
             novel_service.retrieve(novel_id=99999)
@@ -183,7 +177,7 @@ class TestNovelServiceRetrieve:
 class TestNovelServiceUpdate:
     """소설 수정 서비스 테스트"""
 
-    def test_update_novel_success(self, novel_service: NovelService, author: User) -> None:
+    def test_update_novel_success(self, novel_service, author):
         """소설 수정 성공"""
         novel = baker.make("novels.Novel", author=author, title="원본 제목")
 
@@ -196,9 +190,7 @@ class TestNovelServiceUpdate:
         assert updated.title == "수정된 제목"
         assert updated.description == "수정된 설명"
 
-    def test_update_novel_not_owner_raises_error(
-        self, novel_service: NovelService, author: User, other_author: User
-    ) -> None:
+    def test_update_novel_not_owner_raises_error(self, novel_service, author, other_author):
         """작가가 아닌 사용자가 수정 시 에러"""
         novel = baker.make("novels.Novel", author=author)
 
@@ -209,7 +201,7 @@ class TestNovelServiceUpdate:
                 data={"title": "해킹 시도"},
             )
 
-    def test_update_novel_partial(self, novel_service: NovelService, author: User) -> None:
+    def test_update_novel_partial(self, novel_service, author):
         """부분 수정 (일부 필드만)"""
         novel = baker.make(
             "novels.Novel",
@@ -231,7 +223,7 @@ class TestNovelServiceUpdate:
 class TestNovelServiceDelete:
     """소설 삭제 서비스 테스트"""
 
-    def test_delete_novel_soft_delete(self, novel_service: NovelService, author: User) -> None:
+    def test_delete_novel_soft_delete(self, novel_service, author):
         """소설 소프트 삭제"""
         novel = baker.make("novels.Novel", author=author)
 
@@ -241,18 +233,14 @@ class TestNovelServiceDelete:
         assert novel.is_deleted is True
         assert novel.deleted_at is not None
 
-    def test_delete_novel_not_owner_raises_error(
-        self, novel_service: NovelService, author: User, other_author: User
-    ) -> None:
+    def test_delete_novel_not_owner_raises_error(self, novel_service, author, other_author):
         """작가가 아닌 사용자가 삭제 시 에러"""
         novel = baker.make("novels.Novel", author=author)
 
         with pytest.raises(PermissionError):
             novel_service.delete(novel_id=novel.id, author=other_author)
 
-    def test_delete_already_deleted_raises_error(
-        self, novel_service: NovelService, author: User
-    ) -> None:
+    def test_delete_already_deleted_raises_error(self, novel_service, author):
         """이미 삭제된 소설 삭제 시 에러"""
         novel = baker.make("novels.Novel", author=author)
         novel.soft_delete()

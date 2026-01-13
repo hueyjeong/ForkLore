@@ -15,36 +15,35 @@ Tests:
 
 import pytest
 from django.urls import reverse
-from model_bakery import baker
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
+from model_bakery import baker
 
 from apps.novels.models import (
+    Novel,
     Branch,
-    BranchLinkRequest,
     BranchType,
     BranchVisibility,
     BranchVote,
+    BranchLinkRequest,
     LinkRequestStatus,
-    Novel,
 )
-from apps.users.models import User
 
 
-def get_tokens_for_user(user: User) -> str:
+def get_tokens_for_user(user):
     """Generate JWT tokens for a user."""
     refresh = RefreshToken.for_user(user)
     return str(refresh.access_token)
 
 
 @pytest.fixture
-def api_client() -> APIClient:
+def api_client():
     return APIClient()
 
 
 @pytest.fixture
-def authenticated_client(api_client: APIClient) -> APIClient:
+def authenticated_client(api_client):
     user = baker.make("users.User")
     token = get_tokens_for_user(user)
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
@@ -56,11 +55,11 @@ def authenticated_client(api_client: APIClient) -> APIClient:
 class TestBranchList:
     """Tests for GET /novels/{id}/branches"""
 
-    def test_list_branches(self, api_client: APIClient) -> None:
+    def test_list_branches(self, api_client):
         """Should return branches for a novel."""
         novel = baker.make(Novel)
-        baker.make(Branch, novel=novel, visibility=BranchVisibility.PUBLIC)
-        baker.make(Branch, novel=novel, visibility=BranchVisibility.LINKED)
+        branch1 = baker.make(Branch, novel=novel, visibility=BranchVisibility.PUBLIC)
+        branch2 = baker.make(Branch, novel=novel, visibility=BranchVisibility.LINKED)
 
         url = reverse("novel-branches-list", kwargs={"novel_pk": novel.id})
         response = api_client.get(url)
@@ -69,7 +68,7 @@ class TestBranchList:
         assert response.data["success"] is True
         assert len(response.data["data"]["results"]) == 2
 
-    def test_list_branches_filter_by_visibility(self, api_client: APIClient) -> None:
+    def test_list_branches_filter_by_visibility(self, api_client):
         """Should filter branches by visibility."""
         novel = baker.make(Novel)
         baker.make(Branch, novel=novel, visibility=BranchVisibility.PUBLIC)
@@ -87,7 +86,7 @@ class TestBranchList:
 class TestGetMainBranch:
     """Tests for GET /novels/{id}/branches/main"""
 
-    def test_get_main_branch(self, api_client: APIClient) -> None:
+    def test_get_main_branch(self, api_client):
         """Should return the main branch."""
         novel = baker.make(Novel)
         main = baker.make(Branch, novel=novel, is_main=True, name="메인 브랜치")
@@ -105,7 +104,7 @@ class TestGetMainBranch:
 class TestBranchRetrieve:
     """Tests for GET /branches/{id}"""
 
-    def test_retrieve_branch(self, api_client: APIClient) -> None:
+    def test_retrieve_branch(self, api_client):
         """Should return branch details."""
         branch = baker.make(Branch, name="테스트 브랜치")
 
@@ -116,7 +115,7 @@ class TestBranchRetrieve:
         assert response.data["data"]["id"] == branch.id
         assert response.data["data"]["name"] == "테스트 브랜치"
 
-    def test_retrieve_nonexistent_branch(self, api_client: APIClient) -> None:
+    def test_retrieve_nonexistent_branch(self, api_client):
         """Should return 404 for nonexistent branch."""
         url = reverse("branch-detail", kwargs={"pk": 99999})
         response = api_client.get(url)
@@ -128,7 +127,7 @@ class TestBranchRetrieve:
 class TestBranchFork:
     """Tests for POST /novels/{id}/branches"""
 
-    def test_fork_branch_success(self, authenticated_client: APIClient) -> None:
+    def test_fork_branch_success(self, authenticated_client):
         """Should create a forked branch."""
         novel = baker.make(Novel, allow_branching=True)
         parent = baker.make(Branch, novel=novel, is_main=True)
@@ -147,7 +146,7 @@ class TestBranchFork:
         assert response.data["data"]["name"] == "IF: 다른 선택"
         assert response.data["data"]["is_main"] is False
 
-    def test_fork_branch_not_allowed(self, authenticated_client: APIClient) -> None:
+    def test_fork_branch_not_allowed(self, authenticated_client):
         """Should fail if novel doesn't allow branching."""
         novel = baker.make(Novel, allow_branching=False)
         parent = baker.make(Branch, novel=novel, is_main=True)
@@ -158,7 +157,7 @@ class TestBranchFork:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_fork_branch_unauthenticated(self, api_client: APIClient) -> None:
+    def test_fork_branch_unauthenticated(self, api_client):
         """Should fail for unauthenticated user."""
         novel = baker.make(Novel)
         parent = baker.make(Branch, novel=novel, is_main=True)
@@ -174,7 +173,7 @@ class TestBranchFork:
 class TestBranchVisibilityUpdate:
     """Tests for PATCH /branches/{id}/visibility"""
 
-    def test_update_visibility_success(self, authenticated_client: APIClient) -> None:
+    def test_update_visibility_success(self, authenticated_client):
         """Should update branch visibility."""
         branch = baker.make(
             Branch,
@@ -190,7 +189,7 @@ class TestBranchVisibilityUpdate:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["data"]["visibility"] == BranchVisibility.PUBLIC
 
-    def test_update_visibility_not_owner(self, authenticated_client: APIClient) -> None:
+    def test_update_visibility_not_owner(self, authenticated_client):
         """Should fail if not the owner."""
         other_user = baker.make("users.User")
         branch = baker.make(Branch, author=other_user, visibility=BranchVisibility.PRIVATE)
@@ -206,7 +205,7 @@ class TestBranchVisibilityUpdate:
 class TestBranchVote:
     """Tests for POST/DELETE /branches/{id}/vote"""
 
-    def test_vote_success(self, authenticated_client: APIClient) -> None:
+    def test_vote_success(self, authenticated_client):
         """Should add vote to branch."""
         branch = baker.make(Branch, vote_count=0)
 
@@ -217,7 +216,7 @@ class TestBranchVote:
         branch.refresh_from_db()
         assert branch.vote_count == 1
 
-    def test_vote_duplicate(self, authenticated_client: APIClient) -> None:
+    def test_vote_duplicate(self, authenticated_client):
         """Should fail for duplicate vote."""
         branch = baker.make(Branch, vote_count=1)
         baker.make(BranchVote, user=authenticated_client.user, branch=branch)
@@ -227,7 +226,7 @@ class TestBranchVote:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_unvote_success(self, authenticated_client: APIClient) -> None:
+    def test_unvote_success(self, authenticated_client):
         """Should remove vote from branch."""
         branch = baker.make(Branch, vote_count=1)
         baker.make(BranchVote, user=authenticated_client.user, branch=branch)
@@ -244,7 +243,7 @@ class TestBranchVote:
 class TestBranchLinkRequest:
     """Tests for POST /branches/{id}/link-request"""
 
-    def test_create_link_request_success(self, authenticated_client: APIClient) -> None:
+    def test_create_link_request_success(self, authenticated_client):
         """Should create a link request."""
         branch = baker.make(
             Branch,
@@ -260,7 +259,7 @@ class TestBranchLinkRequest:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["data"]["status"] == LinkRequestStatus.PENDING
 
-    def test_create_link_request_not_owner(self, authenticated_client: APIClient) -> None:
+    def test_create_link_request_not_owner(self, authenticated_client):
         """Should fail if not branch owner."""
         other_user = baker.make("users.User")
         branch = baker.make(Branch, author=other_user, is_main=False)
@@ -276,7 +275,7 @@ class TestBranchLinkRequest:
 class TestLinkRequestReview:
     """Tests for PATCH /link-requests/{id}"""
 
-    def test_approve_link_request(self, authenticated_client: APIClient) -> None:
+    def test_approve_link_request(self, authenticated_client):
         """Should approve link request (novel author)."""
         novel = baker.make(Novel, author=authenticated_client.user)
         branch = baker.make(Branch, novel=novel, is_main=False, visibility=BranchVisibility.PUBLIC)
@@ -294,7 +293,7 @@ class TestLinkRequestReview:
         branch.refresh_from_db()
         assert branch.visibility == BranchVisibility.LINKED
 
-    def test_reject_link_request(self, authenticated_client: APIClient) -> None:
+    def test_reject_link_request(self, authenticated_client):
         """Should reject link request."""
         novel = baker.make(Novel, author=authenticated_client.user)
         branch = baker.make(Branch, novel=novel, is_main=False)

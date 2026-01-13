@@ -41,9 +41,9 @@ class User(AbstractUser):
         verbose_name = "사용자"
         verbose_name_plural = "사용자들"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.nickname
 
     @property
-    def is_author(self) -> bool:
+    def is_author(self):
         return self.role in [UserRole.AUTHOR, UserRole.ADMIN]

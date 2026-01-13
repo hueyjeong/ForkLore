@@ -4,14 +4,15 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+
     dependencies = [
-        ("novels", "0002_initial"),
+        ('novels', '0002_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="novel",
-            name="linked_branch_count",
-            field=models.IntegerField(default=0, verbose_name="연결된 브랜치 수"),
+            model_name='novel',
+            name='linked_branch_count',
+            field=models.IntegerField(default=0, verbose_name='연결된 브랜치 수'),
         ),
     ]

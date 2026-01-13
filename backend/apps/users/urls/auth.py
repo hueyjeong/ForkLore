@@ -2,11 +2,11 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from ..views import (
+    SignUpView,
     CustomTokenObtainPairView,
+    LogoutView,
     GoogleLoginView,
     KakaoLoginView,
-    LogoutView,
-    SignUpView,
 )
 
 urlpatterns = [

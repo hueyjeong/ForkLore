@@ -10,16 +10,17 @@ Contains serializers for:
 from rest_framework import serializers
 
 from .models import (
-    AgeRating,
+    Novel,
     Branch,
-    BranchLinkRequest,
     BranchType,
     BranchVisibility,
-    Genre,
+    BranchLinkRequest,
     LinkRequestStatus,
-    Novel,
+    Genre,
+    AgeRating,
     NovelStatus,
 )
+
 
 # =============================================================================
 # Novel Serializers

@@ -5,30 +5,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+
     initial = True
 
-    dependencies = []
+    dependencies = [
+    ]
 
     operations = [
         migrations.CreateModel(
-            name="ChapterChunk",
+            name='ChapterChunk',
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                ("chunk_index", models.IntegerField(verbose_name="청크 인덱스")),
-                ("content", models.TextField(verbose_name="내용")),
-                ("embedding", pgvector.django.vector.VectorField(dimensions=3072)),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('chunk_index', models.IntegerField(verbose_name='청크 인덱스')),
+                ('content', models.TextField(verbose_name='내용')),
+                ('embedding', pgvector.django.vector.VectorField(dimensions=3072)),
             ],
             options={
-                "verbose_name": "회차 청크",
-                "verbose_name_plural": "회차 청크들",
-                "db_table": "chapter_chunks",
+                'verbose_name': '회차 청크',
+                'verbose_name_plural': '회차 청크들',
+                'db_table': 'chapter_chunks',
             },
         ),
     ]

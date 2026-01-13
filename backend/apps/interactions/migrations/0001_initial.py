@@ -5,164 +5,98 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+
     initial = True
 
     dependencies = [
-        ("contents", "0001_initial"),
+        ('contents', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="Comment",
+            name='Comment',
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                ("deleted_at", models.DateTimeField(blank=True, null=True)),
-                ("content", models.TextField(verbose_name="내용")),
-                ("is_spoiler", models.BooleanField(default=False, verbose_name="스포일러 여부")),
-                ("is_pinned", models.BooleanField(default=False, verbose_name="고정 여부")),
-                ("like_count", models.IntegerField(default=0, verbose_name="좋아요 수")),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('deleted_at', models.DateTimeField(blank=True, null=True)),
+                ('content', models.TextField(verbose_name='내용')),
+                ('is_spoiler', models.BooleanField(default=False, verbose_name='스포일러 여부')),
+                ('is_pinned', models.BooleanField(default=False, verbose_name='고정 여부')),
+                ('like_count', models.IntegerField(default=0, verbose_name='좋아요 수')),
             ],
             options={
-                "verbose_name": "댓글",
-                "verbose_name_plural": "댓글들",
-                "db_table": "comments",
-                "ordering": ["-created_at"],
+                'verbose_name': '댓글',
+                'verbose_name_plural': '댓글들',
+                'db_table': 'comments',
+                'ordering': ['-created_at'],
             },
         ),
         migrations.CreateModel(
-            name="Purchase",
+            name='Purchase',
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                ("price_paid", models.IntegerField(verbose_name="결제 금액")),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('price_paid', models.IntegerField(verbose_name='결제 금액')),
             ],
             options={
-                "verbose_name": "소장",
-                "verbose_name_plural": "소장 목록",
-                "db_table": "purchases",
+                'verbose_name': '소장',
+                'verbose_name_plural': '소장 목록',
+                'db_table': 'purchases',
             },
         ),
         migrations.CreateModel(
-            name="ReadingLog",
+            name='ReadingLog',
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                ("deleted_at", models.DateTimeField(blank=True, null=True)),
-                (
-                    "progress",
-                    models.DecimalField(
-                        decimal_places=4, default=0, max_digits=5, verbose_name="진행률"
-                    ),
-                ),
-                ("is_completed", models.BooleanField(default=False, verbose_name="완독 여부")),
-                ("read_at", models.DateTimeField(auto_now=True, verbose_name="읽은 시간")),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('deleted_at', models.DateTimeField(blank=True, null=True)),
+                ('progress', models.DecimalField(decimal_places=4, default=0, max_digits=5, verbose_name='진행률')),
+                ('is_completed', models.BooleanField(default=False, verbose_name='완독 여부')),
+                ('read_at', models.DateTimeField(auto_now=True, verbose_name='읽은 시간')),
             ],
             options={
-                "verbose_name": "읽은 기록",
-                "verbose_name_plural": "읽은 기록들",
-                "db_table": "reading_logs",
+                'verbose_name': '읽은 기록',
+                'verbose_name_plural': '읽은 기록들',
+                'db_table': 'reading_logs',
             },
         ),
         migrations.CreateModel(
-            name="Subscription",
+            name='Subscription',
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                (
-                    "plan_type",
-                    models.CharField(
-                        choices=[("BASIC", "베이직"), ("PREMIUM", "프리미엄")],
-                        max_length=20,
-                        verbose_name="플랜 타입",
-                    ),
-                ),
-                ("started_at", models.DateTimeField(auto_now_add=True, verbose_name="시작일")),
-                ("expires_at", models.DateTimeField(verbose_name="만료일")),
-                (
-                    "payment_id",
-                    models.CharField(blank=True, max_length=255, verbose_name="결제 ID"),
-                ),
-                ("auto_renew", models.BooleanField(default=True, verbose_name="자동 갱신")),
-                (
-                    "status",
-                    models.CharField(
-                        choices=[
-                            ("ACTIVE", "활성"),
-                            ("CANCELLED", "취소됨"),
-                            ("EXPIRED", "만료됨"),
-                        ],
-                        default="ACTIVE",
-                        max_length=20,
-                        verbose_name="상태",
-                    ),
-                ),
-                (
-                    "cancelled_at",
-                    models.DateTimeField(blank=True, null=True, verbose_name="취소일"),
-                ),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('plan_type', models.CharField(choices=[('BASIC', '베이직'), ('PREMIUM', '프리미엄')], max_length=20, verbose_name='플랜 타입')),
+                ('started_at', models.DateTimeField(auto_now_add=True, verbose_name='시작일')),
+                ('expires_at', models.DateTimeField(verbose_name='만료일')),
+                ('payment_id', models.CharField(blank=True, max_length=255, verbose_name='결제 ID')),
+                ('auto_renew', models.BooleanField(default=True, verbose_name='자동 갱신')),
+                ('status', models.CharField(choices=[('ACTIVE', '활성'), ('CANCELLED', '취소됨'), ('EXPIRED', '만료됨')], default='ACTIVE', max_length=20, verbose_name='상태')),
+                ('cancelled_at', models.DateTimeField(blank=True, null=True, verbose_name='취소일')),
             ],
             options={
-                "verbose_name": "구독",
-                "verbose_name_plural": "구독들",
-                "db_table": "subscriptions",
+                'verbose_name': '구독',
+                'verbose_name_plural': '구독들',
+                'db_table': 'subscriptions',
             },
         ),
         migrations.CreateModel(
-            name="Bookmark",
+            name='Bookmark',
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("updated_at", models.DateTimeField(auto_now=True)),
-                (
-                    "scroll_position",
-                    models.DecimalField(
-                        decimal_places=4, default=0, max_digits=5, verbose_name="스크롤 위치"
-                    ),
-                ),
-                ("note", models.CharField(blank=True, max_length=500, verbose_name="메모")),
-                (
-                    "chapter",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="bookmarks",
-                        to="contents.chapter",
-                    ),
-                ),
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('scroll_position', models.DecimalField(decimal_places=4, default=0, max_digits=5, verbose_name='스크롤 위치')),
+                ('note', models.CharField(blank=True, max_length=500, verbose_name='메모')),
+                ('chapter', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='bookmarks', to='contents.chapter')),
             ],
             options={
-                "verbose_name": "책갈피",
-                "verbose_name_plural": "책갈피들",
-                "db_table": "bookmarks",
+                'verbose_name': '책갈피',
+                'verbose_name_plural': '책갈피들',
+                'db_table': 'bookmarks',
             },
         ),
     ]

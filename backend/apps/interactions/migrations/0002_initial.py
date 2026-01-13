@@ -6,108 +6,71 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+
     initial = True
 
     dependencies = [
-        ("contents", "0002_initial"),
-        ("interactions", "0001_initial"),
+        ('contents', '0002_initial'),
+        ('interactions', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="bookmark",
-            name="user",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="bookmarks",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='bookmark',
+            name='user',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='bookmarks', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name="comment",
-            name="chapter",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="comments",
-                to="contents.chapter",
-            ),
+            model_name='comment',
+            name='chapter',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='contents.chapter'),
         ),
         migrations.AddField(
-            model_name="comment",
-            name="parent",
-            field=models.ForeignKey(
-                blank=True,
-                null=True,
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="replies",
-                to="interactions.comment",
-            ),
+            model_name='comment',
+            name='parent',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='replies', to='interactions.comment'),
         ),
         migrations.AddField(
-            model_name="comment",
-            name="user",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="comments",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='comment',
+            name='user',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comments', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name="purchase",
-            name="chapter",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="purchases",
-                to="contents.chapter",
-            ),
+            model_name='purchase',
+            name='chapter',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='purchases', to='contents.chapter'),
         ),
         migrations.AddField(
-            model_name="purchase",
-            name="user",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="purchases",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='purchase',
+            name='user',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='purchases', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name="readinglog",
-            name="chapter",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="reading_logs",
-                to="contents.chapter",
-            ),
+            model_name='readinglog',
+            name='chapter',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reading_logs', to='contents.chapter'),
         ),
         migrations.AddField(
-            model_name="readinglog",
-            name="user",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="reading_logs",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='readinglog',
+            name='user',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reading_logs', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name="subscription",
-            name="user",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="subscriptions",
-                to=settings.AUTH_USER_MODEL,
-            ),
+            model_name='subscription',
+            name='user',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subscriptions', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AlterUniqueTogether(
-            name="bookmark",
-            unique_together={("user", "chapter")},
+            name='bookmark',
+            unique_together={('user', 'chapter')},
         ),
         migrations.AlterUniqueTogether(
-            name="purchase",
-            unique_together={("user", "chapter")},
+            name='purchase',
+            unique_together={('user', 'chapter')},
         ),
         migrations.AlterUniqueTogether(
-            name="readinglog",
-            unique_together={("user", "chapter")},
+            name='readinglog',
+            unique_together={('user', 'chapter')},
         ),
     ]

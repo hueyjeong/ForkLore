@@ -18,6 +18,9 @@ from .models import (
     Bookmark,
     Comment,
     Like,
+    Report,
+    ReportReason,
+    ReportStatus,
 )
 
 
@@ -257,3 +260,109 @@ class LikeToggleResponseSerializer(serializers.Serializer):
 
     liked = serializers.BooleanField(read_only=True)
     like_count = serializers.IntegerField(read_only=True, allow_null=True)
+
+
+# =============================================================================
+# Report Serializers
+# =============================================================================
+
+REPORT_TARGET_TYPES = {
+    "comment": "interactions.Comment",
+    "chapter": "contents.Chapter",
+    "novel": "novels.Novel",
+    "branch": "novels.Branch",
+}
+
+
+class ReportCreateSerializer(serializers.Serializer):
+    """Serializer for creating a report."""
+
+    target_type = serializers.ChoiceField(choices=list(REPORT_TARGET_TYPES.keys()))
+    target_id = serializers.IntegerField()
+    reason = serializers.ChoiceField(choices=ReportReason.choices)
+    description = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate(self, data):
+        """Validate that the target exists."""
+        from django.apps import apps
+        from django.core.exceptions import ObjectDoesNotExist
+
+        target_type = data["target_type"]
+        target_id = data["target_id"]
+
+        model_path = REPORT_TARGET_TYPES[target_type]
+        app_label, model_name = model_path.rsplit(".", 1)
+
+        try:
+            model = apps.get_model(app_label, model_name)
+            target = model.objects.get(id=target_id)
+            data["target"] = target
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError({"target_id": "대상을 찾을 수 없습니다."})
+
+        return data
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    """Serializer for report list/detail."""
+
+    reporter = UserBriefSerializer(read_only=True)
+    target_type = serializers.SerializerMethodField()
+    target_id = serializers.IntegerField(source="object_id", read_only=True)
+
+    class Meta:
+        model = Report
+        fields = [
+            "id",
+            "reporter",
+            "target_type",
+            "target_id",
+            "reason",
+            "description",
+            "status",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_target_type(self, obj):
+        """Get human-readable target type."""
+        model_name = obj.content_type.model
+        return model_name
+
+
+class ReportAdminSerializer(serializers.ModelSerializer):
+    """Serializer for admin report detail with resolution fields."""
+
+    reporter = UserBriefSerializer(read_only=True)
+    resolver = UserBriefSerializer(read_only=True, allow_null=True)
+    target_type = serializers.SerializerMethodField()
+    target_id = serializers.IntegerField(source="object_id", read_only=True)
+
+    class Meta:
+        model = Report
+        fields = [
+            "id",
+            "reporter",
+            "target_type",
+            "target_id",
+            "reason",
+            "description",
+            "status",
+            "resolver",
+            "resolved_at",
+            "resolution_note",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_target_type(self, obj):
+        """Get human-readable target type."""
+        return obj.content_type.model
+
+
+class ReportActionSerializer(serializers.Serializer):
+    """Serializer for admin report actions."""
+
+    action = serializers.ChoiceField(choices=["resolve", "reject"])
+    resolution_note = serializers.CharField(required=False, allow_blank=True, default="")

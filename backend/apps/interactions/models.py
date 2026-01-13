@@ -141,3 +141,60 @@ class Like(BaseModel):
         indexes = [
             models.Index(fields=["content_type", "object_id"]),
         ]
+
+
+class ReportReason(models.TextChoices):
+    """Reasons for reporting content."""
+
+    SPAM = "SPAM", "스팸"
+    ABUSE = "ABUSE", "욕설/비방"
+    SPOILER = "SPOILER", "스포일러"
+    COPYRIGHT = "COPYRIGHT", "저작권 침해"
+    OTHER = "OTHER", "기타"
+
+
+class ReportStatus(models.TextChoices):
+    """Status of a report."""
+
+    PENDING = "PENDING", "대기중"
+    RESOLVED = "RESOLVED", "처리완료"
+    REJECTED = "REJECTED", "반려"
+
+
+class Report(BaseModel):
+    """Report model with GenericForeignKey for polymorphic reports."""
+
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reports_submitted"
+    )
+    # Generic relation fields (polymorphic target)
+    content_type = models.ForeignKey("contenttypes.ContentType", on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+
+    reason = models.CharField("신고 사유", max_length=20, choices=ReportReason.choices)
+    description = models.TextField("상세 설명", blank=True)
+    status = models.CharField(
+        "상태", max_length=20, choices=ReportStatus.choices, default=ReportStatus.PENDING
+    )
+
+    # Resolution fields
+    resolver = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reports_resolved",
+    )
+    resolved_at = models.DateTimeField("처리일", null=True, blank=True)
+    resolution_note = models.TextField("처리 메모", blank=True)
+
+    class Meta:
+        db_table = "reports"
+        verbose_name = "신고"
+        verbose_name_plural = "신고들"
+        unique_together = ["reporter", "content_type", "object_id"]
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["content_type", "object_id"]),
+            models.Index(fields=["status"]),
+        ]

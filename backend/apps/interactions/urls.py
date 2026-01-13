@@ -17,6 +17,8 @@ from .views import (
     WalletChargeViewSet,
     UserWalletViewSet,
     AdminWalletAdjustmentViewSet,
+    UserAIUsageViewSet,
+    AIUsageViewSet,
 )
 
 
@@ -77,5 +79,21 @@ urlpatterns = [
         "admin/wallet/<int:user_pk>/adjustment/",
         AdminWalletAdjustmentViewSet.as_view({"post": "create"}),
         name="admin-wallet-adjustment",
+    ),
+    # AI Usage routes
+    path(
+        "users/me/ai-usage/",
+        UserAIUsageViewSet.as_view({"get": "usage_status"}),
+        name="user-ai-usage",
+    ),
+    path(
+        "ai/check-limit/",
+        AIUsageViewSet.as_view({"post": "check_limit"}),
+        name="ai-check-limit",
+    ),
+    path(
+        "ai/record-usage/",
+        AIUsageViewSet.as_view({"post": "record_usage"}),
+        name="ai-record-usage",
     ),
 ]

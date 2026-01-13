@@ -752,3 +752,148 @@ class AdminWalletAdjustmentViewSet(viewsets.ViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+
+# =============================================================================
+# AI Usage ViewSets
+# =============================================================================
+
+
+@extend_schema_view(
+    usage_status=extend_schema(
+        summary="AI 사용량 조회",
+        description="현재 사용자의 AI 사용량과 한도를 조회합니다.",
+        tags=["AI Usage"],
+    ),
+)
+class UserAIUsageViewSet(viewsets.ViewSet):
+    """
+    ViewSet for user AI usage.
+
+    Routes:
+    - GET /users/me/ai-usage/ - Get AI usage status
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=["get"], url_path="", url_name="usage-status")
+    def usage_status(self, request):
+        """Get AI usage status for current user."""
+        from apps.interactions.services import AIUsageService
+        from apps.interactions.serializers import AIUsageStatusSerializer
+
+        service = AIUsageService()
+        status_data = service.get_usage_status(request.user)
+
+        serializer = AIUsageStatusSerializer(status_data)
+        return Response(serializer.data)
+
+
+@extend_schema_view(
+    check_limit=extend_schema(
+        summary="AI 한도 체크",
+        description="AI 사용 가능 여부를 확인합니다.",
+        tags=["AI Usage"],
+    ),
+    record_usage=extend_schema(
+        summary="AI 사용량 기록",
+        description="AI 사용량을 기록합니다.",
+        tags=["AI Usage"],
+    ),
+)
+class AIUsageViewSet(viewsets.ViewSet):
+    """
+    ViewSet for AI usage operations.
+
+    Routes:
+    - POST /ai/check-limit/ - Check if user can use AI
+    - POST /ai/record-usage/ - Record AI usage
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=["post"], url_path="check-limit", url_name="check-limit")
+    def check_limit(self, request):
+        """Check if user can use AI."""
+        from apps.interactions.services import AIUsageService
+        from apps.interactions.serializers import (
+            AIUsageCheckLimitSerializer,
+            AIUsageCheckLimitResponseSerializer,
+        )
+
+        serializer = AIUsageCheckLimitSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        service = AIUsageService()
+        action_type = serializer.validated_data["action_type"]
+        enforce = serializer.validated_data.get("enforce", False)
+
+        allowed = service.can_use_ai(user=request.user, action_type=action_type)
+        remaining = service.get_remaining_quota(user=request.user, action_type=action_type)
+        daily_limit = service.get_daily_limit(request.user)
+        tier = service.get_user_tier(request.user)
+
+        # If enforce mode and not allowed, return 429
+        if enforce and not allowed:
+            return Response(
+                {"detail": "AI 사용 한도를 초과했습니다.", "remaining": 0, "tier": tier},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        response_data = {
+            "allowed": allowed,
+            "remaining": remaining,
+            "daily_limit": daily_limit,
+            "tier": tier,
+        }
+
+        return Response(response_data)
+
+    @action(detail=False, methods=["post"], url_path="record-usage", url_name="record-usage")
+    def record_usage(self, request):
+        """Record AI usage."""
+        from apps.interactions.services import AIUsageService
+        from apps.interactions.serializers import (
+            AIUsageRecordSerializer,
+            AIUsageRecordResponseSerializer,
+        )
+
+        serializer = AIUsageRecordSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        service = AIUsageService()
+        action_type = serializer.validated_data["action_type"]
+        token_count = serializer.validated_data.get("token_count", 0)
+
+        # Check if user can use before recording
+        if not service.can_use_ai(user=request.user, action_type=action_type):
+            return Response(
+                {"detail": "AI 사용 한도를 초과했습니다."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        # Record usage
+        log = service.increment(
+            user=request.user,
+            action_type=action_type,
+            token_count=token_count,
+        )
+
+        remaining = service.get_remaining_quota(user=request.user, action_type=action_type)
+        daily_limit = service.get_daily_limit(request.user)
+
+        response_data = {
+            "used": log.request_count,
+            "remaining": remaining,
+            "daily_limit": daily_limit,
+        }
+
+        return Response(response_data)

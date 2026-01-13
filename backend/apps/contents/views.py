@@ -19,8 +19,17 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from common.pagination import StandardPagination
 
 from apps.novels.models import Branch
-from apps.contents.models import Chapter, ChapterStatus, WikiEntry, WikiTagDefinition
+from apps.contents.models import (
+    Chapter,
+    ChapterStatus,
+    WikiEntry,
+    WikiTagDefinition,
+    Map,
+    MapSnapshot,
+    MapLayer,
+)
 from apps.contents.services import ChapterService, WikiService
+from apps.contents.map_services import MapService
 from apps.contents.serializers import (
     ChapterCreateSerializer,
     ChapterDetailSerializer,
@@ -36,6 +45,16 @@ from apps.contents.serializers import (
     WikiSnapshotSerializer,
     WikiSnapshotCreateSerializer,
     WikiTagUpdateSerializer,
+    MapListSerializer,
+    MapDetailSerializer,
+    MapCreateSerializer,
+    MapUpdateSerializer,
+    MapSnapshotSerializer,
+    MapSnapshotCreateSerializer,
+    MapLayerSerializer,
+    MapLayerCreateSerializer,
+    MapObjectSerializer,
+    MapObjectCreateSerializer,
 )
 
 
@@ -812,6 +831,393 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
             )
 
         response_serializer = WikiSnapshotSerializer(snapshot)
+        return Response(
+            {"success": True, "data": response_serializer.data},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# =============================================================================
+# Map ViewSets
+# =============================================================================
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="지도 목록 조회",
+        description="브랜치의 지도 목록을 조회합니다.",
+        tags=["Maps"],
+    ),
+    create=extend_schema(
+        summary="지도 생성",
+        description="새 지도를 생성합니다.",
+        tags=["Maps"],
+    ),
+)
+class MapViewSet(viewsets.ViewSet):
+    """
+    ViewSet for maps nested under branches.
+
+    Routes:
+    - GET /branches/{branch_id}/maps/ - List maps
+    - POST /branches/{branch_id}/maps/ - Create map
+    """
+
+    pagination_class = StandardPagination
+
+    def get_permissions(self):
+        if self.action in ["create"]:
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def list(self, request, branch_pk=None):
+        """List maps for a branch."""
+        maps = MapService.list(branch_id=branch_pk)
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(maps, request)
+        serializer = MapListSerializer(page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+    def create(self, request, branch_pk=None):
+        """Create a new map."""
+        serializer = MapCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            map_obj = MapService.create(
+                branch_id=branch_pk,
+                user=request.user,
+                **serializer.validated_data,
+            )
+        except PermissionError:
+            return Response(
+                {"success": False, "message": "권한이 없습니다.", "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = MapDetailSerializer(map_obj)
+        return Response(
+            {"success": True, "message": "지도 생성 완료", "data": response_serializer.data},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary="지도 상세 조회",
+        description="지도 상세 정보를 조회합니다. ?currentChapter=N으로 문맥 인식 조회 가능.",
+        tags=["Maps"],
+    ),
+    partial_update=extend_schema(
+        summary="지도 수정",
+        description="지도를 수정합니다.",
+        tags=["Maps"],
+    ),
+    destroy=extend_schema(
+        summary="지도 삭제",
+        description="지도를 삭제합니다.",
+        tags=["Maps"],
+    ),
+)
+class MapDetailViewSet(viewsets.ViewSet):
+    """
+    ViewSet for map operations by ID.
+
+    Routes:
+    - GET /maps/{id}/ - Get map detail (with optional ?currentChapter=N)
+    - PATCH /maps/{id}/ - Update map
+    - DELETE /maps/{id}/ - Delete map
+    """
+
+    def get_permissions(self):
+        if self.action in ["retrieve"]:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def retrieve(self, request, pk=None):
+        """Get map detail, optionally with context-aware snapshot."""
+        chapter = request.query_params.get("currentChapter")
+        chapter = int(chapter) if chapter else None
+
+        try:
+            map_obj = MapService.retrieve(map_id=pk)
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = MapDetailSerializer(map_obj, context={"chapter": chapter})
+        return Response({"success": True, "data": serializer.data})
+
+    def partial_update(self, request, pk=None):
+        """Update a map."""
+        serializer = MapUpdateSerializer(data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            map_obj = MapService.update(
+                map_id=pk,
+                user=request.user,
+                **serializer.validated_data,
+            )
+        except PermissionError:
+            return Response(
+                {"success": False, "message": "권한이 없습니다.", "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = MapDetailSerializer(map_obj)
+        return Response({"success": True, "data": response_serializer.data})
+
+    def destroy(self, request, pk=None):
+        """Delete a map."""
+        try:
+            MapService.delete(map_id=pk, user=request.user)
+        except PermissionError:
+            return Response(
+                {"success": False, "message": "권한이 없습니다.", "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="지도 스냅샷 목록 조회",
+        description="지도의 스냅샷 목록을 조회합니다.",
+        tags=["Maps"],
+    ),
+    create=extend_schema(
+        summary="지도 스냅샷 생성",
+        description="새 지도 스냅샷을 생성합니다.",
+        tags=["Maps"],
+    ),
+)
+class MapSnapshotViewSet(viewsets.ViewSet):
+    """
+    ViewSet for map snapshots nested under maps.
+
+    Routes:
+    - GET /maps/{map_id}/snapshots/ - List snapshots
+    - POST /maps/{map_id}/snapshots/ - Create snapshot
+    """
+
+    def get_permissions(self):
+        if self.action in ["create"]:
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def list(self, request, map_pk=None):
+        """List snapshots for a map."""
+        try:
+            map_obj = MapService.retrieve(map_id=map_pk)
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = MapSnapshotSerializer(map_obj.snapshots.all(), many=True)
+        return Response({"success": True, "data": serializer.data})
+
+    def create(self, request, map_pk=None):
+        """Create a new map snapshot."""
+        serializer = MapSnapshotCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            snapshot = MapService.create_snapshot(
+                map_id=map_pk,
+                user=request.user,
+                **serializer.validated_data,
+            )
+        except PermissionError:
+            return Response(
+                {"success": False, "message": "권한이 없습니다.", "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = MapSnapshotSerializer(snapshot)
+        return Response(
+            {"success": True, "data": response_serializer.data},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="레이어 목록 조회",
+        description="스냅샷의 레이어 목록을 조회합니다.",
+        tags=["Maps"],
+    ),
+    create=extend_schema(
+        summary="레이어 생성",
+        description="새 레이어를 생성합니다.",
+        tags=["Maps"],
+    ),
+)
+class MapLayerViewSet(viewsets.ViewSet):
+    """
+    ViewSet for map layers nested under snapshots.
+
+    Routes:
+    - GET /snapshots/{snapshot_id}/layers/ - List layers
+    - POST /snapshots/{snapshot_id}/layers/ - Create layer
+    """
+
+    def get_permissions(self):
+        if self.action in ["create"]:
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def list(self, request, snapshot_pk=None):
+        """List layers for a snapshot."""
+        try:
+            snapshot = MapSnapshot.objects.prefetch_related("layers").get(id=snapshot_pk)
+        except MapSnapshot.DoesNotExist:
+            return Response(
+                {"success": False, "message": "스냅샷을 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = MapLayerSerializer(snapshot.layers.all(), many=True)
+        return Response({"success": True, "data": serializer.data})
+
+    def create(self, request, snapshot_pk=None):
+        """Create a new layer."""
+        serializer = MapLayerCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            layer = MapService.add_layer(
+                snapshot_id=snapshot_pk,
+                user=request.user,
+                **serializer.validated_data,
+            )
+        except PermissionError:
+            return Response(
+                {"success": False, "message": "권한이 없습니다.", "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = MapLayerSerializer(layer)
+        return Response(
+            {"success": True, "data": response_serializer.data},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="오브젝트 목록 조회",
+        description="레이어의 오브젝트 목록을 조회합니다.",
+        tags=["Maps"],
+    ),
+    create=extend_schema(
+        summary="오브젝트 생성",
+        description="새 오브젝트를 생성합니다.",
+        tags=["Maps"],
+    ),
+)
+class MapObjectViewSet(viewsets.ViewSet):
+    """
+    ViewSet for map objects nested under layers.
+
+    Routes:
+    - GET /layers/{layer_id}/objects/ - List objects
+    - POST /layers/{layer_id}/objects/ - Create object
+    """
+
+    def get_permissions(self):
+        if self.action in ["create"]:
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def list(self, request, layer_pk=None):
+        """List objects for a layer."""
+        try:
+            layer = MapLayer.objects.prefetch_related("map_objects").get(id=layer_pk)
+        except MapLayer.DoesNotExist:
+            return Response(
+                {"success": False, "message": "레이어를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = MapObjectSerializer(layer.map_objects.all(), many=True)
+        return Response({"success": True, "data": serializer.data})
+
+    def create(self, request, layer_pk=None):
+        """Create a new object."""
+        serializer = MapObjectCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            obj = MapService.add_object(
+                layer_id=layer_pk,
+                user=request.user,
+                **serializer.validated_data,
+            )
+        except PermissionError:
+            return Response(
+                {"success": False, "message": "권한이 없습니다.", "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = MapObjectSerializer(obj)
         return Response(
             {"success": True, "data": response_serializer.data},
             status=status.HTTP_201_CREATED,

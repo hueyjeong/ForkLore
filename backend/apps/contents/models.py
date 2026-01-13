@@ -149,3 +149,128 @@ class WikiSnapshot(BaseModel):
 
     def __str__(self):
         return f"{self.wiki_entry.name} - 회차 {self.valid_from_chapter}~"
+
+
+class LayerType(models.TextChoices):
+    """지도 레이어 타입"""
+
+    BASE = "BASE", "기본 레이어"
+    OVERLAY = "OVERLAY", "오버레이"
+    MARKER = "MARKER", "마커"
+    PATH = "PATH", "경로"
+    REGION = "REGION", "지역"
+
+
+class ObjectType(models.TextChoices):
+    """지도 오브젝트 타입"""
+
+    POINT = "POINT", "포인트"
+    LINE = "LINE", "선"
+    POLYGON = "POLYGON", "다각형"
+    CIRCLE = "CIRCLE", "원"
+    ICON = "ICON", "아이콘"
+
+
+class Map(BaseModel):
+    """지도 (브랜치별)"""
+
+    branch = models.ForeignKey("novels.Branch", on_delete=models.CASCADE, related_name="maps")
+
+    # 포크된 지도인 경우 원본 참조
+    source_map = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="forked_maps",
+    )
+
+    name = models.CharField("이름", max_length=100)
+    description = models.TextField("설명", blank=True)
+    width = models.IntegerField("가로 크기")
+    height = models.IntegerField("세로 크기")
+
+    class Meta:
+        db_table = "maps"
+        verbose_name = "지도"
+        verbose_name_plural = "지도들"
+        unique_together = [["branch", "name"]]
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.branch.name} - {self.name}"
+
+
+class MapSnapshot(BaseModel):
+    """지도 스냅샷 (회차별 버전)"""
+
+    map = models.ForeignKey(Map, on_delete=models.CASCADE, related_name="snapshots")
+
+    valid_from_chapter = models.IntegerField("유효 시작 회차")
+    base_image_url = models.URLField("기본 이미지 URL", max_length=500, blank=True)
+
+    class Meta:
+        db_table = "map_snapshots"
+        verbose_name = "지도 스냅샷"
+        verbose_name_plural = "지도 스냅샷들"
+        unique_together = [["map", "valid_from_chapter"]]
+        ordering = ["valid_from_chapter"]
+
+    def __str__(self):
+        return f"{self.map.name} - 회차 {self.valid_from_chapter}~"
+
+
+class MapLayer(BaseModel):
+    """지도 레이어"""
+
+    snapshot = models.ForeignKey(MapSnapshot, on_delete=models.CASCADE, related_name="layers")
+
+    name = models.CharField("이름", max_length=100)
+    layer_type = models.CharField(
+        "레이어 타입", max_length=50, choices=LayerType.choices, default=LayerType.OVERLAY
+    )
+    z_index = models.IntegerField("Z 순서", default=0)
+    is_visible = models.BooleanField("표시 여부", default=True)
+    style_json = models.JSONField("스타일 JSON", null=True, blank=True)
+
+    class Meta:
+        db_table = "map_layers"
+        verbose_name = "지도 레이어"
+        verbose_name_plural = "지도 레이어들"
+        ordering = ["z_index", "name"]
+
+    def __str__(self):
+        return f"{self.snapshot.map.name} - {self.name}"
+
+
+class MapObject(BaseModel):
+    """지도 오브젝트"""
+
+    layer = models.ForeignKey(MapLayer, on_delete=models.CASCADE, related_name="map_objects")
+
+    object_type = models.CharField(
+        "오브젝트 타입", max_length=50, choices=ObjectType.choices, default=ObjectType.POINT
+    )
+    coordinates = models.JSONField("좌표")
+    label = models.CharField("라벨", max_length=100, blank=True)
+    description = models.TextField("설명", blank=True)
+
+    # 위키 엔트리와 연결 (선택)
+    wiki_entry = models.ForeignKey(
+        WikiEntry,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="map_objects",
+    )
+
+    style_json = models.JSONField("스타일 JSON", null=True, blank=True)
+
+    class Meta:
+        db_table = "map_objects"
+        verbose_name = "지도 오브젝트"
+        verbose_name_plural = "지도 오브젝트들"
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.layer.name} - {self.label or self.object_type}"

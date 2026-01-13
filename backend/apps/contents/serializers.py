@@ -17,6 +17,10 @@ from .models import (
     WikiEntry,
     WikiSnapshot,
     WikiTagDefinition,
+    Map,
+    MapSnapshot,
+    MapLayer,
+    MapObject,
 )
 
 
@@ -272,3 +276,159 @@ class WikiTagUpdateSerializer(serializers.Serializer):
     """Serializer for updating wiki tags."""
 
     tag_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=True)
+
+
+# =============================================================================
+# Map Serializers
+# =============================================================================
+
+
+class MapObjectSerializer(serializers.ModelSerializer):
+    """Serializer for map object."""
+
+    class Meta:
+        model = MapObject
+        fields = [
+            "id",
+            "object_type",
+            "coordinates",
+            "label",
+            "description",
+            "wiki_entry_id",
+            "style_json",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class MapObjectCreateSerializer(serializers.Serializer):
+    """Serializer for creating a map object."""
+
+    object_type = serializers.CharField(max_length=50)
+    coordinates = serializers.JSONField()
+    label = serializers.CharField(max_length=100, required=False, default="")
+    description = serializers.CharField(required=False, default="")
+    wiki_entry_id = serializers.IntegerField(required=False, allow_null=True)
+    style_json = serializers.JSONField(required=False, allow_null=True)
+
+
+class MapLayerSerializer(serializers.ModelSerializer):
+    """Serializer for map layer."""
+
+    objects = MapObjectSerializer(source="map_objects", many=True, read_only=True)
+
+    class Meta:
+        model = MapLayer
+        fields = [
+            "id",
+            "name",
+            "layer_type",
+            "z_index",
+            "is_visible",
+            "style_json",
+            "objects",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class MapLayerCreateSerializer(serializers.Serializer):
+    """Serializer for creating a map layer."""
+
+    name = serializers.CharField(max_length=100)
+    layer_type = serializers.CharField(max_length=50, required=False, default="OVERLAY")
+    z_index = serializers.IntegerField(required=False, default=0)
+    is_visible = serializers.BooleanField(required=False, default=True)
+    style_json = serializers.JSONField(required=False, allow_null=True)
+
+
+class MapSnapshotSerializer(serializers.ModelSerializer):
+    """Serializer for map snapshot."""
+
+    layers = MapLayerSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = MapSnapshot
+        fields = [
+            "id",
+            "valid_from_chapter",
+            "base_image_url",
+            "layers",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class MapSnapshotCreateSerializer(serializers.Serializer):
+    """Serializer for creating a map snapshot."""
+
+    valid_from_chapter = serializers.IntegerField()
+    base_image_url = serializers.URLField(required=False, default="", max_length=500)
+
+
+class MapListSerializer(serializers.ModelSerializer):
+    """Serializer for map list view."""
+
+    class Meta:
+        model = Map
+        fields = [
+            "id",
+            "name",
+            "description",
+            "width",
+            "height",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class MapDetailSerializer(serializers.ModelSerializer):
+    """Serializer for map detail view."""
+
+    snapshots = MapSnapshotSerializer(many=True, read_only=True)
+    snapshot = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Map
+        fields = [
+            "id",
+            "name",
+            "description",
+            "width",
+            "height",
+            "source_map_id",
+            "snapshots",
+            "snapshot",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_snapshot(self, obj):
+        """Get context-aware snapshot if chapter is specified."""
+        chapter = self.context.get("chapter")
+        if chapter is not None:
+            from .map_services import MapService
+
+            snapshot = MapService.get_snapshot_for_chapter(obj.id, chapter)
+            if snapshot:
+                return MapSnapshotSerializer(snapshot).data
+        return None
+
+
+class MapCreateSerializer(serializers.Serializer):
+    """Serializer for creating a map."""
+
+    name = serializers.CharField(max_length=100)
+    description = serializers.CharField(required=False, default="")
+    width = serializers.IntegerField()
+    height = serializers.IntegerField()
+
+
+class MapUpdateSerializer(serializers.Serializer):
+    """Serializer for updating a map."""
+
+    name = serializers.CharField(max_length=100, required=False)
+    description = serializers.CharField(required=False)
+    width = serializers.IntegerField(required=False)
+    height = serializers.IntegerField(required=False)

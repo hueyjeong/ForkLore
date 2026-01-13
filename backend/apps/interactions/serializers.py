@@ -366,3 +366,49 @@ class ReportActionSerializer(serializers.Serializer):
 
     action = serializers.ChoiceField(choices=["resolve", "reject"])
     resolution_note = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+# =============================================================================
+# Wallet Serializers
+# =============================================================================
+
+
+class WalletChargeSerializer(serializers.Serializer):
+    """Serializer for charging coins."""
+
+    amount = serializers.IntegerField(min_value=1)
+    description = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class WalletAdjustmentSerializer(serializers.Serializer):
+    """Serializer for admin wallet adjustment."""
+
+    amount = serializers.IntegerField()  # Can be negative
+    description = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class CoinTransactionSerializer(serializers.Serializer):
+    """Serializer for coin transaction."""
+
+    id = serializers.IntegerField(read_only=True)
+    transaction_type = serializers.CharField(read_only=True)
+    amount = serializers.IntegerField(read_only=True)
+    balance_after = serializers.IntegerField(read_only=True)
+    description = serializers.CharField(read_only=True)
+    reference_type = serializers.CharField(read_only=True)
+    reference_id = serializers.IntegerField(read_only=True, allow_null=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
+
+class WalletSerializer(serializers.Serializer):
+    """Serializer for wallet with recent transactions."""
+
+    balance = serializers.IntegerField(read_only=True)
+    recent_transactions = CoinTransactionSerializer(many=True, read_only=True)
+
+
+class WalletBalanceResponseSerializer(serializers.Serializer):
+    """Serializer for wallet balance response after charge/adjustment."""
+
+    balance = serializers.IntegerField(read_only=True)
+    transaction = CoinTransactionSerializer(read_only=True)

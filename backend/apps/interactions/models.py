@@ -198,3 +198,60 @@ class Report(BaseModel):
             models.Index(fields=["content_type", "object_id"]),
             models.Index(fields=["status"]),
         ]
+
+
+# =============================================================================
+# Wallet / Coin Transaction Models
+# =============================================================================
+
+
+class Wallet(BaseModel):
+    """User wallet for storing coin balance."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet"
+    )
+    balance = models.IntegerField("잔액", default=0)
+
+    class Meta:
+        db_table = "wallets"
+        verbose_name = "지갑"
+        verbose_name_plural = "지갑들"
+
+
+class TransactionType(models.TextChoices):
+    """Types of coin transactions."""
+
+    CHARGE = "CHARGE", "충전"
+    SPEND = "SPEND", "사용"
+    REFUND = "REFUND", "환불"
+    ADJUSTMENT = "ADJUSTMENT", "정정"
+
+
+class CoinTransaction(BaseModel):
+    """
+    Immutable coin transaction ledger.
+
+    INSERT ONLY - UPDATE/DELETE should be prevented at service layer.
+    """
+
+    wallet = models.ForeignKey(Wallet, on_delete=models.PROTECT, related_name="transactions")
+    transaction_type = models.CharField("거래 유형", max_length=20, choices=TransactionType.choices)
+    amount = models.IntegerField("금액")  # Can be negative for adjustments
+    balance_after = models.IntegerField("거래 후 잔액")
+    description = models.TextField("설명", blank=True)
+
+    # Reference to related entity (e.g., purchase, chapter)
+    reference_type = models.CharField("참조 타입", max_length=50, blank=True)
+    reference_id = models.PositiveIntegerField("참조 ID", null=True, blank=True)
+
+    class Meta:
+        db_table = "coin_transactions"
+        verbose_name = "코인 거래"
+        verbose_name_plural = "코인 거래들"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["wallet", "-created_at"]),
+            models.Index(fields=["transaction_type"]),
+            models.Index(fields=["reference_type", "reference_id"]),
+        ]

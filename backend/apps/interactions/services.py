@@ -830,3 +830,250 @@ class ReportService:
             queryset = queryset.filter(status=status)
 
         return list(queryset)
+
+
+class WalletService:
+    """Service for managing wallets and coin transactions."""
+
+    @staticmethod
+    def charge(
+        user,
+        amount: int,
+        description: str = "",
+    ) -> dict:
+        """
+        Charge coins to user's wallet.
+
+        Creates wallet if it doesn't exist.
+
+        Args:
+            user: User instance
+            amount: Amount to charge (must be positive)
+            description: Optional description
+
+        Returns:
+            Dict with 'wallet' and 'transaction' keys
+
+        Raises:
+            ValueError: If amount is not positive
+        """
+        from apps.interactions.models import Wallet, CoinTransaction, TransactionType
+        from django.db import transaction
+
+        if amount <= 0:
+            raise ValueError("충전 금액은 0보다 커야 합니다")
+
+        with transaction.atomic():
+            # Get or create wallet with lock
+            wallet, created = Wallet.objects.select_for_update().get_or_create(
+                user=user,
+                defaults={"balance": 0},
+            )
+
+            # Update balance
+            wallet.balance += amount
+            wallet.save()
+
+            # Create transaction record
+            tx = CoinTransaction.objects.create(
+                wallet=wallet,
+                transaction_type=TransactionType.CHARGE,
+                amount=amount,
+                balance_after=wallet.balance,
+                description=description,
+            )
+
+        return {"wallet": wallet, "transaction": tx}
+
+    @staticmethod
+    def spend(
+        user,
+        amount: int,
+        description: str = "",
+        reference_type: str = "",
+        reference_id: int = None,
+    ) -> dict:
+        """
+        Spend coins from user's wallet.
+
+        Args:
+            user: User instance
+            amount: Amount to spend (must be positive)
+            description: Optional description
+            reference_type: Type of related entity (e.g., 'chapter')
+            reference_id: ID of related entity
+
+        Returns:
+            Dict with 'wallet' and 'transaction' keys
+
+        Raises:
+            ValueError: If amount is not positive, wallet doesn't exist,
+                       or insufficient balance
+        """
+        from apps.interactions.models import Wallet, CoinTransaction, TransactionType
+        from django.db import transaction
+
+        if amount <= 0:
+            raise ValueError("사용 금액은 0보다 커야 합니다")
+
+        with transaction.atomic():
+            try:
+                wallet = Wallet.objects.select_for_update().get(user=user)
+            except Wallet.DoesNotExist:
+                raise ValueError("지갑이 존재하지 않습니다")
+
+            if wallet.balance < amount:
+                raise ValueError("잔액이 부족합니다")
+
+            # Update balance
+            wallet.balance -= amount
+            wallet.save()
+
+            # Create transaction record
+            tx = CoinTransaction.objects.create(
+                wallet=wallet,
+                transaction_type=TransactionType.SPEND,
+                amount=amount,
+                balance_after=wallet.balance,
+                description=description,
+                reference_type=reference_type,
+                reference_id=reference_id,
+            )
+
+        return {"wallet": wallet, "transaction": tx}
+
+    @staticmethod
+    def refund(
+        user,
+        amount: int,
+        description: str = "",
+        reference_type: str = "",
+        reference_id: int = None,
+    ) -> dict:
+        """
+        Refund coins to user's wallet.
+
+        Args:
+            user: User instance
+            amount: Amount to refund (must be positive)
+            description: Optional description
+            reference_type: Type of related entity
+            reference_id: ID of related entity
+
+        Returns:
+            Dict with 'wallet' and 'transaction' keys
+
+        Raises:
+            ValueError: If amount is not positive or wallet doesn't exist
+        """
+        from apps.interactions.models import Wallet, CoinTransaction, TransactionType
+        from django.db import transaction
+
+        if amount <= 0:
+            raise ValueError("환불 금액은 0보다 커야 합니다")
+
+        with transaction.atomic():
+            try:
+                wallet = Wallet.objects.select_for_update().get(user=user)
+            except Wallet.DoesNotExist:
+                raise ValueError("지갑이 존재하지 않습니다")
+
+            # Update balance
+            wallet.balance += amount
+            wallet.save()
+
+            # Create transaction record
+            tx = CoinTransaction.objects.create(
+                wallet=wallet,
+                transaction_type=TransactionType.REFUND,
+                amount=amount,
+                balance_after=wallet.balance,
+                description=description,
+                reference_type=reference_type,
+                reference_id=reference_id,
+            )
+
+        return {"wallet": wallet, "transaction": tx}
+
+    @staticmethod
+    def adjustment(
+        user,
+        amount: int,
+        description: str = "",
+    ) -> dict:
+        """
+        Adjust wallet balance (admin operation).
+
+        Can be positive or negative. Allows balance to go below zero.
+
+        Args:
+            user: User instance
+            amount: Amount to adjust (can be negative)
+            description: Required description for audit
+
+        Returns:
+            Dict with 'wallet' and 'transaction' keys
+        """
+        from apps.interactions.models import Wallet, CoinTransaction, TransactionType
+        from django.db import transaction
+
+        with transaction.atomic():
+            wallet, created = Wallet.objects.select_for_update().get_or_create(
+                user=user,
+                defaults={"balance": 0},
+            )
+
+            # Update balance (can go negative)
+            wallet.balance += amount
+            wallet.save()
+
+            # Create transaction record
+            tx = CoinTransaction.objects.create(
+                wallet=wallet,
+                transaction_type=TransactionType.ADJUSTMENT,
+                amount=amount,
+                balance_after=wallet.balance,
+                description=description,
+            )
+
+        return {"wallet": wallet, "transaction": tx}
+
+    @staticmethod
+    def get_balance(user) -> int:
+        """
+        Get current wallet balance.
+
+        Args:
+            user: User instance
+
+        Returns:
+            Current balance, or 0 if no wallet
+        """
+        from apps.interactions.models import Wallet
+
+        try:
+            wallet = Wallet.objects.get(user=user)
+            return wallet.balance
+        except Wallet.DoesNotExist:
+            return 0
+
+    @staticmethod
+    def get_transactions(user, limit: int = 20) -> list:
+        """
+        Get recent transactions for user.
+
+        Args:
+            user: User instance
+            limit: Maximum number of transactions
+
+        Returns:
+            List of CoinTransaction instances
+        """
+        from apps.interactions.models import Wallet, CoinTransaction
+
+        try:
+            wallet = Wallet.objects.get(user=user)
+        except Wallet.DoesNotExist:
+            return []
+
+        return list(CoinTransaction.objects.filter(wallet=wallet).order_by("-created_at")[:limit])

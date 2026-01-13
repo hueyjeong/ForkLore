@@ -24,6 +24,27 @@ from .services import (
     CommentService,
     LikeService,
     ReportService,
+    WalletService,
+)
+from .serializers import (
+    SubscriptionCreateSerializer,
+    SubscriptionDetailSerializer,
+    SubscriptionStatusSerializer,
+    PurchaseDetailSerializer,
+    PurchaseListSerializer,
+    CommentCreateSerializer,
+    CommentUpdateSerializer,
+    CommentSerializer,
+    LikeToggleResponseSerializer,
+    ReportCreateSerializer,
+    ReportSerializer,
+    ReportAdminSerializer,
+    ReportActionSerializer,
+    WalletChargeSerializer,
+    WalletAdjustmentSerializer,
+    CoinTransactionSerializer,
+    WalletSerializer,
+    WalletBalanceResponseSerializer,
 )
 from .serializers import (
     SubscriptionCreateSerializer,
@@ -562,6 +583,172 @@ class AdminReportViewSet(viewsets.ViewSet):
                 "success": True,
                 "message": "신고가 처리되었습니다.",
                 "data": response_serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+# =============================================================================
+# Wallet ViewSets
+# =============================================================================
+
+
+@extend_schema_view(
+    create=extend_schema(
+        summary="코인 충전",
+        description="코인을 충전합니다 (MVP: 내부 시뮬레이션).",
+        tags=["Wallet"],
+    ),
+)
+class WalletChargeViewSet(viewsets.ViewSet):
+    """
+    ViewSet for charging coins.
+
+    Routes:
+    - POST /wallet/charge/ - Charge coins
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        """Charge coins to user's wallet."""
+        serializer = WalletChargeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = WalletService.charge(
+                user=request.user,
+                amount=serializer.validated_data["amount"],
+                description=serializer.validated_data.get("description", ""),
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": "충전이 완료되었습니다.",
+                "data": {
+                    "balance": result["wallet"].balance,
+                    "transaction": CoinTransactionSerializer(result["transaction"]).data,
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class UserWalletViewSet(viewsets.ViewSet):
+    """
+    ViewSet for user wallet operations.
+
+    Routes:
+    - GET /users/me/wallet/ - Get balance and recent transactions
+    - GET /users/me/wallet/transactions/ - Get full transaction history
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="지갑 조회",
+        description="잔액과 최근 거래 내역을 조회합니다.",
+        tags=["Wallet"],
+    )
+    def retrieve(self, request):
+        """Get wallet balance and recent transactions."""
+        balance = WalletService.get_balance(user=request.user)
+        transactions = WalletService.get_transactions(user=request.user, limit=5)
+
+        return Response(
+            {
+                "success": True,
+                "data": {
+                    "balance": balance,
+                    "recentTransactions": CoinTransactionSerializer(transactions, many=True).data,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        summary="거래 내역 조회",
+        description="전체 거래 내역을 조회합니다.",
+        tags=["Wallet"],
+    )
+    @action(detail=False, methods=["get"], url_path="transactions")
+    def transactions(self, request):
+        """Get full transaction history with pagination."""
+        from apps.interactions.models import Wallet, CoinTransaction
+
+        try:
+            wallet = Wallet.objects.get(user=request.user)
+            transactions = CoinTransaction.objects.filter(wallet=wallet).order_by("-created_at")
+        except Wallet.DoesNotExist:
+            transactions = []
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(list(transactions), request)
+        serializer = CoinTransactionSerializer(page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+
+@extend_schema_view(
+    create=extend_schema(
+        summary="지갑 조정 (관리자)",
+        description="관리자가 사용자의 지갑 잔액을 조정합니다.",
+        tags=["Admin - Wallet"],
+    ),
+)
+class AdminWalletAdjustmentViewSet(viewsets.ViewSet):
+    """
+    ViewSet for admin wallet adjustments.
+
+    Routes:
+    - POST /admin/wallet/{user_id}/adjustment/ - Adjust wallet balance
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def create(self, request, user_pk=None):
+        """Adjust user's wallet balance."""
+        from apps.users.models import User
+
+        try:
+            target_user = User.objects.get(pk=user_pk)
+        except User.DoesNotExist:
+            return Response(
+                {"success": False, "message": "사용자를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = WalletAdjustmentSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = WalletService.adjustment(
+            user=target_user,
+            amount=serializer.validated_data["amount"],
+            description=serializer.validated_data.get("description", ""),
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "잔액이 조정되었습니다.",
+                "data": {
+                    "balance": result["wallet"].balance,
+                    "transaction": CoinTransactionSerializer(result["transaction"]).data,
+                },
             },
             status=status.HTTP_200_OK,
         )

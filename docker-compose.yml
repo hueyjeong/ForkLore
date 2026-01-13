@@ -1,0 +1,108 @@
+services:
+  db:
+    image: ankane/pgvector:v0.8.0
+    container_name: forklore-db
+    environment:
+      POSTGRES_DB: app_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: forklore-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: forklore-backend
+    environment:
+      - DATABASE_URL=postgres://postgres:${DB_PASSWORD:-password}@db:5432/app_db
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=config.settings.local
+      - DEBUG=True
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: poetry run python manage.py runserver 0.0.0.0:8000
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: forklore-celery
+    environment:
+      - DATABASE_URL=postgres://postgres:${DB_PASSWORD:-password}@db:5432/app_db
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=config.settings.local
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: poetry run celery -A config worker -l info
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: forklore-celery-beat
+    environment:
+      - DATABASE_URL=postgres://postgres:${DB_PASSWORD:-password}@db:5432/app_db
+      - REDIS_URL=redis://redis:6379/0
+      - DJANGO_SETTINGS_MODULE=config.settings.local
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: poetry run celery -A config beat -l info
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: forklore-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    command: pnpm dev
+
+volumes:
+  postgres_data:
+  redis_data:

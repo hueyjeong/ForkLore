@@ -51,6 +51,7 @@ class Novel(SoftDeleteModel):
     total_like_count = models.BigIntegerField("총 좋아요", default=0)
     total_chapter_count = models.IntegerField("총 회차 수", default=0)
     branch_count = models.IntegerField("브랜치 수", default=1)
+    linked_branch_count = models.IntegerField("연결된 브랜치 수", default=0)
 
     class Meta:
         db_table = "novels"

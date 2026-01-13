@@ -58,5 +58,4 @@ ignore = ["E501", "ANN101", "ANN102", "ANN401"]
 known-first-party = ["apps", "config", "common"]
 
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**/*.py" = ["ANN"]
 "**/migrations/**/*.py" = ["ANN"]

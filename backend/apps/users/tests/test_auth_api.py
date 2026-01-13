@@ -4,29 +4,31 @@ Tests the full HTTP request/response cycle.
 """
 
 import json
+from typing import Any
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 
-User = get_user_model()
+from apps.users.models import User
 
 
-def get_json(response):
+def get_json(response: Response) -> Any:
     """Helper to parse JSON from response content (rendered by StandardJSONRenderer)."""
     return json.loads(response.content)
 
 
 @pytest.fixture
-def api_client():
+def api_client() -> APIClient:
     """Return an API client instance."""
     return APIClient()
 
 
 @pytest.fixture
-def user_data():
+def user_data() -> dict[str, str]:
     """Valid user registration data."""
     return {
         "email": "test@example.com",
@@ -37,7 +39,7 @@ def user_data():
 
 
 @pytest.fixture
-def existing_user(db):
+def existing_user(db: Any) -> User:
     """Create an existing user for tests."""
     user = User.objects.create_user(
         username="existing@example.com",
@@ -56,7 +58,9 @@ def existing_user(db):
 class TestSignupEndpoint:
     """Tests for POST /api/v1/auth/signup"""
 
-    def test_signup_success(self, api_client, db, user_data):
+    def test_signup_success(
+        self, api_client: APIClient, db: Any, user_data: dict[str, str]
+    ) -> None:
         """Signup with valid data should return 201."""
         url = reverse("signup")
         response = api_client.post(url, user_data, format="json")
@@ -67,7 +71,9 @@ class TestSignupEndpoint:
         assert "message" in data
         assert User.objects.filter(email=user_data["email"]).exists()
 
-    def test_signup_password_mismatch(self, api_client, db, user_data):
+    def test_signup_password_mismatch(
+        self, api_client: APIClient, db: Any, user_data: dict[str, str]
+    ) -> None:
         """Signup with mismatched passwords should return 400."""
         url = reverse("signup")
         user_data["passwordConfirm"] = "DifferentPassword123!"
@@ -75,7 +81,9 @@ class TestSignupEndpoint:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_signup_duplicate_email(self, api_client, existing_user, user_data):
+    def test_signup_duplicate_email(
+        self, api_client: APIClient, existing_user: User, user_data: dict[str, str]
+    ) -> None:
         """Signup with existing email should return 400."""
         url = reverse("signup")
         user_data["email"] = existing_user.email
@@ -92,7 +100,7 @@ class TestSignupEndpoint:
 class TestLoginEndpoint:
     """Tests for POST /api/v1/auth/login"""
 
-    def test_login_success(self, api_client, existing_user):
+    def test_login_success(self, api_client: APIClient, existing_user: User) -> None:
         """Login with valid credentials should return tokens and user data."""
         url = reverse("login")
         response = api_client.post(
@@ -109,7 +117,7 @@ class TestLoginEndpoint:
         assert "user" in data["data"]
         assert data["data"]["user"]["email"] == existing_user.email
 
-    def test_login_invalid_password(self, api_client, existing_user):
+    def test_login_invalid_password(self, api_client: APIClient, existing_user: User) -> None:
         """Login with wrong password should return 401."""
         url = reverse("login")
         response = api_client.post(
@@ -120,7 +128,7 @@ class TestLoginEndpoint:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_login_nonexistent_user(self, api_client, db):
+    def test_login_nonexistent_user(self, api_client: APIClient, db: Any) -> None:
         """Login with non-existent email should return 401."""
         url = reverse("login")
         response = api_client.post(
@@ -140,7 +148,7 @@ class TestLoginEndpoint:
 class TestLogoutEndpoint:
     """Tests for POST /api/v1/auth/logout"""
 
-    def test_logout_success(self, api_client, existing_user):
+    def test_logout_success(self, api_client: APIClient, existing_user: User) -> None:
         """Logout with valid refresh token should return 200."""
         # First login to get tokens
         login_url = reverse("login")
@@ -166,7 +174,7 @@ class TestLogoutEndpoint:
         data = get_json(response)
         assert data["success"] is True
 
-    def test_logout_without_auth(self, api_client, db):
+    def test_logout_without_auth(self, api_client: APIClient, db: Any) -> None:
         """Logout without authentication should return 401."""
         url = reverse("logout")
         response = api_client.post(url, {"refresh": "some-token"}, format="json")
@@ -182,7 +190,7 @@ class TestLogoutEndpoint:
 class TestRefreshEndpoint:
     """Tests for POST /api/v1/auth/refresh"""
 
-    def test_refresh_success(self, api_client, existing_user):
+    def test_refresh_success(self, api_client: APIClient, existing_user: User) -> None:
         """Refresh with valid token should return new access token."""
         # First login to get tokens
         login_url = reverse("login")
@@ -206,7 +214,7 @@ class TestRefreshEndpoint:
         data = get_json(response)
         assert "access" in data["data"]
 
-    def test_refresh_invalid_token(self, api_client, db):
+    def test_refresh_invalid_token(self, api_client: APIClient, db: Any) -> None:
         """Refresh with invalid token should return 401."""
         url = reverse("token_refresh")
         response = api_client.post(url, {"refresh": "invalid-token"}, format="json")
@@ -222,7 +230,7 @@ class TestRefreshEndpoint:
 class TestMeEndpoint:
     """Tests for GET/PATCH /api/v1/users/me"""
 
-    def test_get_me_success(self, api_client, existing_user):
+    def test_get_me_success(self, api_client: APIClient, existing_user: User) -> None:
         """Get profile with valid auth should return user data."""
         # Login first
         login_url = reverse("login")
@@ -244,14 +252,14 @@ class TestMeEndpoint:
         assert data["success"] is True
         assert data["data"]["email"] == existing_user.email
 
-    def test_get_me_without_auth(self, api_client, db):
+    def test_get_me_without_auth(self, api_client: APIClient, db: Any) -> None:
         """Get profile without auth should return 401."""
         url = reverse("me")
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_update_me_success(self, api_client, existing_user):
+    def test_update_me_success(self, api_client: APIClient, existing_user: User) -> None:
         """Update profile with valid data should return updated user."""
         # Login first
         login_url = reverse("login")
@@ -286,7 +294,7 @@ class TestMeEndpoint:
 class TestChangePasswordEndpoint:
     """Tests for POST /api/v1/users/me/password"""
 
-    def test_change_password_success(self, api_client, existing_user):
+    def test_change_password_success(self, api_client: APIClient, existing_user: User) -> None:
         """Change password with valid data should succeed."""
         # Login first
         login_url = reverse("login")
@@ -315,7 +323,9 @@ class TestChangePasswordEndpoint:
         existing_user.refresh_from_db()
         assert existing_user.check_password("NewPassword456!")
 
-    def test_change_password_wrong_old_password(self, api_client, existing_user):
+    def test_change_password_wrong_old_password(
+        self, api_client: APIClient, existing_user: User
+    ) -> None:
         """Change password with wrong old password should fail."""
         # Login first
         login_url = reverse("login")

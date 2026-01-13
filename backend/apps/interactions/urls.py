@@ -12,6 +12,8 @@ from .views import (
     ChapterCommentViewSet,
     CommentDetailViewSet,
     ChapterLikeViewSet,
+    ReportViewSet,
+    AdminReportViewSet,
 )
 
 
@@ -20,12 +22,19 @@ router = DefaultRouter()
 router.register(r"subscriptions", SubscriptionViewSet, basename="subscription")
 router.register(r"purchases", PurchaseViewSet, basename="purchase")
 router.register(r"comments", CommentDetailViewSet, basename="comment")
+router.register(r"reports", ReportViewSet, basename="report")
+
+# Admin router
+admin_router = DefaultRouter()
+admin_router.register(r"reports", AdminReportViewSet, basename="admin-report")
 
 
 app_name = "interactions"
 
 urlpatterns = [
     path("", include(router.urls)),
+    # Admin routes
+    path("admin/", include(admin_router.urls)),
     # Chapter purchase endpoint
     path(
         "chapters/<int:chapter_pk>/purchase/",

@@ -679,3 +679,154 @@ class LikeService:
             content_type=content_type,
             object_id=target.id,
         ).exists()
+
+
+class ReportService:
+    """Service for managing reports."""
+
+    @staticmethod
+    def create_report(reporter, target, reason: str, description: str = "") -> "Report":
+        """
+        Create a report for a target (comment, chapter, etc.).
+
+        Args:
+            reporter: User submitting the report
+            target: Model instance to report (Comment, Chapter, etc.)
+            reason: ReportReason value
+            description: Optional detailed description
+
+        Returns:
+            Report instance
+
+        Raises:
+            ValueError: If user has already reported this target
+        """
+        from apps.interactions.models import Report, ReportStatus
+        from django.contrib.contenttypes.models import ContentType
+
+        content_type = ContentType.objects.get_for_model(target)
+
+        # Check for duplicate report
+        if Report.objects.filter(
+            reporter=reporter,
+            content_type=content_type,
+            object_id=target.id,
+        ).exists():
+            raise ValueError("이미 신고한 대상입니다")
+
+        return Report.objects.create(
+            reporter=reporter,
+            content_type=content_type,
+            object_id=target.id,
+            reason=reason,
+            description=description,
+            status=ReportStatus.PENDING,
+        )
+
+    @staticmethod
+    def admin_resolve(report_id: int, resolver, note: str = "") -> "Report":
+        """
+        Resolve a report (admin only).
+
+        Args:
+            report_id: ID of report to resolve
+            resolver: Admin user processing the report
+            note: Optional resolution note
+
+        Returns:
+            Updated Report instance
+
+        Raises:
+            PermissionError: If resolver is not admin
+            ValueError: If report is already processed
+        """
+        from apps.interactions.models import Report, ReportStatus
+
+        if not resolver.is_staff:
+            raise PermissionError("관리자만 신고를 처리할 수 있습니다")
+
+        report = Report.objects.get(id=report_id)
+
+        if report.status != ReportStatus.PENDING:
+            raise ValueError("이미 처리된 신고입니다")
+
+        report.status = ReportStatus.RESOLVED
+        report.resolver = resolver
+        report.resolution_note = note
+        report.resolved_at = timezone.now()
+        report.save()
+
+        return report
+
+    @staticmethod
+    def admin_reject(report_id: int, resolver, note: str = "") -> "Report":
+        """
+        Reject a report (admin only).
+
+        Args:
+            report_id: ID of report to reject
+            resolver: Admin user processing the report
+            note: Optional rejection note
+
+        Returns:
+            Updated Report instance
+
+        Raises:
+            PermissionError: If resolver is not admin
+            ValueError: If report is already processed
+        """
+        from apps.interactions.models import Report, ReportStatus
+
+        if not resolver.is_staff:
+            raise PermissionError("관리자만 신고를 처리할 수 있습니다")
+
+        report = Report.objects.get(id=report_id)
+
+        if report.status != ReportStatus.PENDING:
+            raise ValueError("이미 처리된 신고입니다")
+
+        report.status = ReportStatus.REJECTED
+        report.resolver = resolver
+        report.resolution_note = note
+        report.resolved_at = timezone.now()
+        report.save()
+
+        return report
+
+    @staticmethod
+    def list_pending() -> list:
+        """
+        List all pending reports.
+
+        Returns:
+            List of pending Report instances
+        """
+        from apps.interactions.models import Report, ReportStatus
+
+        return list(
+            Report.objects.filter(status=ReportStatus.PENDING)
+            .select_related("reporter", "resolver", "content_type")
+            .order_by("-created_at")
+        )
+
+    @staticmethod
+    def list_all(status: str = None) -> list:
+        """
+        List all reports, optionally filtered by status.
+
+        Args:
+            status: Optional ReportStatus to filter by
+
+        Returns:
+            List of Report instances
+        """
+        from apps.interactions.models import Report
+
+        queryset = Report.objects.select_related("reporter", "resolver", "content_type").order_by(
+            "-created_at"
+        )
+
+        if status:
+            queryset = queryset.filter(status=status)
+
+        return list(queryset)

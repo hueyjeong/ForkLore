@@ -11,14 +11,20 @@ Contains views for:
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from common.pagination import StandardPagination
 
 from apps.contents.models import Chapter
-from .models import Comment
-from .services import SubscriptionService, PurchaseService, CommentService, LikeService
+from .models import Comment, Report
+from .services import (
+    SubscriptionService,
+    PurchaseService,
+    CommentService,
+    LikeService,
+    ReportService,
+)
 from .serializers import (
     SubscriptionCreateSerializer,
     SubscriptionDetailSerializer,
@@ -29,6 +35,10 @@ from .serializers import (
     CommentUpdateSerializer,
     CommentSerializer,
     LikeToggleResponseSerializer,
+    ReportCreateSerializer,
+    ReportSerializer,
+    ReportAdminSerializer,
+    ReportActionSerializer,
 )
 
 
@@ -407,3 +417,151 @@ class ChapterLikeViewSet(viewsets.ViewSet):
         result = LikeService.toggle(user=request.user, target=chapter)
         serializer = LikeToggleResponseSerializer(result)
         return Response(serializer.data)
+
+
+# =============================================================================
+# Report ViewSets
+# =============================================================================
+
+
+@extend_schema_view(
+    create=extend_schema(
+        summary="신고 생성",
+        description="콘텐츠를 신고합니다.",
+        tags=["Reports"],
+    ),
+)
+class ReportViewSet(viewsets.ViewSet):
+    """
+    ViewSet for creating reports (authenticated users).
+
+    Routes:
+    - POST /reports/ - Create a report
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        """Create a new report."""
+        serializer = ReportCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        target = serializer.validated_data["target"]
+
+        try:
+            report = ReportService.create_report(
+                reporter=request.user,
+                target=target,
+                reason=serializer.validated_data["reason"],
+                description=serializer.validated_data.get("description", ""),
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = ReportSerializer(report)
+        return Response(
+            {
+                "success": True,
+                "message": "신고가 접수되었습니다.",
+                "data": response_serializer.data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="신고 목록 조회 (관리자)",
+        description="모든 신고 목록을 조회합니다.",
+        tags=["Admin - Reports"],
+    ),
+    partial_update=extend_schema(
+        summary="신고 처리 (관리자)",
+        description="신고를 처리(승인/반려)합니다.",
+        tags=["Admin - Reports"],
+    ),
+)
+class AdminReportViewSet(viewsets.ViewSet):
+    """
+    ViewSet for admin report management.
+
+    Routes:
+    - GET /admin/reports/ - List all reports
+    - PATCH /admin/reports/{id}/ - Process a report
+    """
+
+    permission_classes = [IsAdminUser]
+    pagination_class = StandardPagination
+
+    def list(self, request):
+        """List all reports."""
+        status_filter = request.query_params.get("status")
+
+        if status_filter:
+            reports = ReportService.list_all(status=status_filter)
+        else:
+            reports = ReportService.list_all()
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(reports, request)
+        serializer = ReportAdminSerializer(page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+    def partial_update(self, request, pk=None):
+        """Process a report (resolve/reject)."""
+        serializer = ReportActionSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        action_type = serializer.validated_data["action"]
+        note = serializer.validated_data.get("resolution_note", "")
+
+        try:
+            if action_type == "resolve":
+                report = ReportService.admin_resolve(
+                    report_id=pk,
+                    resolver=request.user,
+                    note=note,
+                )
+            else:  # reject
+                report = ReportService.admin_reject(
+                    report_id=pk,
+                    resolver=request.user,
+                    note=note,
+                )
+        except Report.DoesNotExist:
+            return Response(
+                {"success": False, "message": "신고를 찾을 수 없습니다.", "data": None},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except PermissionError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {"success": False, "message": str(e), "data": None},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        response_serializer = ReportAdminSerializer(report)
+        return Response(
+            {
+                "success": True,
+                "message": "신고가 처리되었습니다.",
+                "data": response_serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )

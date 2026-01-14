@@ -3,14 +3,23 @@ TDD: MapViewSet 테스트
 RED → GREEN → REFACTOR
 """
 
+import json
+from typing import Any
+
 import pytest
 from model_bakery import baker
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 from apps.contents.models import Map, MapObject
 
 pytestmark = pytest.mark.django_db
+
+
+def get_json(response: Response) -> Any:
+    """Helper to parse JSON from response content (rendered by StandardJSONRenderer)."""
+    return json.loads(response.content)
 
 
 class TestMapViewSet:
@@ -33,8 +42,10 @@ class TestMapViewSet:
 
         assert response.status_code == status.HTTP_200_OK
         # Paginated response
-        data = response.data.get("results") or response.data.get("data")
-        assert len(data) == 2
+        json_data = get_json(response)
+        data = json_data.get("data", {})
+        results = data.get("results") or data
+        assert len(results) == 2
 
     def test_create_map(self):
         """지도 생성"""
@@ -49,8 +60,8 @@ class TestMapViewSet:
         response = self.client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["data"]["name"] == "세계 지도"
-        assert response.data["data"]["width"] == 1920
+        assert get_json(response)["data"]["name"] == "세계 지도"
+        assert get_json(response)["data"]["width"] == 1920
 
     def test_create_map_unauthenticated(self):
         """비인증 사용자 지도 생성 불가"""
@@ -70,7 +81,7 @@ class TestMapViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["name"] == "테스트 지도"
+        assert get_json(response)["data"]["name"] == "테스트 지도"
 
     def test_retrieve_map_with_context(self):
         """문맥 인식 지도 조회"""
@@ -82,7 +93,9 @@ class TestMapViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["snapshot"]["valid_from_chapter"] == 1
+        snapshot = get_json(response)["data"]["snapshot"]
+        valid_from = snapshot.get("validFromChapter") or snapshot.get("valid_from_chapter")
+        assert valid_from == 1
 
     def test_update_map(self):
         """지도 수정"""
@@ -94,7 +107,7 @@ class TestMapViewSet:
         response = self.client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["name"] == "수정된 지도"
+        assert get_json(response)["data"]["name"] == "수정된 지도"
 
     def test_delete_map(self):
         """지도 삭제"""
@@ -129,7 +142,9 @@ class TestMapSnapshotViewSet:
         response = self.client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["data"]["valid_from_chapter"] == 1
+        resp_data = get_json(response)["data"]
+        valid_from = resp_data.get("validFromChapter") or resp_data.get("valid_from_chapter")
+        assert valid_from == 1
 
     def test_list_snapshots(self):
         """스냅샷 목록 조회"""
@@ -140,8 +155,11 @@ class TestMapSnapshotViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.data.get("results") or response.data.get("data")
-        assert len(data) == 2
+        json_data = get_json(response)
+        data = json_data.get("data", [])
+        # Check if data is already a list or has a "results" key
+        results = data if isinstance(data, list) else data.get("results", data)
+        assert len(results) == 2
 
 
 class TestMapLayerViewSet:
@@ -168,7 +186,7 @@ class TestMapLayerViewSet:
         response = self.client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["data"]["name"] == "마커 레이어"
+        assert get_json(response)["data"]["name"] == "마커 레이어"
 
     def test_list_layers(self):
         """레이어 목록 조회"""
@@ -179,8 +197,11 @@ class TestMapLayerViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.data.get("results") or response.data.get("data")
-        assert len(data) == 2
+        json_data = get_json(response)
+        data = json_data.get("data", [])
+        # Check if data is already a list or has a "results" key
+        results = data if isinstance(data, list) else data.get("results", data)
+        assert len(results) == 2
 
 
 class TestMapObjectViewSet:
@@ -209,7 +230,7 @@ class TestMapObjectViewSet:
         response = self.client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["data"]["label"] == "수도"
+        assert get_json(response)["data"]["label"] == "수도"
 
     def test_list_objects(self):
         """오브젝트 목록 조회"""
@@ -227,8 +248,11 @@ class TestMapObjectViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        data = response.data.get("results") or response.data.get("data")
-        assert len(data) == 2
+        json_data = get_json(response)
+        data = json_data.get("data", [])
+        # Check if data is already a list or has a "results" key
+        results = data if isinstance(data, list) else data.get("results", data)
+        assert len(results) == 2
 
     def test_create_object_with_wiki_link(self):
         """위키 연결된 오브젝트 생성"""
@@ -245,5 +269,5 @@ class TestMapObjectViewSet:
         response = self.client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        obj = MapObject.objects.get(id=response.data["data"]["id"])
+        obj = MapObject.objects.get(id=get_json(response)["data"]["id"])
         assert obj.wiki_entry == wiki

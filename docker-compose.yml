@@ -1,6 +1,6 @@
 services:
   db:
-    image: pgvector/pgvector:pg17
+    image: pgvector/pgvector:pg18
     container_name: forklore-db
     environment:
       POSTGRES_DB: app_db

@@ -144,24 +144,116 @@ frontend/
 
 **Workflow: RED → GREEN → REFACTOR**
 
+### Test Structure
+
+```
+backend/apps/
+├── users/tests/
+│   └── test_auth_api.py              # Integration tests (19 tests)
+└── novels/tests/
+    ├── test_services.py               # Unit tests (services)
+    ├── test_views.py                  # Unit tests (views)
+    └── test_integration/              # Integration tests
+        ├── conftest.py                # Shared fixtures (author, reader, clients)
+        ├── test_novel_api.py          # Novel CRUD (4 tests)
+        ├── test_branch_api.py         # Branch management (5 tests)
+        └── test_link_request_workflow.py  # Link requests (6 tests)
+```
+
+### Unit Tests (Services & Views)
+
 ```python
 # 1. Unit tests for services (mock external deps)
 @patch("apps.ai.services.genai")
 def test_embed_text(self, mock_genai):
     mock_genai.embed_content.return_value = {"embedding": [0.1] * 3072}
-    ...
-
-# 2. Integration tests for views (real HTTP)
-def test_create_novel(self):
-    response = self.client.post("/api/v1/novels/", data, format="json")
-    assert response.status_code == 201
+    service = AIService()
+    result = service.embed_text("test")
+    assert result is not None
 
 # Test fixtures: model_bakery
 branch = baker.make("novels.Branch", author=user)
 chapter = baker.make("contents.Chapter", branch=branch, content="test")
 ```
 
-**Coverage requirement: 70%+**
+### Integration Tests (Real HTTP Workflows)
+
+**Location**: `apps/<app_name>/tests/test_integration/`
+
+**Shared Fixtures** (`conftest.py`):
+```python
+import pytest
+from django.contrib.auth import get_user_model
+from model_bakery import baker
+from rest_framework.test import APIClient
+
+User = get_user_model()
+
+@pytest.fixture
+def author(db):
+    """Author user for testing"""
+    return baker.make(User, email="author@test.com")
+
+@pytest.fixture
+def reader(db):
+    """Reader user for testing"""
+    return baker.make(User, email="reader@test.com")
+
+@pytest.fixture
+def api_client():
+    """Unauthenticated API client"""
+    return APIClient()
+
+@pytest.fixture
+def author_client(api_client, author):
+    """Authenticated client for author"""
+    api_client.force_authenticate(user=author)
+    return api_client
+
+@pytest.fixture
+def reader_client(api_client, reader):
+    """Authenticated client for reader"""
+    api_client.force_authenticate(user=reader)
+    return api_client
+```
+
+**Integration Test Example**:
+```python
+import pytest
+from django.urls import reverse
+from model_bakery import baker
+from rest_framework import status
+
+@pytest.mark.django_db
+class TestNovelCRUD:
+    def test_create_novel_creates_main_branch(self, author_client):
+        """Test novel creation automatically creates main branch"""
+        url = reverse("novel-list")
+        data = {
+            "title": "Test Novel",
+            "description": "Test description",
+            "genre": "FANTASY",
+        }
+        
+        response = author_client.post(url, data, format="json")
+        
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["title"] == "Test Novel"
+        # Verify main branch was created
+        assert response.data["main_branch"] is not None
+    
+    def test_non_author_cannot_update_novel(self, author, reader_client):
+        """Test non-authors cannot modify novels"""
+        novel = baker.make("novels.Novel", author=author)
+        url = reverse("novel-detail", kwargs={"pk": novel.pk})
+        data = {"title": "Hacked Title"}
+        
+        response = reader_client.patch(url, data, format="json")
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+```
+
+**Coverage requirement: 95%+ (current: 95%, 545 tests)**
 
 ## Key Rules
 

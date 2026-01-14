@@ -115,7 +115,7 @@ class AIViewSet(GenericViewSet):
                 user=request.user,
                 text=serializer.validated_data["text"],
             )
-            return Response({"data": suggestions})
+            return Response(suggestions)
         except ValueError as e:
             raise RateLimitExceeded(str(e))
         except Exception as e:

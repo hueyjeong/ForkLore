@@ -11,6 +11,7 @@ Contains views for:
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -69,11 +70,7 @@ class SubscriptionViewSet(viewsets.ViewSet):
     def create(self, request: Request) -> Response:
         """Create or extend subscription."""
         serializer = SubscriptionCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         service = SubscriptionService()
         subscription = service.subscribe(
@@ -98,15 +95,9 @@ class SubscriptionViewSet(viewsets.ViewSet):
         result = service.cancel(user=request.user)
 
         if not result:
-            return Response(
-                {"success": False, "message": "활성 구독이 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("활성 구독이 없습니다.")
 
-        return Response(
-            {"success": True, "message": "구독이 취소되었습니다.", "data": None},
-            status=status.HTTP_200_OK,
-        )
+        return Response({"message": "구독이 취소되었습니다."}, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="구독 상태 조회",
@@ -120,10 +111,7 @@ class SubscriptionViewSet(viewsets.ViewSet):
         result = service.get_status(user=request.user)
 
         if not result:
-            return Response(
-                {"success": True, "message": "구독 정보가 없습니다.", "data": None},
-                status=status.HTTP_200_OK,
-            )
+            return Response(None)
 
         serializer = SubscriptionStatusSerializer(result)
         return Response(serializer.data)
@@ -179,20 +167,14 @@ class ChapterPurchaseViewSet(viewsets.ViewSet):
         """Purchase a chapter."""
         try:
             chapter = Chapter.objects.get(pk=chapter_pk)
-        except Chapter.DoesNotExist:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        except Chapter.DoesNotExist as e:
+            raise NotFound("회차를 찾을 수 없습니다.") from e
 
         service = PurchaseService()
         try:
             purchase = service.purchase(user=request.user, chapter=chapter)
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e)) from e
 
         serializer = PurchaseDetailSerializer(purchase)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -250,11 +232,7 @@ class ChapterCommentViewSet(viewsets.ViewSet):
     def create(self, request: Request, chapter_pk: int | None = None) -> Response:
         """Create a new comment."""
         serializer = CommentCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             comment = CommentService.create(
@@ -263,10 +241,7 @@ class ChapterCommentViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except Exception as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e)) from e
 
         response_serializer = CommentSerializer(comment)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
@@ -302,11 +277,7 @@ class CommentDetailViewSet(viewsets.ViewSet):
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a comment."""
         serializer = CommentUpdateSerializer(data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             comment = CommentService.update(
@@ -315,15 +286,9 @@ class CommentDetailViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except PermissionError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except Comment.DoesNotExist:
-            return Response(
-                {"success": False, "message": "댓글을 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise PermissionDenied(str(e)) from e
+        except Comment.DoesNotExist as e:
+            raise NotFound("댓글을 찾을 수 없습니다.") from e
 
         response_serializer = CommentSerializer(comment)
         return Response(response_serializer.data)
@@ -333,15 +298,9 @@ class CommentDetailViewSet(viewsets.ViewSet):
         try:
             CommentService.delete(comment_id=pk, user=request.user)
         except PermissionError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except Comment.DoesNotExist:
-            return Response(
-                {"success": False, "message": "댓글을 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise PermissionDenied(str(e)) from e
+        except Comment.DoesNotExist as e:
+            raise NotFound("댓글을 찾을 수 없습니다.") from e
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -359,15 +318,9 @@ class CommentDetailViewSet(viewsets.ViewSet):
             else:
                 comment = CommentService.unpin(comment_id=pk, user=request.user)
         except PermissionError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        except Comment.DoesNotExist:
-            return Response(
-                {"success": False, "message": "댓글을 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise PermissionDenied(str(e)) from e
+        except Comment.DoesNotExist as e:
+            raise NotFound("댓글을 찾을 수 없습니다.") from e
 
         response_serializer = CommentSerializer(comment)
         return Response(response_serializer.data)
@@ -382,11 +335,8 @@ class CommentDetailViewSet(viewsets.ViewSet):
         """Like or unlike a comment."""
         try:
             comment = Comment.objects.get(pk=pk)
-        except Comment.DoesNotExist:
-            return Response(
-                {"success": False, "message": "댓글을 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        except Comment.DoesNotExist as e:
+            raise NotFound("댓글을 찾을 수 없습니다.") from e
 
         result = LikeService.toggle(user=request.user, target=comment)
         serializer = LikeToggleResponseSerializer(result)
@@ -413,11 +363,8 @@ class ChapterLikeViewSet(viewsets.ViewSet):
         """Like or unlike a chapter."""
         try:
             chapter = Chapter.objects.get(pk=chapter_pk)
-        except Chapter.DoesNotExist:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        except Chapter.DoesNotExist as e:
+            raise NotFound("회차를 찾을 수 없습니다.") from e
 
         result = LikeService.toggle(user=request.user, target=chapter)
         serializer = LikeToggleResponseSerializer(result)
@@ -449,11 +396,7 @@ class ReportViewSet(viewsets.ViewSet):
     def create(self, request: Request) -> Response:
         """Create a new report."""
         serializer = ReportCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         target = serializer.validated_data["target"]
 
@@ -465,20 +408,10 @@ class ReportViewSet(viewsets.ViewSet):
                 description=serializer.validated_data.get("description", ""),
             )
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e)) from e
 
         response_serializer = ReportSerializer(report)
-        return Response(
-            {
-                "success": True,
-                "message": "신고가 접수되었습니다.",
-                "data": response_serializer.data,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -523,11 +456,7 @@ class AdminReportViewSet(viewsets.ViewSet):
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Process a report (resolve/reject)."""
         serializer = ReportActionSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         action_type = serializer.validated_data["action"]
         note = serializer.validated_data.get("resolution_note", "")
@@ -545,31 +474,15 @@ class AdminReportViewSet(viewsets.ViewSet):
                     resolver=request.user,
                     note=note,
                 )
-        except Report.DoesNotExist:
-            return Response(
-                {"success": False, "message": "신고를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        except Report.DoesNotExist as e:
+            raise NotFound("신고를 찾을 수 없습니다.") from e
         except PermissionError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied(str(e)) from e
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e)) from e
 
         response_serializer = ReportAdminSerializer(report)
-        return Response(
-            {
-                "success": True,
-                "message": "신고가 처리되었습니다.",
-                "data": response_serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 # =============================================================================
@@ -597,11 +510,7 @@ class WalletChargeViewSet(viewsets.ViewSet):
     def create(self, request: Request) -> Response:
         """Charge coins to user's wallet."""
         serializer = WalletChargeSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             result = WalletService.charge(
@@ -610,19 +519,12 @@ class WalletChargeViewSet(viewsets.ViewSet):
                 description=serializer.validated_data.get("description", ""),
             )
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e)) from e
 
         return Response(
             {
-                "success": True,
-                "message": "충전이 완료되었습니다.",
-                "data": {
-                    "balance": result["wallet"].balance,
-                    "transaction": CoinTransactionSerializer(result["transaction"]).data,
-                },
+                "balance": result["wallet"].balance,
+                "transaction": CoinTransactionSerializer(result["transaction"]).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -651,11 +553,8 @@ class UserWalletViewSet(viewsets.ViewSet):
 
         return Response(
             {
-                "success": True,
-                "data": {
-                    "balance": balance,
-                    "recentTransactions": CoinTransactionSerializer(transactions, many=True).data,
-                },
+                "balance": balance,
+                "recentTransactions": CoinTransactionSerializer(transactions, many=True).data,
             },
             status=status.HTTP_200_OK,
         )
@@ -706,18 +605,11 @@ class AdminWalletAdjustmentViewSet(viewsets.ViewSet):
 
         try:
             target_user = User.objects.get(pk=user_pk)
-        except User.DoesNotExist:
-            return Response(
-                {"success": False, "message": "사용자를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        except User.DoesNotExist as e:
+            raise NotFound("사용자를 찾을 수 없습니다.") from e
 
         serializer = WalletAdjustmentSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         result = WalletService.adjustment(
             user=target_user,
@@ -727,12 +619,8 @@ class AdminWalletAdjustmentViewSet(viewsets.ViewSet):
 
         return Response(
             {
-                "success": True,
-                "message": "잔액이 조정되었습니다.",
-                "data": {
-                    "balance": result["wallet"].balance,
-                    "transaction": CoinTransactionSerializer(result["transaction"]).data,
-                },
+                "balance": result["wallet"].balance,
+                "transaction": CoinTransactionSerializer(result["transaction"]).data,
             },
             status=status.HTTP_200_OK,
         )
@@ -805,11 +693,7 @@ class AIUsageViewSet(viewsets.ViewSet):
         from apps.interactions.services import AIUsageService
 
         serializer = AIUsageCheckLimitSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         service = AIUsageService()
         action_type = serializer.validated_data["action_type"]
@@ -845,11 +729,7 @@ class AIUsageViewSet(viewsets.ViewSet):
         from apps.interactions.services import AIUsageService
 
         serializer = AIUsageRecordSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         service = AIUsageService()
         action_type = serializer.validated_data["action_type"]

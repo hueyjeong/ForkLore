@@ -12,8 +12,11 @@ cd backend
 poetry install
 poetry run python manage.py migrate
 
-# Run single test
-poetry run pytest apps/novels/tests/test_services.py::TestNovelService::test_create -v
+# Run single test (class method)
+poetry run pytest apps/novels/tests/test_services.py::TestNovelServiceCreate::test_create_novel_success -v
+
+# Run single test class
+poetry run pytest apps/novels/tests/test_services.py::TestNovelServiceCreate -v
 
 # Run test file
 poetry run pytest apps/novels/tests/test_services.py -v
@@ -21,14 +24,15 @@ poetry run pytest apps/novels/tests/test_services.py -v
 # Run app tests with coverage
 poetry run pytest apps/novels/tests/ -v --cov=apps/novels --cov-report=term-missing
 
-# All tests
-poetry run pytest --cov=apps
+# All tests with coverage
+poetry run pytest --cov=apps --cov-report=term-missing
 
-# Lint
-poetry run ruff check apps/
-poetry run ruff format apps/
+# Lint and format
+poetry run ruff check apps/           # Lint only
+poetry run ruff format apps/          # Format only
+poetry run ruff check --fix apps/     # Auto-fix issues
 
-# Server
+# Dev server
 poetry run python manage.py runserver
 ```
 
@@ -36,17 +40,31 @@ poetry run python manage.py runserver
 ```bash
 cd frontend
 pnpm install
-pnpm dev                           # Dev server
-pnpm test                          # Run vitest
-pnpm test -- auth.test.tsx         # Single test file
-pnpm lint                          # ESLint
+
+# Development
+pnpm dev                           # Dev server (http://localhost:3000)
+
+# Testing
+pnpm test                          # Run all vitest tests
+pnpm test -- input.test.tsx        # Single test file
+pnpm test -- --run                 # Run once without watch mode
+
+# Linting & Formatting
+pnpm lint                          # ESLint check
+pnpm lint -- --fix                 # ESLint auto-fix
+npx prettier --write .             # Format all files
+
+# Build
 pnpm build                         # Production build
+pnpm start                         # Start production server
 ```
 
 ### Docker
 ```bash
-docker compose up -d
-docker compose exec backend poetry run python manage.py migrate
+docker compose up -d                                                    # Start all services
+docker compose exec backend poetry run python manage.py migrate        # Run migrations
+docker compose logs -f backend                                          # View logs
+docker compose down                                                     # Stop all services
 ```
 
 ## Code Style

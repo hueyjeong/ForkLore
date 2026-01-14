@@ -14,6 +14,7 @@ from typing import Any
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -34,6 +35,14 @@ from apps.ai.tasks import create_branch_chunks, create_chapter_chunks
 from apps.novels.models import Branch
 
 logger = logging.getLogger(__name__)
+
+
+class RateLimitExceeded(ValidationError):
+    """API rate limit exceeded exception."""
+
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    default_detail = "API 사용 한도를 초과했습니다."
+    default_code = "rate_limit_exceeded"
 
 
 @extend_schema_view(
@@ -80,12 +89,13 @@ class AIViewSet(GenericViewSet):
         try:
             branch = Branch.objects.get(id=branch_id)
         except Branch.DoesNotExist:
-            return None
+            raise NotFound("브랜치를 찾을 수 없거나 접근 권한이 없습니다.")
 
         # 권한 검사: 작가 또는 협력자만 접근 가능
         if branch.author != self.request.user:
             # TODO: 협력자 검사 추가
-            return None
+            # Return 404 to hide branch existence from unauthorized users
+            raise NotFound("브랜치를 찾을 수 없거나 접근 권한이 없습니다.")
 
         return branch
 
@@ -94,15 +104,9 @@ class AIViewSet(GenericViewSet):
         """위키 제안 API."""
         branch_pk = kwargs.get("branch_pk")
         branch = self.get_branch(branch_pk)
-        if not branch:
-            return Response(
-                {"error": "브랜치를 찾을 수 없거나 접근 권한이 없습니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
 
         serializer = WikiSuggestionRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         try:
             service = AIService()
@@ -113,28 +117,19 @@ class AIViewSet(GenericViewSet):
             )
             return Response({"data": suggestions})
         except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            raise RateLimitExceeded(str(e))
         except Exception as e:
             logger.error(f"Wiki suggestion failed: {e}")
-            return Response(
-                {"error": "위키 제안 생성에 실패했습니다."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            raise ValidationError("위키 제안 생성에 실패했습니다.")
 
     @action(detail=False, methods=["post"], url_path="consistency-check")
     def consistency_check(self, request: Request, **kwargs: Any) -> Response:
         """일관성 검사 API."""
         branch_pk = kwargs.get("branch_pk")
         branch = self.get_branch(branch_pk)
-        if not branch:
-            return Response(
-                {"error": "브랜치를 찾을 수 없거나 접근 권한이 없습니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
 
         serializer = ConsistencyCheckRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         try:
             service = AIService()
@@ -147,29 +142,20 @@ class AIViewSet(GenericViewSet):
         except ValueError as e:
             error_msg = str(e)
             if "한도" in error_msg:
-                return Response({"error": error_msg}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-            return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+                raise RateLimitExceeded(error_msg)
+            raise ValidationError(error_msg)
         except Exception as e:
             logger.error(f"Consistency check failed: {e}")
-            return Response(
-                {"error": "일관성 검사에 실패했습니다."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            raise ValidationError("일관성 검사에 실패했습니다.")
 
     @action(detail=False, methods=["post"], url_path="ask")
     def ask(self, request: Request, **kwargs: Any) -> Response:
         """RAG 질문응답 API."""
         branch_pk = kwargs.get("branch_pk")
         branch = self.get_branch(branch_pk)
-        if not branch:
-            return Response(
-                {"error": "브랜치를 찾을 수 없거나 접근 권한이 없습니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
 
         serializer = AskRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         try:
             service = AIService()
@@ -182,29 +168,20 @@ class AIViewSet(GenericViewSet):
         except ValueError as e:
             error_msg = str(e)
             if "한도" in error_msg:
-                return Response({"error": error_msg}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-            return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+                raise RateLimitExceeded(error_msg)
+            raise ValidationError(error_msg)
         except Exception as e:
             logger.error(f"Ask failed: {e}")
-            return Response(
-                {"error": "AI 응답 생성에 실패했습니다."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            raise ValidationError("AI 응답 생성에 실패했습니다.")
 
     @action(detail=False, methods=["post"], url_path="create-chunks")
     def create_chunks(self, request: Request, **kwargs: Any) -> Response:
         """청킹 태스크 생성 API."""
         branch_pk = kwargs.get("branch_pk")
         branch = self.get_branch(branch_pk)
-        if not branch:
-            return Response(
-                {"error": "브랜치를 찾을 수 없거나 접근 권한이 없습니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
 
         serializer = ChunkTaskRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         chapter_id = serializer.validated_data.get("chapter_id")
 

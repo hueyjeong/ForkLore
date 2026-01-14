@@ -12,6 +12,7 @@ from dj_rest_auth.registration.views import SocialLoginView
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, serializers, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -69,10 +70,7 @@ class LogoutView(generics.GenericAPIView):
             AuthService.logout(refresh_token=serializer.validated_data["refresh"])
             return Response({"message": "로그아웃되었습니다."})
         except ValueError as e:
-            return Response(
-                {"message": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
 
 class MeView(generics.RetrieveUpdateAPIView):

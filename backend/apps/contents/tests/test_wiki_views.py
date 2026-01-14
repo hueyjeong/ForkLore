@@ -3,12 +3,21 @@ TDD: WikiViewSet 테스트
 RED → GREEN → REFACTOR
 """
 
+import json
+from typing import Any
+
 import pytest
 from model_bakery import baker
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 
 pytestmark = pytest.mark.django_db
+
+
+def get_json(response: Response) -> Any:
+    """Helper to parse JSON from response content (rendered by StandardJSONRenderer)."""
+    return json.loads(response.content)
 
 
 class TestWikiEntryViewSet:
@@ -31,9 +40,10 @@ class TestWikiEntryViewSet:
 
         assert response.status_code == status.HTTP_200_OK
         # Paginated response
-        assert "results" in response.data or "data" in response.data
-        data = response.data.get("results") or response.data.get("data")
-        assert len(data) == 2
+        json_data = get_json(response)
+        data = json_data.get("data", {})
+        results = data.get("results") or data
+        assert len(results) == 2
 
     def test_create_wiki_entry(self):
         """위키 생성"""
@@ -48,9 +58,11 @@ class TestWikiEntryViewSet:
         response = self.client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["data"]["name"] == "새 캐릭터"
+        assert get_json(response)["data"]["name"] == "새 캐릭터"
         # camelCase or snake_case depending on renderer
-        image_url = response.data["data"].get("imageUrl") or response.data["data"].get("image_url")
+        image_url = get_json(response)["data"].get("imageUrl") or get_json(response)["data"].get(
+            "image_url"
+        )
         assert image_url == "https://example.com/char.jpg"
 
     def test_create_wiki_entry_with_initial_content(self):
@@ -67,7 +79,7 @@ class TestWikiEntryViewSet:
         # 스냅샷이 생성되었는지 확인
         from apps.contents.models import WikiEntry
 
-        wiki = WikiEntry.objects.get(id=response.data["data"]["id"])
+        wiki = WikiEntry.objects.get(id=get_json(response)["data"]["id"])
         assert wiki.snapshots.count() == 1
 
     def test_create_wiki_unauthenticated(self):
@@ -88,7 +100,7 @@ class TestWikiEntryViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["name"] == "캐릭터"
+        assert get_json(response)["data"]["name"] == "캐릭터"
 
     def test_retrieve_wiki_with_context(self):
         """문맥 인식 위키 조회"""
@@ -111,13 +123,13 @@ class TestWikiEntryViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["snapshot"]["content"] == "초기"
+        assert get_json(response)["data"]["snapshot"]["content"] == "초기"
 
         # 회차 7 기준 조회
         url = f"/api/v1/wikis/{wiki.id}/?chapter=7"
         response = self.client.get(url)
 
-        assert response.data["data"]["snapshot"]["content"] == "5화 이후"
+        assert get_json(response)["data"]["snapshot"]["content"] == "5화 이후"
 
     def test_update_wiki_entry(self):
         """위키 수정"""
@@ -129,7 +141,7 @@ class TestWikiEntryViewSet:
         response = self.client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["name"] == "수정된 캐릭터"
+        assert get_json(response)["data"]["name"] == "수정된 캐릭터"
 
     def test_delete_wiki_entry(self):
         """위키 삭제"""
@@ -173,7 +185,7 @@ class TestWikiTagViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["data"]) == 2
+        assert len(get_json(response)["data"]) == 2
 
     def test_create_tag(self):
         """태그 생성"""
@@ -188,8 +200,8 @@ class TestWikiTagViewSet:
         response = self.client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["data"]["name"] == "인물"
-        assert response.data["data"]["color"] == "#FF5733"
+        assert get_json(response)["data"]["name"] == "인물"
+        assert get_json(response)["data"]["color"] == "#FF5733"
 
     def test_delete_tag(self):
         """태그 삭제"""
@@ -230,7 +242,7 @@ class TestWikiSnapshotViewSet:
         response = self.client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["data"]) == 2
+        assert len(get_json(response)["data"]) == 2
 
     def test_create_snapshot(self):
         """스냅샷 생성"""
@@ -244,9 +256,9 @@ class TestWikiSnapshotViewSet:
 
         assert response.status_code == status.HTTP_201_CREATED
         # camelCase or snake_case depending on renderer
-        valid_from = response.data["data"].get("validFromChapter") or response.data["data"].get(
-            "valid_from_chapter"
-        )
+        valid_from = get_json(response)["data"].get("validFromChapter") or get_json(response)[
+            "data"
+        ].get("valid_from_chapter")
         assert valid_from == 10
 
     def test_update_tags(self):

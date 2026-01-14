@@ -13,6 +13,7 @@ Contains views for:
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -113,10 +114,7 @@ class ChapterViewSet(viewsets.ViewSet):
         try:
             branch = Branch.objects.get(pk=branch_pk)
         except Branch.DoesNotExist:
-            return Response(
-                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("브랜치를 찾을 수 없습니다.")
 
         is_author = request.user.is_authenticated and branch.author == request.user
         chapters = service.list(branch_id=branch_pk, published_only=not is_author)
@@ -136,26 +134,17 @@ class ChapterViewSet(viewsets.ViewSet):
         try:
             chapter_number = int(pk)
         except (ValueError, TypeError):
-            return Response(
-                {"success": False, "message": "잘못된 회차 번호입니다.", "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError("잘못된 회차 번호입니다.")
 
         chapter = service.retrieve(branch_id=branch_pk, chapter_number=chapter_number)
 
         if not chapter:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("회차를 찾을 수 없습니다.")
 
         # Check access permissions
         if chapter.status != ChapterStatus.PUBLISHED:
             if not request.user.is_authenticated or chapter.branch.author != request.user:
-                return Response(
-                    {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+                raise NotFound("회차를 찾을 수 없습니다.")
 
         serializer = ChapterDetailSerializer(chapter)
         return Response(serializer.data)
@@ -166,23 +155,13 @@ class ChapterViewSet(viewsets.ViewSet):
         try:
             branch = Branch.objects.get(pk=branch_pk)
         except Branch.DoesNotExist:
-            return Response(
-                {"success": False, "message": "브랜치를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("브랜치를 찾을 수 없습니다.")
 
         if branch.author != request.user:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
 
         serializer = ChapterCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         service = ChapterService()
         chapter = service.create(
@@ -246,10 +225,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         """Get chapter by ID."""
         chapter = self._get_chapter(pk)
         if not chapter:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("회차를 찾을 수 없습니다.")
 
         serializer = ChapterDetailSerializer(chapter)
         return Response(serializer.data)
@@ -258,32 +234,19 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         """Update a chapter."""
         chapter = self._get_chapter(pk)
         if not chapter:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("회차를 찾을 수 없습니다.")
 
         if not self._check_author(chapter, request.user):
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
 
         serializer = ChapterUpdateSerializer(data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         service = ChapterService()
         try:
             updated = service.update(chapter=chapter, **serializer.validated_data)
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = ChapterDetailSerializer(updated)
         return Response(response_serializer.data)
@@ -292,16 +255,10 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         """Delete a chapter."""
         chapter = self._get_chapter(pk)
         if not chapter:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("회차를 찾을 수 없습니다.")
 
         if not self._check_author(chapter, request.user):
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
 
         chapter.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -316,25 +273,16 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         """Publish a draft chapter."""
         chapter = self._get_chapter(pk)
         if not chapter:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("회차를 찾을 수 없습니다.")
 
         if not self._check_author(chapter, request.user):
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
 
         service = ChapterService()
         try:
             published = service.publish(chapter=chapter)
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         serializer = ChapterDetailSerializer(published)
         return Response(serializer.data)
@@ -349,23 +297,13 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         """Schedule a chapter for future publication."""
         chapter = self._get_chapter(pk)
         if not chapter:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("회차를 찾을 수 없습니다.")
 
         if not self._check_author(chapter, request.user):
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
 
         serializer = ChapterScheduleSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         service = ChapterService()
         try:
@@ -374,10 +312,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
                 scheduled_at=serializer.validated_data["scheduled_at"],
             )
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = ChapterDetailSerializer(scheduled)
         return Response(response_serializer.data)
@@ -395,18 +330,11 @@ class ChapterDetailViewSet(viewsets.ViewSet):
 
         chapter = self._get_chapter(pk)
         if not chapter:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("회차를 찾을 수 없습니다.")
 
         if request.method == "POST":
             serializer = BookmarkCreateSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(
-                    {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            serializer.is_valid(raise_exception=True)
 
             bookmark = BookmarkService.add_bookmark(
                 user=request.user,
@@ -437,17 +365,10 @@ class ChapterDetailViewSet(viewsets.ViewSet):
 
         chapter = self._get_chapter(pk)
         if not chapter:
-            return Response(
-                {"success": False, "message": "회차를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("회차를 찾을 수 없습니다.")
 
         serializer = ReadingProgressSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         log = ReadingService.record_reading(
             user=request.user,
@@ -506,11 +427,7 @@ class WikiEntryViewSet(viewsets.ViewSet):
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new wiki entry."""
         serializer = WikiEntryCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             wiki = WikiService.create(
@@ -523,21 +440,12 @@ class WikiEntryViewSet(viewsets.ViewSet):
                 initial_content=serializer.validated_data.get("initial_content"),
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = WikiEntryDetailSerializer(wiki)
-        return Response(
-            {"success": True, "message": "위키 생성 완료", "data": response_serializer.data},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -581,22 +489,15 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
         try:
             wiki = WikiService.retrieve(wiki_id=pk)
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound(str(e))
 
         serializer = WikiEntryDetailSerializer(wiki, context={"chapter": chapter})
-        return Response({"success": True, "data": serializer.data})
+        return Response(serializer.data)
 
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a wiki entry."""
         serializer = WikiEntryUpdateSerializer(data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             wiki = WikiService.update(
@@ -605,33 +506,21 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = WikiEntryDetailSerializer(wiki)
-        return Response({"success": True, "data": response_serializer.data})
+        return Response(response_serializer.data)
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a wiki entry."""
         try:
             WikiService.delete(wiki_id=pk, user=request.user)
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound(str(e))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -644,11 +533,7 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
     def tags(self, request: Request, pk: int | None = None) -> Response:
         """Update wiki tags."""
         serializer = WikiTagUpdateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             wiki = WikiService.update_tags(
@@ -657,18 +542,12 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
                 tag_ids=serializer.validated_data["tag_ids"],
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = WikiEntryDetailSerializer(wiki)
-        return Response({"success": True, "data": response_serializer.data})
+        return Response(response_serializer.data)
 
 
 @extend_schema_view(
@@ -701,16 +580,12 @@ class WikiTagViewSet(viewsets.ViewSet):
         """List tag definitions for a branch."""
         tags = WikiService.list_tags(branch_id=branch_pk)
         serializer = WikiTagDefinitionSerializer(tags, many=True)
-        return Response({"success": True, "data": serializer.data})
+        return Response(serializer.data)
 
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new tag definition."""
         serializer = WikiTagDefinitionCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             tag = WikiService.create_tag(
@@ -719,21 +594,12 @@ class WikiTagViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = WikiTagDefinitionSerializer(tag)
-        return Response(
-            {"success": True, "data": response_serializer.data},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class WikiTagDetailViewSet(viewsets.ViewSet):
@@ -751,15 +617,9 @@ class WikiTagDetailViewSet(viewsets.ViewSet):
         try:
             WikiService.delete_tag(tag_id=pk, user=request.user)
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound(str(e))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -795,22 +655,15 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
         try:
             wiki = WikiService.retrieve(wiki_id=wiki_pk)
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound(str(e))
 
         serializer = WikiSnapshotSerializer(wiki.snapshots.all(), many=True)
-        return Response({"success": True, "data": serializer.data})
+        return Response(serializer.data)
 
     def create(self, request: Request, wiki_pk: int | None = None) -> Response:
         """Create a new snapshot."""
         serializer = WikiSnapshotCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             snapshot = WikiService.add_snapshot(
@@ -820,21 +673,12 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
                 valid_from_chapter=serializer.validated_data["valid_from_chapter"],
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = WikiSnapshotSerializer(snapshot)
-        return Response(
-            {"success": True, "data": response_serializer.data},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 # =============================================================================
@@ -883,11 +727,7 @@ class MapViewSet(viewsets.ViewSet):
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new map."""
         serializer = MapCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             map_obj = MapService.create(
@@ -896,21 +736,12 @@ class MapViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = MapDetailSerializer(map_obj)
-        return Response(
-            {"success": True, "message": "지도 생성 완료", "data": response_serializer.data},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -953,22 +784,15 @@ class MapDetailViewSet(viewsets.ViewSet):
         try:
             map_obj = MapService.retrieve(map_id=pk)
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound(str(e))
 
         serializer = MapDetailSerializer(map_obj, context={"chapter": chapter})
-        return Response({"success": True, "data": serializer.data})
+        return Response(serializer.data)
 
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a map."""
         serializer = MapUpdateSerializer(data=request.data, partial=True)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             map_obj = MapService.update(
@@ -977,33 +801,21 @@ class MapDetailViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = MapDetailSerializer(map_obj)
-        return Response({"success": True, "data": response_serializer.data})
+        return Response(response_serializer.data)
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a map."""
         try:
             MapService.delete(map_id=pk, user=request.user)
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound(str(e))
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1039,22 +851,15 @@ class MapSnapshotViewSet(viewsets.ViewSet):
         try:
             map_obj = MapService.retrieve(map_id=map_pk)
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound(str(e))
 
         serializer = MapSnapshotSerializer(map_obj.snapshots.all(), many=True)
-        return Response({"success": True, "data": serializer.data})
+        return Response(serializer.data)
 
     def create(self, request: Request, map_pk: int | None = None) -> Response:
         """Create a new map snapshot."""
         serializer = MapSnapshotCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             snapshot = MapService.create_snapshot(
@@ -1063,21 +868,12 @@ class MapSnapshotViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = MapSnapshotSerializer(snapshot)
-        return Response(
-            {"success": True, "data": response_serializer.data},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -1111,22 +907,15 @@ class MapLayerViewSet(viewsets.ViewSet):
         try:
             snapshot = MapSnapshot.objects.prefetch_related("layers").get(id=snapshot_pk)
         except MapSnapshot.DoesNotExist:
-            return Response(
-                {"success": False, "message": "스냅샷을 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("스냅샷을 찾을 수 없습니다.")
 
         serializer = MapLayerSerializer(snapshot.layers.all(), many=True)
-        return Response({"success": True, "data": serializer.data})
+        return Response(serializer.data)
 
     def create(self, request: Request, snapshot_pk: int | None = None) -> Response:
         """Create a new layer."""
         serializer = MapLayerCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             layer = MapService.add_layer(
@@ -1135,21 +924,12 @@ class MapLayerViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = MapLayerSerializer(layer)
-        return Response(
-            {"success": True, "data": response_serializer.data},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(
@@ -1183,22 +963,15 @@ class MapObjectViewSet(viewsets.ViewSet):
         try:
             layer = MapLayer.objects.prefetch_related("map_objects").get(id=layer_pk)
         except MapLayer.DoesNotExist:
-            return Response(
-                {"success": False, "message": "레이어를 찾을 수 없습니다.", "data": None},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise NotFound("레이어를 찾을 수 없습니다.")
 
         serializer = MapObjectSerializer(layer.map_objects.all(), many=True)
-        return Response({"success": True, "data": serializer.data})
+        return Response(serializer.data)
 
     def create(self, request: Request, layer_pk: int | None = None) -> Response:
         """Create a new object."""
         serializer = MapObjectCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                {"success": False, "message": "유효성 검사 실패", "errors": serializer.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer.is_valid(raise_exception=True)
 
         try:
             obj = MapService.add_object(
@@ -1207,18 +980,9 @@ class MapObjectViewSet(viewsets.ViewSet):
                 **serializer.validated_data,
             )
         except PermissionError:
-            return Response(
-                {"success": False, "message": "권한이 없습니다.", "data": None},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            raise PermissionDenied("권한이 없습니다.")
         except ValueError as e:
-            return Response(
-                {"success": False, "message": str(e), "data": None},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError(str(e))
 
         response_serializer = MapObjectSerializer(obj)
-        return Response(
-            {"success": True, "data": response_serializer.data},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)

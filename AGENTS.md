@@ -9,28 +9,23 @@ Interactive web novel platform. Django 5.1 + Next.js 16. **TDD required.**
 cd backend
 
 # Setup
-poetry install
-poetry run python manage.py migrate
+poetry install && poetry run python manage.py migrate
 
-# Run single test (class method)
+# Tests - Single test method
 poetry run pytest apps/novels/tests/test_services.py::TestNovelServiceCreate::test_create_novel_success -v
 
-# Run single test class
+# Tests - Single class
 poetry run pytest apps/novels/tests/test_services.py::TestNovelServiceCreate -v
 
-# Run test file
+# Tests - File/app/all with coverage
 poetry run pytest apps/novels/tests/test_services.py -v
-
-# Run app tests with coverage
 poetry run pytest apps/novels/tests/ -v --cov=apps/novels --cov-report=term-missing
-
-# All tests with coverage
 poetry run pytest --cov=apps --cov-report=term-missing
 
-# Lint and format
+# Lint & format (ruff)
 poetry run ruff check apps/           # Lint only
 poetry run ruff format apps/          # Format only
-poetry run ruff check --fix apps/     # Auto-fix issues
+poetry run ruff check --fix apps/     # Auto-fix
 
 # Dev server
 poetry run python manage.py runserver
@@ -39,313 +34,214 @@ poetry run python manage.py runserver
 ### Frontend (Next.js)
 ```bash
 cd frontend
-pnpm install
 
 # Development
-pnpm dev                           # Dev server (http://localhost:3000)
+pnpm install
+pnpm dev                           # http://localhost:3000
 
-# Testing
-pnpm test                          # Run all vitest tests
-pnpm test -- input.test.tsx        # Single test file
-pnpm test -- --run                 # Run once without watch mode
+# Tests (vitest)
+pnpm test                          # All tests (watch mode)
+pnpm test -- input.test.tsx        # Single file
+pnpm test -- --run                 # No watch
 
-# Linting & Formatting
+# Lint & format
 pnpm lint                          # ESLint check
-pnpm lint -- --fix                 # ESLint auto-fix
-npx prettier --write .             # Format all files
+pnpm lint -- --fix                 # Auto-fix
+npx prettier --write .             # Format
 
 # Build
-pnpm build                         # Production build
-pnpm start                         # Start production server
+pnpm build && pnpm start           # Production
 ```
 
 ### Docker
 ```bash
-docker compose up -d                                                    # Start all services
-docker compose exec backend poetry run python manage.py migrate        # Run migrations
-docker compose logs -f backend                                          # View logs
-docker compose down                                                     # Stop all services
+docker compose up -d                                                    # Start
+docker compose exec backend poetry run python manage.py migrate        # Migrate
+docker compose logs -f backend                                          # Logs
+docker compose down                                                     # Stop
 ```
 
 ## Code Style
 
 ### Python (Backend)
+- **Imports**: stdlib → django → third-party → local (ruff auto-sorts)
+- **Type hints**: Required on all functions
+- **Docstrings**: Google style (Args/Returns/Raises)
+- **Line length**: 100 characters
+- **Service pattern**: Business logic in services, not views
+- **Error messages**: Korean for user-facing errors
+- **Testing**: model_bakery for fixtures, pytest for all tests
+
 ```python
-# Imports: stdlib → django → third-party → local (ruff handles this)
+# Service example
 from django.db import transaction
-from rest_framework import status
+from rest_framework.exceptions import NotFound
 from apps.novels.models import Novel
 
-# Type hints required
-def create(self, author: User, data: dict) -> Novel:
-
-# Docstrings: Google style
-def method(self, arg: str) -> bool:
-    """Short description.
-
-    Args:
-        arg: Description
-
-    Returns:
-        Description
-
-    Raises:
-        ValueError: When invalid
-    """
-
-# Service pattern: Business logic in services, not views
 class NovelService:
     @transaction.atomic
-    def create(self, author, data: dict) -> Novel:
+    def create(self, author: User, data: dict) -> Novel:
+        """Create novel with main branch.
+        
+        Args:
+            author: User creating the novel
+            data: Novel data (title, description, genre)
+            
+        Returns:
+            Created Novel instance
+            
+        Raises:
+            ValidationError: If data is invalid
+        """
+        if not data.get("title"):
+            raise ValidationError("제목은 필수입니다.")
         ...
-
-# Error messages in Korean for user-facing errors
-raise ValueError("제목은 필수입니다.")
-
-# Line length: 100 (ruff configured)
 ```
 
 ### TypeScript (Frontend)
+- **Exports**: Named exports preferred
+- **Naming**: camelCase (vars/functions), PascalCase (types/components)
+- **Organization**: types/*.types.ts, lib/api/*.api.ts, stores/*.ts
+- **No type suppression**: Never use `as any`, `@ts-ignore`, `@ts-expect-error`
+- **Testing**: Vitest + React Testing Library
+
 ```typescript
-// Named exports preferred
-export interface LoginRequest { ... }
-export function useAuth() { ... }
+// lib/api/novels.api.ts
+export interface NovelResponse {
+  id: number;
+  title: string;
+}
 
-// Types in separate files: types/*.types.ts
-// API calls: lib/api/*.api.ts
-// Stores: stores/*.ts (Zustand)
-
-// camelCase for variables/functions, PascalCase for types/components
-const userData: UserResponse = await fetchUser();
+export async function fetchNovels(): Promise<NovelResponse[]> {
+  const response = await apiClient.get('/novels');
+  return response.data;
+}
 ```
+
+## API Response Format
+
+**CRITICAL**: All responses auto-wrapped by `StandardJSONRenderer`. Views return raw data.
+
+```python
+# ✅ CORRECT - Renderer wraps automatically
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.filter(pk=pk).first()
+    if not novel:
+        raise NotFound("소설을 찾을 수 없습니다.")  # Exception handler formats
+    return Response(NovelSerializer(novel).data)  # Renderer wraps
+
+# ❌ WRONG - Manual wrapping creates double wrapping
+return Response({"success": True, "data": serializer.data})
+
+# ❌ WRONG - Manual error responses
+return Response({"error": "Not found"}, status=404)
+```
+
+**Output format**:
+```json
+{
+  "success": true,
+  "message": null,
+  "data": { "id": 1, "title": "..." },
+  "timestamp": "2026-01-14T16:17:00+09:00"
+}
+```
+
+**DRF Exceptions**: Use `NotFound`, `PermissionDenied`, `ValidationError`, etc.
+
+## Testing Strategy
+
+**TDD Required**: RED → GREEN → REFACTOR
+
+### Test Organization
+```
+apps/<app>/tests/
+├── test_services.py      # Unit tests (mock external deps)
+├── test_views.py         # Unit tests (view logic)
+└── test_integration/     # Integration tests (real HTTP)
+    ├── conftest.py       # Shared fixtures
+    └── test_*.py         # API workflows
+```
+
+### Fixtures (conftest.py)
+```python
+import pytest
+from model_bakery import baker
+from rest_framework.test import APIClient
+
+@pytest.fixture
+def author(db):
+    return baker.make('users.User', email='author@test.com')
+
+@pytest.fixture
+def author_client(api_client, author):
+    api_client.force_authenticate(user=author)
+    return api_client
+```
+
+### Test Example
+```python
+@pytest.mark.django_db
+class TestNovelAPI:
+    def test_create_novel(self, author_client):
+        url = reverse('novel-list')
+        data = {'title': 'Test', 'genre': 'FANTASY'}
+        response = author_client.post(url, data, format='json')
+        assert response.status_code == 201
+        assert response.data['title'] == 'Test'
+```
+
+**Coverage**: 95%+ required (current: 95%, 545 tests)
 
 ## Project Structure
 
 ```
 backend/
 ├── apps/
-│   ├── users/       # Auth, profiles
-│   ├── novels/      # Novel, Branch
-│   ├── contents/    # Chapter, Wiki, Map
-│   ├── interactions/# Comments, Subscriptions, Wallet
-│   └── ai/          # Embeddings, RAG
-├── common/          # Base models, utils
-└── config/settings/ # base.py, local.py, test.py
+│   ├── users/        # Auth, profiles
+│   ├── novels/       # Novel, Branch
+│   ├── contents/     # Chapter, Wiki, Map
+│   ├── interactions/ # Comments, Subscriptions, Wallet
+│   └── ai/           # Embeddings, RAG
+├── common/           # Renderers, exceptions, pagination
+└── config/settings/  # base.py, local.py, test.py
 
 frontend/
-├── app/             # Next.js App Router
-├── components/      # UI (shadcn/ui)
-├── lib/             # Utils, API client
-├── stores/          # Zustand stores
-└── types/           # TypeScript types
+├── app/              # Next.js App Router
+├── components/       # UI (shadcn/ui)
+├── lib/              # Utils, API client
+├── stores/           # Zustand state
+└── types/            # TypeScript types
 ```
 
-## Testing (TDD Required)
+## Git Workflow
 
-**Workflow: RED → GREEN → REFACTOR**
-
-### Test Structure
-
-```
-backend/apps/
-├── users/tests/
-│   └── test_auth_api.py              # Integration tests (19 tests)
-└── novels/tests/
-    ├── test_services.py               # Unit tests (services)
-    ├── test_views.py                  # Unit tests (views)
-    └── test_integration/              # Integration tests
-        ├── conftest.py                # Shared fixtures (author, reader, clients)
-        ├── test_novel_api.py          # Novel CRUD (4 tests)
-        ├── test_branch_api.py         # Branch management (5 tests)
-        └── test_link_request_workflow.py  # Link requests (6 tests)
-```
-
-### Unit Tests (Services & Views)
-
-```python
-# 1. Unit tests for services (mock external deps)
-@patch("apps.ai.services.genai")
-def test_embed_text(self, mock_genai):
-    mock_genai.embed_content.return_value = {"embedding": [0.1] * 3072}
-    service = AIService()
-    result = service.embed_text("test")
-    assert result is not None
-
-# Test fixtures: model_bakery
-branch = baker.make("novels.Branch", author=user)
-chapter = baker.make("contents.Chapter", branch=branch, content="test")
-```
-
-### Integration Tests (Real HTTP Workflows)
-
-**Location**: `apps/<app_name>/tests/test_integration/`
-
-**Shared Fixtures** (`conftest.py`):
-```python
-import pytest
-from django.contrib.auth import get_user_model
-from model_bakery import baker
-from rest_framework.test import APIClient
-
-User = get_user_model()
-
-@pytest.fixture
-def author(db):
-    """Author user for testing"""
-    return baker.make(User, email="author@test.com")
-
-@pytest.fixture
-def reader(db):
-    """Reader user for testing"""
-    return baker.make(User, email="reader@test.com")
-
-@pytest.fixture
-def api_client():
-    """Unauthenticated API client"""
-    return APIClient()
-
-@pytest.fixture
-def author_client(api_client, author):
-    """Authenticated client for author"""
-    api_client.force_authenticate(user=author)
-    return api_client
-
-@pytest.fixture
-def reader_client(api_client, reader):
-    """Authenticated client for reader"""
-    api_client.force_authenticate(user=reader)
-    return api_client
-```
-
-**Integration Test Example**:
-```python
-import pytest
-from django.urls import reverse
-from model_bakery import baker
-from rest_framework import status
-
-@pytest.mark.django_db
-class TestNovelCRUD:
-    def test_create_novel_creates_main_branch(self, author_client):
-        """Test novel creation automatically creates main branch"""
-        url = reverse("novel-list")
-        data = {
-            "title": "Test Novel",
-            "description": "Test description",
-            "genre": "FANTASY",
-        }
-        
-        response = author_client.post(url, data, format="json")
-        
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["title"] == "Test Novel"
-        # Verify main branch was created
-        assert response.data["main_branch"] is not None
-    
-    def test_non_author_cannot_update_novel(self, author, reader_client):
-        """Test non-authors cannot modify novels"""
-        novel = baker.make("novels.Novel", author=author)
-        url = reverse("novel-detail", kwargs={"pk": novel.pk})
-        data = {"title": "Hacked Title"}
-        
-        response = reader_client.patch(url, data, format="json")
-        
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-```
-
-**Coverage requirement: 95%+ (current: 95%, 545 tests)**
+1. **Branch naming**: `feat/#123-feature-name`, `fix/#123-bug-name`
+2. **Base branch**: `develop` (never force-push to `main`/`develop`)
+3. **PR required**: Always create PR, include `Closes #123`
+4. **Commit format**: `type(scope): message` (feat, fix, refactor, docs, test)
 
 ## Key Rules
 
-1. **TDD**: Write tests BEFORE implementation
-2. **No secrets in code**: Use `env('VAR_NAME')` via django-environ
-3. **No type suppression**: Never use `as any`, `@ts-ignore`, `@ts-expect-error`
-4. **Branch naming**: `feat/#123-feature-name`, `fix/#123-bug-name`
-5. **Base branch**: `develop` (never force-push to `main`/`develop`)
-6. **PR required**: Always create PR after push, include `Closes #123`
+- **TDD**: Write tests BEFORE implementation
+- **No secrets**: Use `env('VAR_NAME')` via django-environ
+- **No type suppression**: Never `as any`, `@ts-ignore`, `@ts-expect-error`
+- **Service pattern**: Business logic in services, not views
+- **DRF exceptions**: Use exceptions, not manual error responses
+- **Coverage**: Maintain 95%+ test coverage
 
-## API Patterns
-
-### Standard Response Format
-
-**All API responses are automatically wrapped by `StandardJSONRenderer`:**
-
-```json
-{
-  "success": true,
-  "message": null,
-  "data": <your_response_data>,
-  "timestamp": "2026-01-14T16:17:00+09:00"
-}
-```
-
-**Views should return raw data** - the renderer handles wrapping:
-
-```python
-# ✅ CORRECT - Let renderer wrap
-def retrieve(self, request, pk=None):
-    novel = Novel.objects.get(pk=pk)
-    serializer = NovelSerializer(novel)
-    return Response(serializer.data)
-# Renderer outputs: {success: true, data: {id: 1, title: "..."}, timestamp: "..."}
-
-# ❌ WRONG - Manual wrapping (creates double wrapping)
-def retrieve(self, request, pk=None):
-    novel = Novel.objects.get(pk=pk)
-    serializer = NovelSerializer(novel)
-    return Response({"success": True, "data": serializer.data})
-# Renderer outputs: {success: true, data: {success: true, data: {...}}, ...}
-```
-
-**Error responses** are handled by `custom_exception_handler`:
-
-```python
-# ✅ CORRECT - Raise exceptions
-from rest_framework.exceptions import NotFound
-
-def retrieve(self, request, pk=None):
-    novel = Novel.objects.filter(pk=pk).first()
-    if not novel:
-        raise NotFound("소설을 찾을 수 없습니다.")
-    serializer = NovelSerializer(novel)
-    return Response(serializer.data)
-
-# ❌ WRONG - Manual error responses
-def retrieve(self, request, pk=None):
-    novel = Novel.objects.filter(pk=pk).first()
-    if not novel:
-        return Response({"error": "Not found"}, status=404)
-```
-
-### ViewSet Patterns
-
-```python
-# ViewSet with nested routes
-class BranchViewSet(GenericViewSet):
-    @action(detail=False, methods=["post"], url_path="wiki-suggestions")
-    def wiki_suggestions(self, request, **kwargs):
-        branch_pk = kwargs.get("branch_pk")  # From nested router
-        ...
-
-# Service instantiation (not static)
-service = NovelService()
-result = service.create(user, data)
-
-# Return raw data - renderer wraps automatically
-return Response(result)
-```
-
-## Tech Stack Reference
+## Tech Stack
 
 | Layer | Tech |
 |-------|------|
-| Backend | Python 3.12, Django 5.1, DRF 3.15, Celery |
+| Backend | Python 3.12, Django 5.1, DRF 3.15, Celery, Redis |
 | Frontend | Next.js 16, React 19, TypeScript 5, Tailwind 4 |
 | Database | PostgreSQL 18 + pgvector |
 | AI | Gemini API (text-embedding-004, gemini-1.5-flash) |
 | Auth | SimpleJWT + NextAuth.js v5 |
+| Testing | pytest, vitest, model_bakery, React Testing Library |
 
-## Design Docs
+## Documentation
 
 - `docs/PRD.md` - Product requirements
 - `docs/database-schema.md` - DB schema (v4)

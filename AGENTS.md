@@ -266,6 +266,59 @@ class TestNovelCRUD:
 
 ## API Patterns
 
+### Standard Response Format
+
+**All API responses are automatically wrapped by `StandardJSONRenderer`:**
+
+```json
+{
+  "success": true,
+  "message": null,
+  "data": <your_response_data>,
+  "timestamp": "2026-01-14T16:17:00+09:00"
+}
+```
+
+**Views should return raw data** - the renderer handles wrapping:
+
+```python
+# ✅ CORRECT - Let renderer wrap
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.get(pk=pk)
+    serializer = NovelSerializer(novel)
+    return Response(serializer.data)
+# Renderer outputs: {success: true, data: {id: 1, title: "..."}, timestamp: "..."}
+
+# ❌ WRONG - Manual wrapping (creates double wrapping)
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.get(pk=pk)
+    serializer = NovelSerializer(novel)
+    return Response({"success": True, "data": serializer.data})
+# Renderer outputs: {success: true, data: {success: true, data: {...}}, ...}
+```
+
+**Error responses** are handled by `custom_exception_handler`:
+
+```python
+# ✅ CORRECT - Raise exceptions
+from rest_framework.exceptions import NotFound
+
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.filter(pk=pk).first()
+    if not novel:
+        raise NotFound("소설을 찾을 수 없습니다.")
+    serializer = NovelSerializer(novel)
+    return Response(serializer.data)
+
+# ❌ WRONG - Manual error responses
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.filter(pk=pk).first()
+    if not novel:
+        return Response({"error": "Not found"}, status=404)
+```
+
+### ViewSet Patterns
+
 ```python
 # ViewSet with nested routes
 class BranchViewSet(GenericViewSet):
@@ -278,8 +331,8 @@ class BranchViewSet(GenericViewSet):
 service = NovelService()
 result = service.create(user, data)
 
-# Response format
-return Response({"data": result}, status=status.HTTP_200_OK)
+# Return raw data - renderer wraps automatically
+return Response(result)
 ```
 
 ## Tech Stack Reference

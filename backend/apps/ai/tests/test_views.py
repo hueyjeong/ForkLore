@@ -46,8 +46,8 @@ class TestWikiSuggestions(TestAIViewSetBase):
         )
 
         assert response.status_code == status.HTTP_200_OK
-        assert "data" in response.data
-        assert isinstance(response.data["data"], list)
+        assert isinstance(response.data, list)
+        assert len(response.data) > 0
 
     def test_wiki_suggestions_unauthorized(self):
         """인증되지 않은 요청"""

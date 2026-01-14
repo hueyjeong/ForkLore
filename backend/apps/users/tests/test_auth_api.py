@@ -90,6 +90,30 @@ class TestSignupEndpoint:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_signup_weak_password(
+        self, api_client: APIClient, db: Any, user_data: dict[str, str]
+    ) -> None:
+        """Signup with weak password should return 400."""
+        url = reverse("signup")
+        user_data["password"] = "weak"
+        user_data["passwordConfirm"] = "weak"
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        data = get_json(response)
+        assert "errors" in data
+        assert "password" in data["errors"]
+
+    def test_signup_duplicate_nickname(
+        self, api_client: APIClient, existing_user: User, user_data: dict[str, str]
+    ) -> None:
+        """Signup with existing nickname should return 400."""
+        url = reverse("signup")
+        user_data["nickname"] = existing_user.nickname
+        response = api_client.post(url, user_data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
 
 # =============================================================================
 # Login Tests
@@ -180,6 +204,35 @@ class TestLogoutEndpoint:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_logout_blacklists_token(self, api_client: APIClient, existing_user: User) -> None:
+        """Logout should blacklist the refresh token."""
+        # Login to get tokens
+        login_url = reverse("login")
+        login_response = api_client.post(
+            login_url,
+            {"email": existing_user.email, "password": "ExistingPassword123!"},
+            format="json",
+        )
+        login_data = get_json(login_response)
+        access_token = login_data["data"]["access"]
+        refresh_token = login_data["data"]["refresh"]
+
+        # Logout
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        logout_url = reverse("logout")
+        api_client.post(logout_url, {"refresh": refresh_token}, format="json")
+
+        # Try to use the same refresh token
+        refresh_url = reverse("token_refresh")
+        response = api_client.post(
+            refresh_url,
+            {"refresh": refresh_token},
+            format="json",
+        )
+
+        # Should be rejected because it's blacklisted
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
 
 # =============================================================================
 # Token Refresh Tests
@@ -217,6 +270,15 @@ class TestRefreshEndpoint:
         """Refresh with invalid token should return 401."""
         url = reverse("token_refresh")
         response = api_client.post(url, {"refresh": "invalid-token"}, format="json")
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_refresh_expired_token(self, api_client: APIClient, db: Any) -> None:
+        """Refresh with expired token should return 401."""
+        # Create an intentionally malformed/expired token
+        expired_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTYwOTQ1OTIwMCwianRpIjoiMTIzNDU2Nzg5MCIsInVzZXJfaWQiOjF9.invalid"
+        url = reverse("token_refresh")
+        response = api_client.post(url, {"refresh": expired_token}, format="json")
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 

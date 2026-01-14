@@ -13,10 +13,14 @@ Tests:
 - PATCH /link-requests/{id} - Review link request
 """
 
+import json
+from typing import Any
+
 import pytest
 from django.urls import reverse
 from model_bakery import baker
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -30,6 +34,11 @@ from apps.novels.models import (
     Novel,
 )
 from apps.users.models import User
+
+
+def get_json(response: Response) -> Any:
+    """Helper to parse JSON from response content (rendered by StandardJSONRenderer)."""
+    return json.loads(response.content)
 
 
 def get_tokens_for_user(user: User) -> str:
@@ -66,8 +75,9 @@ class TestBranchList:
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["success"] is True
-        assert len(response.data["data"]["results"]) == 2
+        data = get_json(response)
+        assert data["success"] is True
+        assert len(data["data"]["results"]) == 2
 
     def test_list_branches_filter_by_visibility(self, api_client: APIClient) -> None:
         """Should filter branches by visibility."""
@@ -79,8 +89,9 @@ class TestBranchList:
         response = api_client.get(url, {"visibility": "LINKED"})
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["data"]["results"]) == 1
-        assert response.data["data"]["results"][0]["id"] == linked.id
+        data = get_json(response)
+        assert len(data["data"]["results"]) == 1
+        assert data["data"]["results"][0]["id"] == linked.id
 
 
 @pytest.mark.django_db
@@ -97,8 +108,9 @@ class TestGetMainBranch:
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["id"] == main.id
-        assert response.data["data"]["is_main"] is True
+        data = get_json(response)
+        assert data["data"]["id"] == main.id
+        assert data["data"]["isMain"] is True  # camelCase
 
 
 @pytest.mark.django_db
@@ -113,8 +125,9 @@ class TestBranchRetrieve:
         response = api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["id"] == branch.id
-        assert response.data["data"]["name"] == "테스트 브랜치"
+        data = get_json(response)
+        assert data["data"]["id"] == branch.id
+        assert data["data"]["name"] == "테스트 브랜치"
 
     def test_retrieve_nonexistent_branch(self, api_client: APIClient) -> None:
         """Should return 404 for nonexistent branch."""
@@ -144,8 +157,9 @@ class TestBranchFork:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["data"]["name"] == "IF: 다른 선택"
-        assert response.data["data"]["is_main"] is False
+        result = get_json(response)
+        assert result["data"]["name"] == "IF: 다른 선택"
+        assert result["data"]["isMain"] is False  # camelCase
 
     def test_fork_branch_not_allowed(self, authenticated_client: APIClient) -> None:
         """Should fail if novel doesn't allow branching."""
@@ -188,7 +202,8 @@ class TestBranchVisibilityUpdate:
         response = authenticated_client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["visibility"] == BranchVisibility.PUBLIC
+        result = get_json(response)
+        assert result["data"]["visibility"] == BranchVisibility.PUBLIC
 
     def test_update_visibility_not_owner(self, authenticated_client: APIClient) -> None:
         """Should fail if not the owner."""
@@ -258,7 +273,8 @@ class TestBranchLinkRequest:
         response = authenticated_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["data"]["status"] == LinkRequestStatus.PENDING
+        result = get_json(response)
+        assert result["data"]["status"] == LinkRequestStatus.PENDING
 
     def test_create_link_request_not_owner(self, authenticated_client: APIClient) -> None:
         """Should fail if not branch owner."""
@@ -289,7 +305,8 @@ class TestLinkRequestReview:
         response = authenticated_client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["status"] == LinkRequestStatus.APPROVED
+        result = get_json(response)
+        assert result["data"]["status"] == LinkRequestStatus.APPROVED
 
         branch.refresh_from_db()
         assert branch.visibility == BranchVisibility.LINKED
@@ -307,4 +324,5 @@ class TestLinkRequestReview:
         response = authenticated_client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["data"]["status"] == LinkRequestStatus.REJECTED
+        result = get_json(response)
+        assert result["data"]["status"] == LinkRequestStatus.REJECTED

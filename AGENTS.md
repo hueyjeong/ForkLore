@@ -12,8 +12,11 @@ cd backend
 poetry install
 poetry run python manage.py migrate
 
-# Run single test
-poetry run pytest apps/novels/tests/test_services.py::TestNovelService::test_create -v
+# Run single test (class method)
+poetry run pytest apps/novels/tests/test_services.py::TestNovelServiceCreate::test_create_novel_success -v
+
+# Run single test class
+poetry run pytest apps/novels/tests/test_services.py::TestNovelServiceCreate -v
 
 # Run test file
 poetry run pytest apps/novels/tests/test_services.py -v
@@ -21,14 +24,15 @@ poetry run pytest apps/novels/tests/test_services.py -v
 # Run app tests with coverage
 poetry run pytest apps/novels/tests/ -v --cov=apps/novels --cov-report=term-missing
 
-# All tests
-poetry run pytest --cov=apps
+# All tests with coverage
+poetry run pytest --cov=apps --cov-report=term-missing
 
-# Lint
-poetry run ruff check apps/
-poetry run ruff format apps/
+# Lint and format
+poetry run ruff check apps/           # Lint only
+poetry run ruff format apps/          # Format only
+poetry run ruff check --fix apps/     # Auto-fix issues
 
-# Server
+# Dev server
 poetry run python manage.py runserver
 ```
 
@@ -36,17 +40,31 @@ poetry run python manage.py runserver
 ```bash
 cd frontend
 pnpm install
-pnpm dev                           # Dev server
-pnpm test                          # Run vitest
-pnpm test -- auth.test.tsx         # Single test file
-pnpm lint                          # ESLint
+
+# Development
+pnpm dev                           # Dev server (http://localhost:3000)
+
+# Testing
+pnpm test                          # Run all vitest tests
+pnpm test -- input.test.tsx        # Single test file
+pnpm test -- --run                 # Run once without watch mode
+
+# Linting & Formatting
+pnpm lint                          # ESLint check
+pnpm lint -- --fix                 # ESLint auto-fix
+npx prettier --write .             # Format all files
+
+# Build
 pnpm build                         # Production build
+pnpm start                         # Start production server
 ```
 
 ### Docker
 ```bash
-docker compose up -d
-docker compose exec backend poetry run python manage.py migrate
+docker compose up -d                                                    # Start all services
+docker compose exec backend poetry run python manage.py migrate        # Run migrations
+docker compose logs -f backend                                          # View logs
+docker compose down                                                     # Stop all services
 ```
 
 ## Code Style
@@ -126,24 +144,116 @@ frontend/
 
 **Workflow: RED → GREEN → REFACTOR**
 
+### Test Structure
+
+```
+backend/apps/
+├── users/tests/
+│   └── test_auth_api.py              # Integration tests (19 tests)
+└── novels/tests/
+    ├── test_services.py               # Unit tests (services)
+    ├── test_views.py                  # Unit tests (views)
+    └── test_integration/              # Integration tests
+        ├── conftest.py                # Shared fixtures (author, reader, clients)
+        ├── test_novel_api.py          # Novel CRUD (4 tests)
+        ├── test_branch_api.py         # Branch management (5 tests)
+        └── test_link_request_workflow.py  # Link requests (6 tests)
+```
+
+### Unit Tests (Services & Views)
+
 ```python
 # 1. Unit tests for services (mock external deps)
 @patch("apps.ai.services.genai")
 def test_embed_text(self, mock_genai):
     mock_genai.embed_content.return_value = {"embedding": [0.1] * 3072}
-    ...
-
-# 2. Integration tests for views (real HTTP)
-def test_create_novel(self):
-    response = self.client.post("/api/v1/novels/", data, format="json")
-    assert response.status_code == 201
+    service = AIService()
+    result = service.embed_text("test")
+    assert result is not None
 
 # Test fixtures: model_bakery
 branch = baker.make("novels.Branch", author=user)
 chapter = baker.make("contents.Chapter", branch=branch, content="test")
 ```
 
-**Coverage requirement: 70%+**
+### Integration Tests (Real HTTP Workflows)
+
+**Location**: `apps/<app_name>/tests/test_integration/`
+
+**Shared Fixtures** (`conftest.py`):
+```python
+import pytest
+from django.contrib.auth import get_user_model
+from model_bakery import baker
+from rest_framework.test import APIClient
+
+User = get_user_model()
+
+@pytest.fixture
+def author(db):
+    """Author user for testing"""
+    return baker.make(User, email="author@test.com")
+
+@pytest.fixture
+def reader(db):
+    """Reader user for testing"""
+    return baker.make(User, email="reader@test.com")
+
+@pytest.fixture
+def api_client():
+    """Unauthenticated API client"""
+    return APIClient()
+
+@pytest.fixture
+def author_client(api_client, author):
+    """Authenticated client for author"""
+    api_client.force_authenticate(user=author)
+    return api_client
+
+@pytest.fixture
+def reader_client(api_client, reader):
+    """Authenticated client for reader"""
+    api_client.force_authenticate(user=reader)
+    return api_client
+```
+
+**Integration Test Example**:
+```python
+import pytest
+from django.urls import reverse
+from model_bakery import baker
+from rest_framework import status
+
+@pytest.mark.django_db
+class TestNovelCRUD:
+    def test_create_novel_creates_main_branch(self, author_client):
+        """Test novel creation automatically creates main branch"""
+        url = reverse("novel-list")
+        data = {
+            "title": "Test Novel",
+            "description": "Test description",
+            "genre": "FANTASY",
+        }
+        
+        response = author_client.post(url, data, format="json")
+        
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["title"] == "Test Novel"
+        # Verify main branch was created
+        assert response.data["main_branch"] is not None
+    
+    def test_non_author_cannot_update_novel(self, author, reader_client):
+        """Test non-authors cannot modify novels"""
+        novel = baker.make("novels.Novel", author=author)
+        url = reverse("novel-detail", kwargs={"pk": novel.pk})
+        data = {"title": "Hacked Title"}
+        
+        response = reader_client.patch(url, data, format="json")
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+```
+
+**Coverage requirement: 95%+ (current: 95%, 545 tests)**
 
 ## Key Rules
 
@@ -155,6 +265,59 @@ chapter = baker.make("contents.Chapter", branch=branch, content="test")
 6. **PR required**: Always create PR after push, include `Closes #123`
 
 ## API Patterns
+
+### Standard Response Format
+
+**All API responses are automatically wrapped by `StandardJSONRenderer`:**
+
+```json
+{
+  "success": true,
+  "message": null,
+  "data": <your_response_data>,
+  "timestamp": "2026-01-14T16:17:00+09:00"
+}
+```
+
+**Views should return raw data** - the renderer handles wrapping:
+
+```python
+# ✅ CORRECT - Let renderer wrap
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.get(pk=pk)
+    serializer = NovelSerializer(novel)
+    return Response(serializer.data)
+# Renderer outputs: {success: true, data: {id: 1, title: "..."}, timestamp: "..."}
+
+# ❌ WRONG - Manual wrapping (creates double wrapping)
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.get(pk=pk)
+    serializer = NovelSerializer(novel)
+    return Response({"success": True, "data": serializer.data})
+# Renderer outputs: {success: true, data: {success: true, data: {...}}, ...}
+```
+
+**Error responses** are handled by `custom_exception_handler`:
+
+```python
+# ✅ CORRECT - Raise exceptions
+from rest_framework.exceptions import NotFound
+
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.filter(pk=pk).first()
+    if not novel:
+        raise NotFound("소설을 찾을 수 없습니다.")
+    serializer = NovelSerializer(novel)
+    return Response(serializer.data)
+
+# ❌ WRONG - Manual error responses
+def retrieve(self, request, pk=None):
+    novel = Novel.objects.filter(pk=pk).first()
+    if not novel:
+        return Response({"error": "Not found"}, status=404)
+```
+
+### ViewSet Patterns
 
 ```python
 # ViewSet with nested routes
@@ -168,8 +331,8 @@ class BranchViewSet(GenericViewSet):
 service = NovelService()
 result = service.create(user, data)
 
-# Response format
-return Response({"data": result}, status=status.HTTP_200_OK)
+# Return raw data - renderer wraps automatically
+return Response(result)
 ```
 
 ## Tech Stack Reference

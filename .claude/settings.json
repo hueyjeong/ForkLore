@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write", 
+      "Edit",
+      "Bash(cd backend && poetry run ruff*)",
+      "Bash(cd frontend && pnpm eslint*)",
+      "Bash(cd backend && poetry run pytest*)",
+      "Bash(cd frontend && pnpm test*)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(mkdir *)",
+      "Bash(chmod *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(git push --force*main)",
+      "Bash(git push --force*master)",
+      "Bash(git push --force*develop)",
+      "Bash(git push -f*main)",
+      "Bash(git push -f*master)",
+      "Bash(git push -f*develop)"
+    ]
+  }
+}

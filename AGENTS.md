@@ -11,21 +11,15 @@ cd backend
 # Setup
 poetry install && poetry run python manage.py migrate
 
-# Tests - Single test method
-poetry run pytest apps/novels/tests/test_services.py::TestNovelServiceCreate::test_create_novel_success -v
-
-# Tests - Single class
-poetry run pytest apps/novels/tests/test_services.py::TestNovelServiceCreate -v
-
-# Tests - File/app/all with coverage
-poetry run pytest apps/novels/tests/test_services.py -v
+# Tests
+poetry run pytest apps/novels/tests/test_services.py::TestClass::test_method -v  # Single test
+poetry run pytest apps/novels/tests/test_services.py::TestClass -v                # Single class
 poetry run pytest apps/novels/tests/ -v --cov=apps/novels --cov-report=term-missing
-poetry run pytest --cov=apps --cov-report=term-missing
+poetry run pytest --cov=apps --cov-report=term-missing                             # Full coverage
 
-# Lint & format (ruff)
-poetry run ruff check apps/           # Lint only
-poetry run ruff format apps/          # Format only
-poetry run ruff check --fix apps/     # Auto-fix
+# Lint & format
+poetry run ruff check apps/ && poetry run ruff format apps/  # Check + format
+poetry run ruff check --fix apps/                             # Auto-fix
 
 # Dev server
 poetry run python manage.py runserver
@@ -35,48 +29,41 @@ poetry run python manage.py runserver
 ```bash
 cd frontend
 
-# Development
-pnpm install
-pnpm dev                           # http://localhost:3000
+pnpm install && pnpm dev           # Dev: http://localhost:3000
 
-# Tests (vitest)
-pnpm test                          # All tests (watch mode)
+# Tests
 pnpm test -- input.test.tsx        # Single file
-pnpm test -- --run                 # No watch
+pnpm test -- --run                 # All tests (no watch)
 
 # Lint & format
-pnpm lint                          # ESLint check
-pnpm lint -- --fix                 # Auto-fix
-npx prettier --write .             # Format
+pnpm lint -- --fix && npx prettier --write .
 
 # Build
-pnpm build && pnpm start           # Production
+pnpm build && pnpm start
 ```
 
 ### Docker
 ```bash
-docker compose up -d                                                    # Start
-docker compose exec backend poetry run python manage.py migrate        # Migrate
-docker compose logs -f backend                                          # Logs
-docker compose down                                                     # Stop
+docker compose up -d
+docker compose exec backend poetry run python manage.py migrate
+docker compose down
 ```
 
 ## Code Style
 
 ### Python (Backend)
-- **Imports**: stdlib → django → third-party → local (ruff auto-sorts)
-- **Type hints**: Required on all functions
-- **Docstrings**: Google style (Args/Returns/Raises)
-- **Line length**: 100 characters
-- **Service pattern**: Business logic in services, not views
-- **Error messages**: Korean for user-facing errors
-- **Testing**: model_bakery for fixtures, pytest for all tests
+| Rule | Description |
+|------|-------------|
+| Imports | stdlib -> django -> third-party -> local (ruff auto-sorts) |
+| Type hints | Required on ALL functions |
+| Docstrings | Google style (Args/Returns/Raises) |
+| Line length | 100 characters |
+| Error messages | Korean for user-facing errors |
+| Business logic | Services, NOT views |
 
 ```python
-# Service example
 from django.db import transaction
-from rest_framework.exceptions import NotFound
-from apps.novels.models import Novel
+from rest_framework.exceptions import ValidationError
 
 class NovelService:
     @transaction.atomic
@@ -85,32 +72,27 @@ class NovelService:
         
         Args:
             author: User creating the novel
-            data: Novel data (title, description, genre)
-            
+            data: Novel data dict
         Returns:
             Created Novel instance
-            
         Raises:
-            ValidationError: If data is invalid
+            ValidationError: If data invalid
         """
         if not data.get("title"):
             raise ValidationError("제목은 필수입니다.")
-        ...
 ```
 
 ### TypeScript (Frontend)
-- **Exports**: Named exports preferred
-- **Naming**: camelCase (vars/functions), PascalCase (types/components)
-- **Organization**: types/*.types.ts, lib/api/*.api.ts, stores/*.ts
-- **No type suppression**: Never use `as any`, `@ts-ignore`, `@ts-expect-error`
-- **Testing**: Vitest + React Testing Library
+| Rule | Description |
+|------|-------------|
+| Exports | Named exports preferred |
+| Naming | camelCase (vars/funcs), PascalCase (types/components) |
+| Files | types/*.types.ts, lib/api/*.api.ts, stores/*.ts |
+| Type safety | NEVER use `as any`, `@ts-ignore`, `@ts-expect-error` |
 
 ```typescript
 // lib/api/novels.api.ts
-export interface NovelResponse {
-  id: number;
-  title: string;
-}
+export interface NovelResponse { id: number; title: string; }
 
 export async function fetchNovels(): Promise<NovelResponse[]> {
   const response = await apiClient.get('/novels');
@@ -120,75 +102,44 @@ export async function fetchNovels(): Promise<NovelResponse[]> {
 
 ## API Response Format
 
-**CRITICAL**: All responses auto-wrapped by `StandardJSONRenderer`. Views return raw data.
+**CRITICAL**: Views return RAW data. `StandardJSONRenderer` wraps automatically.
 
 ```python
-# ✅ CORRECT - Renderer wraps automatically
+# CORRECT
 def retrieve(self, request, pk=None):
     novel = Novel.objects.filter(pk=pk).first()
     if not novel:
-        raise NotFound("소설을 찾을 수 없습니다.")  # Exception handler formats
-    return Response(NovelSerializer(novel).data)  # Renderer wraps
+        raise NotFound("소설을 찾을 수 없습니다.")
+    return Response(NovelSerializer(novel).data)
 
-# ❌ WRONG - Manual wrapping creates double wrapping
+# WRONG - creates double wrapping
 return Response({"success": True, "data": serializer.data})
-
-# ❌ WRONG - Manual error responses
-return Response({"error": "Not found"}, status=404)
 ```
 
-**Output format**:
-```json
-{
-  "success": true,
-  "message": null,
-  "data": { "id": 1, "title": "..." },
-  "timestamp": "2026-01-14T16:17:00+09:00"
-}
-```
+Output: `{"success": true, "data": {...}, "timestamp": "..."}`
 
-**DRF Exceptions**: Use `NotFound`, `PermissionDenied`, `ValidationError`, etc.
+Use DRF exceptions: `NotFound`, `PermissionDenied`, `ValidationError`
 
-## Testing Strategy
+## Testing (TDD Required)
 
-**TDD Required**: RED → GREEN → REFACTOR
-
-### Test Organization
 ```
 apps/<app>/tests/
-├── test_services.py      # Unit tests (mock external deps)
-├── test_views.py         # Unit tests (view logic)
-└── test_integration/     # Integration tests (real HTTP)
-    ├── conftest.py       # Shared fixtures
-    └── test_*.py         # API workflows
+├── test_services.py      # Unit tests
+├── test_views.py         # View tests  
+└── test_integration/     # API workflow tests
 ```
 
-### Fixtures (conftest.py)
 ```python
-import pytest
-from model_bakery import baker
-from rest_framework.test import APIClient
-
 @pytest.fixture
 def author(db):
     return baker.make('users.User', email='author@test.com')
 
-@pytest.fixture
-def author_client(api_client, author):
-    api_client.force_authenticate(user=author)
-    return api_client
-```
-
-### Test Example
-```python
 @pytest.mark.django_db
 class TestNovelAPI:
     def test_create_novel(self, author_client):
-        url = reverse('novel-list')
-        data = {'title': 'Test', 'genre': 'FANTASY'}
-        response = author_client.post(url, data, format='json')
+        response = author_client.post(reverse('novel-list'), 
+                                       {'title': 'Test', 'genre': 'FANTASY'})
         assert response.status_code == 201
-        assert response.data['title'] == 'Test'
 ```
 
 **Coverage**: 95%+ required (current: 95%, 545 tests)
@@ -197,38 +148,34 @@ class TestNovelAPI:
 
 ```
 backend/
-├── apps/
-│   ├── users/        # Auth, profiles
-│   ├── novels/       # Novel, Branch
-│   ├── contents/     # Chapter, Wiki, Map
-│   ├── interactions/ # Comments, Subscriptions, Wallet
-│   └── ai/           # Embeddings, RAG
+├── apps/{users,novels,contents,interactions,ai}/
 ├── common/           # Renderers, exceptions, pagination
 └── config/settings/  # base.py, local.py, test.py
 
 frontend/
 ├── app/              # Next.js App Router
-├── components/       # UI (shadcn/ui)
+├── components/       # shadcn/ui
 ├── lib/              # Utils, API client
-├── stores/           # Zustand state
+├── stores/           # Zustand
 └── types/            # TypeScript types
 ```
 
 ## Git Workflow
 
-1. **Branch naming**: `feat/#123-feature-name`, `fix/#123-bug-name`
-2. **Base branch**: `develop` (never force-push to `main`/`develop`)
-3. **PR required**: Always create PR, include `Closes #123`
-4. **Commit format**: `type(scope): message` (feat, fix, refactor, docs, test)
+| Rule | Format |
+|------|--------|
+| Branch | `feat/#123-feature-name`, `fix/#123-bug-name` |
+| Base | `develop` (never force-push main/develop) |
+| Commit | `type(scope): message` (feat, fix, refactor, docs, test) |
+| PR | Always required, include `Closes #123` |
 
 ## Key Rules
 
-- **TDD**: Write tests BEFORE implementation
-- **No secrets**: Use `env('VAR_NAME')` via django-environ
-- **No type suppression**: Never `as any`, `@ts-ignore`, `@ts-expect-error`
-- **Service pattern**: Business logic in services, not views
-- **DRF exceptions**: Use exceptions, not manual error responses
-- **Coverage**: Maintain 95%+ test coverage
+1. **TDD**: Write tests BEFORE implementation
+2. **No secrets**: Use `env('VAR_NAME')` via django-environ
+3. **No type suppression**: Never `as any`, `@ts-ignore`
+4. **Service pattern**: Business logic in services, not views
+5. **Coverage**: Maintain 95%+
 
 ## Tech Stack
 
@@ -246,4 +193,4 @@ frontend/
 - `docs/PRD.md` - Product requirements
 - `docs/database-schema.md` - DB schema (v4)
 - `docs/api-specification.md` - REST API spec
-- `docs/backend-tasks.md` - Task tracking
+- `docs/frontend/` - Frontend guides (Shadcn, MCP, Skills, Hooks, Next.js, React)

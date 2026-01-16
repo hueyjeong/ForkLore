@@ -188,6 +188,27 @@ frontend/
 | Auth | SimpleJWT + NextAuth.js v5 |
 | Testing | pytest, vitest, model_bakery, React Testing Library |
 
+## AI Agent Configuration
+
+### MCP Servers (`.mcp.json`)
+| Server | Purpose |
+|--------|---------|
+| PostgreSQL | DB schema queries, SQL execution |
+| Playwright | Browser automation, E2E tests |
+
+### Skills (`.claude/skills/`)
+| Skill | Purpose |
+|-------|---------|
+| `tdd-flow` | RED-GREEN-REFACTOR workflow |
+| `pr-reviewer` | Code review checklist |
+| `api-pattern` | ForkLore API rules |
+| `frontend-pattern` | React 19/Next.js 16 patterns |
+| `commit-push-pr` | Git workflow standardization |
+
+### Helper Scripts (`scripts/`)
+- `validate_bash.sh` - Block dangerous commands
+- `check_tests_exist.sh` - Enforce TDD
+
 ## Documentation
 
 - `docs/PRD.md` - Product requirements

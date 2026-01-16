@@ -15,10 +15,10 @@ export function RankingCarousel() {
       <div className="flex items-center justify-between px-4">
         <h2 className="flex items-center text-2xl font-bold font-serif tracking-tight">
           <Trophy className="mr-2 h-6 w-6 text-yellow-500" />
-          Top Rankings
+          인기 랭킹
         </h2>
         <Link href="/rankings" className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary">
-          View All <ChevronRight className="ml-1 h-4 w-4" />
+          전체보기 <ChevronRight className="ml-1 h-4 w-4" />
         </Link>
       </div>
 

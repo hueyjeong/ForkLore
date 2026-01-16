@@ -5,22 +5,22 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const GENRES = [
-  'All',
-  'Fantasy',
-  'Romance',
-  'Sci-Fi',
-  'Mystery',
-  'Horror',
-  'Thriller',
-  'Historical',
-  'Action',
-  'Adventure',
-  'Comedy',
-  'Drama',
+  '전체',
+  '판타지',
+  '로맨스',
+  'SF',
+  '미스터리',
+  '호러',
+  '스릴러',
+  '역사',
+  '액션',
+  '어드벤처',
+  '코미디',
+  '드라마',
 ];
 
 export function GenreFilter() {
-  const [activeGenre, setActiveGenre] = React.useState('All');
+  const [activeGenre, setActiveGenre] = React.useState('전체');
 
   return (
     <div className="sticky top-[60px] z-30 w-full bg-background/95 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">

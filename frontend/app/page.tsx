@@ -14,7 +14,9 @@ export default function HomePage() {
       <main className="space-y-4 pb-20">
         
         {/* Genre Filter (Sticky) */}
-        <GenreFilter />
+        <section className="container mx-auto max-w-6xl">
+          <GenreFilter />
+        </section>
         
         {/* Rankings */}
         <section className="container mx-auto max-w-6xl">

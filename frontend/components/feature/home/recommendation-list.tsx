@@ -14,7 +14,7 @@ const RECOMMENDATIONS = [
     title: 'Beneath the Digital Sky', 
     author: 'CyberPunk', 
     desc: 'In a future where memories can be uploaded, a detective searches for the missing fragment of a dead politician.',
-    tags: ['Sci-Fi', 'Mystery'],
+    tags: ['SF', '미스터리'],
     rating: 4.5,
     cover: 'https://images.unsplash.com/photo-1515630278258-407f66498911?q=80&w=2998&auto=format&fit=crop'
   },
@@ -23,7 +23,7 @@ const RECOMMENDATIONS = [
     title: 'The Herbalist\'s Apprentice', 
     author: 'GreenThumb', 
     desc: 'She thought she was just picking flowers, until the flowers started whispering back.',
-    tags: ['Fantasy', 'Slice of Life'],
+    tags: ['판타지', '일상'],
     rating: 4.9,
     cover: 'https://images.unsplash.com/photo-1470813740244-df37b8c1edcb?q=80&w=2942&auto=format&fit=crop'
   },
@@ -32,7 +32,7 @@ const RECOMMENDATIONS = [
     title: 'Code: Breaker', 
     author: 'NullPointer', 
     desc: 'The game was supposed to be unbeatable. He found a glitch that changed reality.',
-    tags: ['Action', 'LitRPG'],
+    tags: ['액션', '리트RPG'],
     rating: 4.2,
     cover: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2940&auto=format&fit=crop'
   },
@@ -42,8 +42,8 @@ export function RecommendationList() {
   return (
     <div className="space-y-6 py-8">
       <div className="px-4">
-        <h2 className="text-2xl font-bold font-serif tracking-tight">Picked for You</h2>
-        <p className="text-muted-foreground">Based on your reading history</p>
+        <h2 className="text-2xl font-bold font-serif tracking-tight">맞춤 추천</h2>
+        <p className="text-muted-foreground">읽은 작품을 기반으로 추천합니다</p>
       </div>
 
       <div className="grid gap-4 px-4 md:grid-cols-2 lg:grid-cols-3">
@@ -87,7 +87,7 @@ export function RecommendationList() {
                       ))}
                     </div>
                     <p className="text-[10px] text-muted-foreground">
-                      by {novel.author}
+                      {novel.author} 작가
                     </p>
                   </div>
                 </div>

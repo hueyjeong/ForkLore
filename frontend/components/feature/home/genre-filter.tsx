@@ -38,7 +38,7 @@ export function GenreFilter() {
             </Button>
           ))}
         </div>
-        <ScrollBar orientation="horizontal" className="invisible" />
+        <ScrollBar />
       </ScrollArea>
     </div>
   );

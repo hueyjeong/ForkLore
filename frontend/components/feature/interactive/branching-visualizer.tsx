@@ -79,7 +79,7 @@ export function BranchingVisualizer() {
             </div>
           ))}
         </div>
-        <ScrollBar orientation="horizontal" />
+        <ScrollBar />
       </ScrollArea>
     </div>
   );

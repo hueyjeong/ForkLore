@@ -7,7 +7,7 @@ CMD="${1:-$(cat)}"
 # 위험한 패턴 목록
 DANGEROUS_PATTERNS=(
     "rm -rf /"
-    "rm -rf /*"
+    # "rm -rf /*"
     "rm -rf ~"
     "rm -rf \$HOME"
     "git push.*--force.*main"

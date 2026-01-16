@@ -1,55 +1,73 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { BookOpen, PenTool } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { RANKING_NOVELS } from '@/lib/mock-data';
 
 export function HeroSection() {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % RANKING_NOVELS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <section className="relative h-[80vh] min-h-[600px] w-full flex items-center justify-center overflow-hidden">
-      {/* Background with Gradient Overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center transition-transform duration-[10000ms] scale-110 hover:scale-100"
-        style={{ backgroundImage: "url('/hero_background_abstract_multiverse.png')" }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
-      
-      {/* Content */}
-      <div className="container relative z-10 px-4 md:px-8 text-center sm:text-left">
+    <section className="relative h-[80vh] min-h-[600px] w-full overflow-hidden">
+      {/* Background Image Carousel */}
+      <AnimatePresence mode="popLayout">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="max-w-3xl"
+          key={currentImageIndex}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.5 }}
+          className="absolute inset-0 z-0"
         >
-          <h1 className="text-5xl md:text-7xl font-bold font-serif tracking-tight text-premium mb-6">
-            당신의 이야기가<br />
-            <span className="text-primary italic">갈라지는</span> 곳
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-[10000ms] ease-linear hover:scale-105"
+            style={{
+              backgroundImage: `url('${RANKING_NOVELS[currentImageIndex].cover}')`,
+            }}
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Overlay Gradient */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-b from-background/30 via-background/60 to-background" />
+
+      {/* Content */}
+      <div className="container relative z-20 flex h-full flex-col items-center justify-center text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="space-y-6 max-w-4xl"
+        >
+          <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">
+            당신의 이야기가 <span className="text-primary italic">갈라지는 곳</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed max-w-2xl">
-            ForkLore에서 수많은 선택의 갈래를 따라 펼쳐지는<br />
-            당신만의 전설을 발견하세요.
-          </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
-            <Button size="lg" asChild className="grad-primary text-white h-14 px-8 text-lg font-semibold rounded-full hover:opacity-90 transition-all shadow-lg shadow-primary/20">
-              <Link href="/novels">작품 읽기</Link>
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
+            ForkLore에서 수많은 선택의 갈래를 따라 펼쳐지는 당신만의 전설을 발견하세요.
+          </p>
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-center pt-8">
+            <Button size="lg" className="gap-2 text-lg h-14 px-8">
+              <BookOpen className="h-5 w-5" />
+              작품 읽기
             </Button>
-            <Button size="lg" variant="outline" asChild className="h-14 px-8 text-lg font-semibold rounded-full glass border-border/50 hover:bg-accent/50 transition-all">
-              <Link href="/publish">연재 시작하기</Link>
+            <Button size="lg" variant="outline" className="gap-2 text-lg h-14 px-8 backdrop-blur-sm bg-background/50 hover:bg-background/80">
+              <PenTool className="h-5 w-5" />
+              연재 시작하기
             </Button>
           </div>
         </motion.div>
       </div>
-      
-      {/* Scroll Indicator */}
-      <motion.div 
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 opacity-50"
-      >
-        <div className="w-1 h-12 rounded-full bg-gradient-to-b from-primary to-transparent" />
-      </motion.div>
     </section>
   );
 }

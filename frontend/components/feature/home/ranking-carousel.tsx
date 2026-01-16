@@ -60,7 +60,7 @@ export function RankingCarousel() {
             </Link>
           ))}
         </div>
-        <ScrollBar orientation="horizontal" />
+        <ScrollBar />
       </ScrollArea>
     </div>
   );

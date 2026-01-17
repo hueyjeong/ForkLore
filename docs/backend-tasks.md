@@ -29,11 +29,19 @@
 |   | ├─ ⬜ `common/models.py` - BaseModel (created_at, updated_at) | 🟢 | 0.5h |
 |   | ├─ ⬜ `common/exceptions.py` - 커스텀 예외 핸들러 | 🟢 | 0.5h |
 |   | └─ ⬜ `common/pagination.py` - StandardPagination | 🟢 | 0.5h |
-| ⬜ | **DRF 설정** | 🟡 | 2h |
-|   | ├─ ⬜ REST_FRAMEWORK 설정 (인증, 페이지네이션, 예외 핸들러) | 🟢 | 0.5h |
-|   | ├─ ⬜ **`common/renderers.py` - StandardJSONRenderer (응답 래퍼)** | 🟡 | 1h |
-|   | ├─ ⬜ **djangorestframework-camel-case 설정 (JSON camelCase)** | 🟢 | 0.5h |
-|   | └─ ⬜ drf-spectacular 설정 (OpenAPI 3.1) | 🟢 | 0.5h |
+| ✅ | **DRF 설정** | 🟡 | 2h |
+|   | ├─ ✅ REST_FRAMEWORK 설정 (인증, 페이지네이션, 예외 핸들러) | 🟢 | 0.5h |
+|   | ├─ ✅ **`common/renderers.py` - StandardJSONRenderer (응답 래퍼)** | 🟡 | 1h |
+|   | ├─ ✅ **djangorestframework-camel-case 설정 (JSON camelCase)** | 🟢 | 0.5h |
+|   | └─ ✅ drf-spectacular 설정 (OpenAPI 3.1) | 🟢 | 0.5h |
+
+**✅ API 응답 표준화 완료 (2026-01-14)**
+- StandardJSONRenderer 및 custom_exception_handler 전체 앱 적용 완료
+- 관련 PR: #186, #187, #188, #189, #190, #191, #192
+- 466줄의 boilerplate 코드 제거, 148개의 수동 wrapping 제거
+- 모든 views에서 DRF exceptions 사용 (NotFound, PermissionDenied, ValidationError 등)
+- 545+ 테스트 통과 (95%+ 커버리지)
+
 | ⬜ | **pytest-django 설정** | 🟢 | 0.5h |
 |   | ├─ ⬜ pytest.ini 및 conftest.py 구성 | 🟢 | 0.5h |
 | ⬜ | **환경 변수 관리** | 🟢 | 0.5h |

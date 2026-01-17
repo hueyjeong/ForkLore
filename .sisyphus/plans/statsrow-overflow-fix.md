@@ -21,8 +21,8 @@ StatsRow 컴포넌트에 `flex-wrap` 추가하여 좁은 화면에서 통계 항
 - `frontend/components/feature/novels/stats-row.tsx` line 32 수정
 
 ### Definition of Done
-- [ ] 수정 후 `pnpm test` 통과
-- [ ] 좁은 화면에서 별점이 컨테이너 내에 표시됨
+- [x] 수정 후 `pnpm test` 통과
+- [x] 좁은 화면에서 별점이 컨테이너 내에 표시됨
 
 ### Must Have
 - `flex-wrap` 추가
@@ -36,7 +36,7 @@ StatsRow 컴포넌트에 `flex-wrap` 추가하여 좁은 화면에서 통계 항
 
 ## TODOs
 
-- [ ] 1. StatsRow flex-wrap 추가
+- [x] 1. StatsRow flex-wrap 추가
 
   **What to do**:
   - `frontend/components/feature/novels/stats-row.tsx` line 32 수정
@@ -53,8 +53,8 @@ StatsRow 컴포넌트에 `flex-wrap` 추가하여 좁은 화면에서 통계 항
   - `frontend/components/feature/novels/stats-row.tsx:32` - 수정 대상 라인
 
   **Acceptance Criteria**:
-  - [ ] `cd /WorkSpace/ForkLore/frontend && pnpm test` → 63 tests pass
-  - [ ] 수정된 라인에 `flex-wrap`과 `gap-x-4 gap-y-1` 포함 확인
+  - [x] `cd /WorkSpace/ForkLore/frontend && pnpm test` → 63 tests pass
+  - [x] 수정된 라인에 `flex-wrap`과 `gap-x-4 gap-y-1` 포함 확인
 
   **Commit**: YES
   - Message: `fix(novels): add flex-wrap to StatsRow for narrow screen support`
@@ -72,6 +72,13 @@ grep "flex-wrap" frontend/components/feature/novels/stats-row.tsx  # Expected: 1
 ```
 
 ### Final Checklist
-- [ ] flex-wrap 추가됨
-- [ ] 테스트 통과
-- [ ] 커밋 완료
+- [x] flex-wrap 추가됨
+- [x] 테스트 통과
+- [x] 커밋 완료
+
+---
+
+## Completion
+
+**Completed**: 2026-01-17
+**Commit**: `0ef6af0 fix(novels): add flex-wrap to StatsRow for narrow screen support`

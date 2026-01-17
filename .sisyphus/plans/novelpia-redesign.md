@@ -46,10 +46,10 @@ ForkLore의 /novels, /ranking, /community 페이지를 Novelpia 스타일로 리
 - `frontend/app/community/page.tsx`: 카드 스타일만 통일
 
 ### Definition of Done
-- [ ] `cd backend && poetry run pytest` → All tests pass
-- [ ] `cd frontend && pnpm test` → All tests pass (기존 45개 + 새 테스트)
-- [ ] `cd frontend && pnpm build` → No errors
-- [ ] 모든 3개 페이지가 Novelpia 스타일로 렌더링
+- [x] `cd backend && poetry run pytest` → All tests pass
+- [x] `cd frontend && pnpm test` → All tests pass (기존 45개 + 새 테스트)
+- [x] `cd frontend && pnpm build` → No errors
+- [x] 모든 3개 페이지가 Novelpia 스타일로 렌더링
 
 ### Must Have
 - TDD: 테스트 먼저 작성
@@ -388,7 +388,7 @@ Task 3 (Badge) ─┬─ Task 4 (StatsRow) ─┬─ Task 5 (Hashtags)
 
 ---
 
-- [ ] 8. Frontend: /novels 페이지 Novelpia 스타일로 업데이트
+- [x] 8. Frontend: /novels 페이지 Novelpia 스타일로 업데이트
 
   **What to do**:
   - 기존 `frontend/app/novels/page.tsx` 수정
@@ -422,7 +422,7 @@ Task 3 (Badge) ─┬─ Task 4 (StatsRow) ─┬─ Task 5 (Hashtags)
 
 ---
 
-- [ ] 9. Frontend: /ranking 페이지 Novelpia 스타일로 업데이트
+- [x] 9. Frontend: /ranking 페이지 Novelpia 스타일로 업데이트
 
   **What to do**:
   - 기존 `frontend/app/ranking/page.tsx` 수정
@@ -454,7 +454,7 @@ Task 3 (Badge) ─┬─ Task 4 (StatsRow) ─┬─ Task 5 (Hashtags)
 
 ---
 
-- [ ] 10. Frontend: /community 페이지 카드 스타일 통일
+- [x] 10. Frontend: /community 페이지 카드 스타일 통일
 
   **What to do**:
   - 기존 `frontend/app/community/page.tsx` 수정
@@ -484,7 +484,7 @@ Task 3 (Badge) ─┬─ Task 4 (StatsRow) ─┬─ Task 5 (Hashtags)
 
 ---
 
-- [ ] 11. Final Verification: 전체 테스트 및 빌드 확인
+- [x] 11. Final Verification: 전체 테스트 및 빌드 확인
 
   **What to do**:
   - 모든 백엔드 테스트 실행

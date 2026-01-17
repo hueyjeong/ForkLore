@@ -105,7 +105,7 @@ export function NovelFilters() {
           value={currentSort}
           onValueChange={(value) => updateParams('sort', value)}
         >
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-[120px] bg-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

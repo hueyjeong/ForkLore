@@ -7,7 +7,7 @@ interface CategoryTabsProps {
   onCategoryChange: (category: string) => void;
 }
 
-const CATEGORIES = ['전체', '베테랑', '독점', '신작', '완결'];
+const CATEGORIES = ['전체', '멤버십', '독점', '신작', '완결'];
 
 export function CategoryTabs({ activeCategory, onCategoryChange }: CategoryTabsProps) {
   return (

@@ -14,7 +14,7 @@ describe('CategoryTabs', () => {
     );
     
     expect(screen.getByRole('tab', { name: '전체' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '베테랑' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '멤버십' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '독점' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '신작' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '완결' })).toBeInTheDocument();
@@ -43,9 +43,9 @@ describe('CategoryTabs', () => {
       />
     );
     
-    const veteranTab = screen.getByRole('tab', { name: '베테랑' });
+    const veteranTab = screen.getByRole('tab', { name: '멤버십' });
     fireEvent.click(veteranTab);
     
-    expect(mockOnCategoryChange).toHaveBeenCalledWith('베테랑');
+    expect(mockOnCategoryChange).toHaveBeenCalledWith('멤버십');
   });
 });

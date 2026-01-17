@@ -44,7 +44,7 @@ export function InfiniteNovelList({
 
     if (category && category !== '전체') {
       switch (category) {
-        case '베테랑':
+        case '멤버십':
           result = result.filter(novel => novel.isPremium);
           break;
         case '독점':

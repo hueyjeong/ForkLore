@@ -46,7 +46,7 @@ export function RankingList({ novels }: RankingListProps) {
 
             <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
               <Image
-                src={novel.cover}
+                src={novel.coverUrl}
                 alt={novel.title}
                 fill
                 className="object-cover"

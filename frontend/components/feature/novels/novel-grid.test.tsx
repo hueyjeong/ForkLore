@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { NovelGrid } from './novel-grid';
-import type { Novel } from '@/lib/mock-data';
+import type { Novel } from '@/lib/types';
 
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
@@ -31,7 +31,12 @@ const mockNovels: Novel[] = [
     views: '100K',
     status: '연재중',
     tags: ['판타지', '로맨스'],
-    lastUpdated: '2026-01-17',
+    description: '테스트 설명 1',
+    episodeCount: 10,
+    recommendCount: 100,
+    isExclusive: false,
+    isPremium: false,
+    updatedAt: '2026-01-17',
   },
   {
     id: '2',
@@ -43,7 +48,12 @@ const mockNovels: Novel[] = [
     views: '200K',
     status: '완결',
     tags: ['로맨스'],
-    lastUpdated: '2026-01-16',
+    description: '테스트 설명 2',
+    episodeCount: 20,
+    recommendCount: 200,
+    isExclusive: true,
+    isPremium: true,
+    updatedAt: '2026-01-16',
   },
 ];
 

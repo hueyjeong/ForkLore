@@ -52,7 +52,7 @@ export function InfiniteNovelList({
       result.sort((a, b) => parseViews(b.views) - parseViews(a.views));
     } else if (sort === 'latest') {
       result.sort((a, b) => 
-        new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       );
     }
 

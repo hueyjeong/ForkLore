@@ -11,33 +11,33 @@ export function Footer() {
               <span className="text-2xl font-bold font-serif text-premium">ForkLore</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Where stories fork, legends begin. Experience the multiverse of narratives in a premium reading environment.
+              이야기가 갈라지는 곳, 전설이 시작됩니다. 프리미엄 독서 환경에서 무한한 서사의 세계를 경험하세요.
             </p>
           </div>
 
           {/* Links Col 1 */}
           <div>
-            <h4 className="font-semibold mb-4">Platform</h4>
+            <h4 className="font-semibold mb-4">플랫폼</h4>
             <nav className="flex flex-col gap-2">
-              <Link href="/novels" className="text-sm text-muted-foreground hover:text-primary transition-colors">Novels</Link>
-              <Link href="/ranking" className="text-sm text-muted-foreground hover:text-primary transition-colors">Ranking</Link>
-              <Link href="/community" className="text-sm text-muted-foreground hover:text-primary transition-colors">Community</Link>
+              <Link href="/novels" className="text-sm text-muted-foreground hover:text-primary transition-colors">작품</Link>
+              <Link href="/ranking" className="text-sm text-muted-foreground hover:text-primary transition-colors">랭킹</Link>
+              <Link href="/community" className="text-sm text-muted-foreground hover:text-primary transition-colors">커뮤니티</Link>
             </nav>
           </div>
 
           {/* Links Col 2 */}
           <div>
-            <h4 className="font-semibold mb-4">Support</h4>
+            <h4 className="font-semibold mb-4">지원</h4>
             <nav className="flex flex-col gap-2">
-              <Link href="/help" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help Center</Link>
-              <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link>
-              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
+              <Link href="/help" className="text-sm text-muted-foreground hover:text-primary transition-colors">고객센터</Link>
+              <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">이용약관</Link>
+              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">개인정보처리방침</Link>
             </nav>
           </div>
 
           {/* Social Col */}
           <div>
-            <h4 className="font-semibold mb-4">Follow Us</h4>
+            <h4 className="font-semibold mb-4">팔로우</h4>
             <div className="flex gap-4">
               <a href="#" className="h-9 w-9 rounded-full bg-accent/50 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all">
                 <span className="sr-only">Twitter</span>
@@ -56,9 +56,9 @@ export function Footer() {
             &copy; {new Date().getFullYear()} ForkLore Team. All rights reserved.
           </p>
           <div className="flex gap-6">
-            <Link href="/terms" className="text-xs text-muted-foreground hover:text-primary">Terms</Link>
-            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-primary">Privacy</Link>
-            <Link href="/cookies" className="text-xs text-muted-foreground hover:text-primary">Cookies</Link>
+            <Link href="/terms" className="text-xs text-muted-foreground hover:text-primary">이용약관</Link>
+            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-primary">개인정보</Link>
+            <Link href="/cookies" className="text-xs text-muted-foreground hover:text-primary">쿠키</Link>
           </div>
         </div>
       </div>

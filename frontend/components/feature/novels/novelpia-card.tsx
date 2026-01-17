@@ -49,7 +49,7 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
 
       <div className="flex flex-col flex-1 min-w-0 py-0.5">
         <div className="flex items-start justify-between gap-2 mb-1.5">
-          <div className="flex flex-wrap items-center gap-2 overflow-hidden">
+          <div className="flex flex-wrap items-center gap-2 overflow-hidden min-h-6">
             <NovelBadge isPremium={novel.isPremium} isExclusive={novel.isExclusive} />
             <h3 className="font-bold text-base sm:text-lg truncate" title={novel.title}>
               {novel.title}

@@ -29,7 +29,7 @@ export function StatsRow({
   className,
 }: StatsRowProps) {
   return (
-    <div className={cn('flex items-center gap-4 text-sm text-muted-foreground', className)}>
+    <div className={cn('flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground', className)}>
       <div className="flex items-center gap-1" title="조회수">
         <Eye className="h-4 w-4" aria-hidden="true" />
         <span>{formatNumber(views)}</span>

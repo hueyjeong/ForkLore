@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { NovelGrid } from './novel-grid';
+import { NovelpiaCard } from './novelpia-card';
 import { NOVELS_LIST, type Novel } from '@/lib/mock-data';
 
 const ITEMS_PER_PAGE = 12;
@@ -10,6 +10,7 @@ const ITEMS_PER_PAGE = 12;
 interface InfiniteNovelListProps {
   genre?: string;
   status?: string;
+  category?: string;
   sort?: 'popular' | 'latest';
   searchQuery?: string;
 }
@@ -24,6 +25,7 @@ function parseViews(views: string): number {
 export function InfiniteNovelList({ 
   genre, 
   status, 
+  category,
   sort = 'popular',
   searchQuery 
 }: InfiniteNovelListProps) {
@@ -38,6 +40,23 @@ export function InfiniteNovelList({
 
     if (status && status !== '전체') {
       result = result.filter(novel => novel.status === status);
+    }
+
+    if (category && category !== '전체') {
+      switch (category) {
+        case '베테랑':
+          result = result.filter(novel => novel.isPremium);
+          break;
+        case '독점':
+          result = result.filter(novel => novel.isExclusive);
+          break;
+        case '신작':
+          result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+          break;
+        case '완결':
+          result = result.filter(novel => novel.status === '완결');
+          break;
+      }
     }
 
     if (searchQuery) {
@@ -85,12 +104,12 @@ export function InfiniteNovelList({
       overscan={200}
       itemContent={(index, novel) => (
         <div className="mb-4">
-          <NovelGrid novels={[novel]} />
+          <NovelpiaCard novel={novel} />
         </div>
       )}
       components={{
         List: ({ children, ...props }) => (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4" {...props}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" {...props}>
             {children}
           </div>
         ),

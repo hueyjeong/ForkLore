@@ -7,7 +7,7 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   return (
-    <div className="flex items-start gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50">
+    <div className="flex items-start gap-4 p-4 border rounded-lg bg-card text-card-foreground shadow-sm hover:border-primary/50 transition-colors">
       {post.isPinned && (
         <Pin
           className="h-4 w-4 shrink-0 text-primary"
@@ -20,7 +20,7 @@ export function PostCard({ post }: PostCardProps) {
           <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
             {post.category}
           </span>
-          <h3 className="font-medium text-foreground truncate">
+          <h3 className="font-bold text-foreground truncate">
             {post.title}
           </h3>
         </div>

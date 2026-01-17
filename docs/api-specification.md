@@ -24,58 +24,24 @@
 
 ### 1.3 공통 응답 형식 (필수)
 
-**중요**: 모든 API 응답은 `StandardJSONRenderer`에 의해 자동으로 감싸집니다.
-
-#### Success Response
+#### Success
 ```json
 {
   "success": true,
   "message": null,
-  "data": { /* 실제 응답 데이터 */ },
-  "timestamp": "2026-01-13T12:00:00+09:00"
+  "data": { },
+  "timestamp": "2026-01-13T12:00:00Z"
 }
 ```
 
-#### Error Response
+#### Failure
 ```json
 {
   "success": false,
   "message": "에러 메시지",
   "data": null,
-  "timestamp": "2026-01-13T12:00:00+09:00"
-}
-```
-
-#### Validation Error Response
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "data": null,
-  "errors": {
-    "fieldName": ["Error message 1", "Error message 2"]
-  },
-  "timestamp": "2026-01-13T12:00:00+09:00"
-}
-```
-
-**구현 상세**:
-- Success responses (status < 400): `StandardJSONRenderer`가 자동으로 wrapping
-- Error responses (status >= 400): `custom_exception_handler`가 처리
-- DRF exceptions (`NotFound`, `PermissionDenied`, `ValidationError` 등) 사용
-- View에서는 직접 wrapping하지 않고 데이터만 반환
-
-**예시**:
-```python
-# View code (권장)
-return Response(serializer.data)  # Renderer가 자동으로 wrapping
-
-# 실제 클라이언트가 받는 응답
-{
-  "success": true,
-  "data": <serializer.data>,
-  "message": null,
-  "timestamp": "2026-01-14T16:17:00+09:00"
+  "errors": { "field": ["..."] },
+  "timestamp": "2026-01-13T12:00:00Z"
 }
 ```
 

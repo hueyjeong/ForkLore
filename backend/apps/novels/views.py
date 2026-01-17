@@ -36,11 +36,11 @@ from .services import BranchLinkService, BranchService, NovelService
 
 
 @extend_schema_view(
-    list=extend_schema(summary="소설 목록 조회", tags=["Novels"]),
-    retrieve=extend_schema(summary="소설 상세 조회", tags=["Novels"]),
-    create=extend_schema(summary="소설 생성", tags=["Novels"]),
-    partial_update=extend_schema(summary="소설 수정", tags=["Novels"]),
-    destroy=extend_schema(summary="소설 삭제", tags=["Novels"]),
+    list=extend_schema(summary="소설 목록 조회"),
+    retrieve=extend_schema(summary="소설 상세 조회"),
+    create=extend_schema(summary="소설 생성"),
+    partial_update=extend_schema(summary="소설 수정"),
+    destroy=extend_schema(summary="소설 삭제"),
 )
 class NovelViewSet(viewsets.ViewSet):
     """ViewSet for Novel CRUD operations."""
@@ -125,14 +125,12 @@ class NovelViewSet(viewsets.ViewSet):
 @extend_schema_view(
     list=extend_schema(
         summary="브랜치 목록 조회",
-        tags=["Branches"],
         parameters=[
             OpenApiParameter(name="visibility", type=str, description="Filter by visibility"),
             OpenApiParameter(name="sort", type=str, description="Sort by: votes, latest, views"),
         ],
     ),
-    create=extend_schema(summary="브랜치 포크", tags=["Branches"]),
-    retrieve=extend_schema(summary="브랜치 상세 조회", tags=["Branches"]),
+    retrieve=extend_schema(summary="브랜치 상세 조회"),
 )
 class BranchViewSet(viewsets.ViewSet):
     """ViewSet for Branch operations."""
@@ -181,7 +179,6 @@ class BranchViewSet(viewsets.ViewSet):
         except ValueError as e:
             raise ValidationError(str(e))
 
-    @extend_schema(summary="메인 브랜치 조회", tags=["Branches"])
     @action(detail=False, methods=["get"], url_path="main")
     def main(self, request: Request, novel_pk: int | None = None) -> Response:
         """Get main branch of a novel."""
@@ -202,13 +199,6 @@ class BranchViewSet(viewsets.ViewSet):
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
 
-@extend_schema_view(
-    retrieve=extend_schema(summary="브랜치 상세 조회", tags=["Branches"]),
-    visibility=extend_schema(summary="브랜치 공개 상태 변경", tags=["Branches"]),
-    vote=extend_schema(summary="브랜치 투표/투표 취소", tags=["Branches"]),
-    link_request=extend_schema(summary="브랜치 연결 요청", tags=["Branch Links"]),
-    continue_reading=extend_schema(summary="이어 읽기 정보 조회", tags=["Branches"]),
-)
 class BranchDetailViewSet(viewsets.ViewSet):
     """ViewSet for single branch operations (visibility, vote, link-request)."""
 
@@ -227,7 +217,6 @@ class BranchDetailViewSet(viewsets.ViewSet):
         except Branch.DoesNotExist:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
-    @extend_schema(summary="브랜치 공개 상태 변경", tags=["Branches"])
     @action(
         detail=True, methods=["patch"], url_path="visibility", permission_classes=[IsAuthenticated]
     )
@@ -250,7 +239,6 @@ class BranchDetailViewSet(viewsets.ViewSet):
         except ValueError as e:
             raise ValidationError(str(e))
 
-    @extend_schema(summary="브랜치 투표/투표 취소", tags=["Branches"])
     @action(
         detail=True,
         methods=["post", "delete"],
@@ -276,7 +264,6 @@ class BranchDetailViewSet(viewsets.ViewSet):
         except IntegrityError:
             raise ValidationError("이미 투표하셨습니다.")
 
-    @extend_schema(summary="브랜치 연결 요청", tags=["Branch Links"])
     @action(
         detail=True, methods=["post"], url_path="link-request", permission_classes=[IsAuthenticated]
     )
@@ -302,7 +289,6 @@ class BranchDetailViewSet(viewsets.ViewSet):
         except ValueError as e:
             raise ValidationError(str(e))
 
-    @extend_schema(summary="이어 읽기 정보 조회", tags=["Branches"])
     @action(
         detail=True,
         methods=["get"],
@@ -324,9 +310,6 @@ class BranchDetailViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
 
-@extend_schema_view(
-    partial_update=extend_schema(summary="브랜치 연결 요청 검토", tags=["Branch Links"]),
-)
 class LinkRequestViewSet(viewsets.ViewSet):
     """ViewSet for BranchLinkRequest operations."""
 

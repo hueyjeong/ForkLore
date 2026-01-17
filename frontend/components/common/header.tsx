@@ -45,7 +45,7 @@ export function Header() {
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="md:hidden shrink-0 hover:bg-accent/50">
               <Menu className="h-5 w-5" />
-              <span className="sr-only">메뉴 열기</span>
+              <span className="sr-only">Toggle menu</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="glass w-[300px] sm:w-[400px] border-r border-border/20">
@@ -53,17 +53,17 @@ export function Header() {
             <div className="flex flex-col gap-8 py-6">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="search" placeholder="작품 검색..." className="w-full pl-10 bg-muted/30 border-none focus-visible:ring-primary/30" />
+                <Input type="search" placeholder="Search stories..." className="w-full pl-10 bg-muted/30 border-none focus-visible:ring-primary/30" />
               </div>
               <nav className="flex flex-col gap-6">
                 <Link href="/novels" className="text-xl font-medium hover:text-primary transition-colors">
-                  작품
+                  Novels
                 </Link>
                 <Link href="/ranking" className="text-xl font-medium hover:text-primary transition-colors">
-                  랭킹
+                  Ranking
                 </Link>
                 <Link href="/community" className="text-xl font-medium hover:text-primary transition-colors">
-                  커뮤니티
+                  Community
                 </Link>
               </nav>
             </div>
@@ -80,13 +80,13 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
           <Link href="/novels" className="relative py-1 transition-colors hover:text-primary text-foreground/70 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-primary after:transition-all">
-            작품
+            Novels
           </Link>
           <Link href="/ranking" className="relative py-1 transition-colors hover:text-primary text-foreground/70 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-primary after:transition-all">
-            랭킹
+            Ranking
           </Link>
           <Link href="/community" className="relative py-1 transition-colors hover:text-primary text-foreground/70 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-primary after:transition-all">
-            커뮤니티
+            Community
           </Link>
         </nav>
 
@@ -96,7 +96,7 @@ export function Header() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
               type="search"
-              placeholder="작품 검색..."
+              placeholder="Search novels..."
               className="h-9 w-full pl-10 bg-muted/50 border-transparent focus:bg-muted/80 focus:border-primary/20 transition-all rounded-full"
             />
           </div>
@@ -116,13 +116,13 @@ export function Header() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="glass w-56 p-2 border-border/20">
-              <DropdownMenuLabel className="font-premium">내 계정</DropdownMenuLabel>
+              <DropdownMenuLabel className="font-premium">My Account</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-border/20" />
-              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">프로필</DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">서재</DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">설정</DropdownMenuItem>
+              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">Profile</DropdownMenuItem>
+              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">Library</DropdownMenuItem>
+              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">Settings</DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/20" />
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">로그아웃</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -1,10 +1,11 @@
-import { Eye, Book, ThumbsUp } from 'lucide-react';
+import { Eye, Book, ThumbsUp, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StatsRowProps {
   views: number;
   episodeCount: number;
   recommendCount: number;
+  rating?: number;
   className?: string;
 }
 
@@ -24,6 +25,7 @@ export function StatsRow({
   views,
   episodeCount,
   recommendCount,
+  rating,
   className,
 }: StatsRowProps) {
   return (
@@ -40,6 +42,12 @@ export function StatsRow({
         <ThumbsUp className="h-4 w-4" aria-hidden="true" />
         <span>{formatNumber(recommendCount)}</span>
       </div>
+      {rating !== undefined && (
+        <div className="flex items-center gap-1 text-primary" title="평점">
+          <Star className="h-4 w-4 fill-current" aria-hidden="true" />
+          <span className="font-semibold">{rating}</span>
+        </div>
+      )}
     </div>
   );
 }

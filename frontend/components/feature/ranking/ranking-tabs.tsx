@@ -4,13 +4,7 @@ import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RankingList } from './ranking-list';
 import { RANKING_NOVELS, type RankingNovel } from '@/lib/mock-data';
-
-function parseViews(views: string): number {
-  const num = parseFloat(views);
-  if (views.includes('M')) return num * 1000000;
-  if (views.includes('K')) return num * 1000;
-  return num;
-}
+import { parseViews } from '@/lib/utils';
 
 function sortByViews(novels: RankingNovel[]): RankingNovel[] {
   return [...novels].sort((a, b) => parseViews(b.views) - parseViews(a.views));

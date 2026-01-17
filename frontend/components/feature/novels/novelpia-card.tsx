@@ -4,7 +4,7 @@ import { Novel, RankingNovel } from '@/lib/types';
 import { NovelBadge } from './novel-badge';
 import { StatsRow } from './stats-row';
 import { HashtagPills } from './hashtag-pills';
-import { cn } from '@/lib/utils';
+import { cn, parseViews } from '@/lib/utils';
 
 interface NovelpiaCardProps {
   novel: Novel | RankingNovel;
@@ -30,7 +30,7 @@ function getRelativeTime(dateString: string): string {
 
 export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
   const relativeTime = getRelativeTime(novel.updatedAt);
-  const views = parseInt(novel.views, 10) || 0;
+  const views = parseViews(novel.views);
 
   return (
     <Link 
@@ -68,6 +68,7 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
           views={views}
           episodeCount={novel.episodeCount}
           recommendCount={novel.recommendCount}
+          rating={novel.rating}
           className="mb-3"
         />
 

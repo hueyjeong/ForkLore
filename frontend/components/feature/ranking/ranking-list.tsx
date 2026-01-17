@@ -1,8 +1,6 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { Star, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RankingNovel } from '@/lib/mock-data';
+import { NovelpiaCard } from '@/components/feature/novels/novelpia-card';
 
 interface RankingListProps {
   novels: RankingNovel[];
@@ -25,15 +23,11 @@ export function RankingList({ novels }: RankingListProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {novels.map((novel, index) => {
         const rank = index + 1;
         return (
-          <Link
-            key={novel.id}
-            href={`/novels/${novel.id}`}
-            className="flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-muted/50"
-          >
+          <div key={novel.id} className="flex items-center gap-4">
             <div
               data-testid={`rank-badge-${rank}`}
               className={cn(
@@ -43,36 +37,8 @@ export function RankingList({ novels }: RankingListProps) {
             >
               {rank}
             </div>
-
-            <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
-              <Image
-                src={novel.coverUrl}
-                alt={novel.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <h3 className="truncate font-serif font-bold text-premium">
-                {novel.title}
-              </h3>
-              <p className="truncate text-sm text-muted-foreground">
-                {novel.author}
-              </p>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Eye className="h-4 w-4" />
-                <span>{novel.views}</span>
-              </div>
-              <div className="flex items-center gap-1 text-primary">
-                <Star className="h-4 w-4 fill-current" />
-                <span className="font-semibold">{novel.rating}</span>
-              </div>
-            </div>
-          </Link>
+            <NovelpiaCard novel={novel} className="flex-1" />
+          </div>
         );
       })}
     </div>

@@ -42,10 +42,10 @@
 - `frontend/components/feature/novels/category-tabs.tsx` - 베테랑→멤버십, grid-cols-4
 
 ### Definition of Done
-- [ ] `cd frontend && pnpm test` → All tests pass
-- [ ] `cd frontend && pnpm build` → No errors
-- [ ] 모든 카드 높이 일관성 확인
-- [ ] Select가 카드와 겹치지 않음
+- [x] `cd frontend && pnpm test` → All tests pass
+- [x] `cd frontend && pnpm build` → No errors
+- [x] 모든 카드 높이 일관성 확인
+- [x] Select가 카드와 겹치지 않음
 
 ### Must Have
 - 배지 없는 카드도 동일 높이
@@ -102,7 +102,7 @@ Task 1 (Badge height) ─┬─ Task 2 (Select bg) ─┬─ Task 3 (Grid cols)
 
 ## TODOs
 
-- [ ] 1. 배지 영역 min-height 추가
+- [x] 1. 배지 영역 min-height 추가
 
   **What to do**:
   - `frontend/components/feature/novels/novelpia-card.tsx` line 52 수정
@@ -129,7 +129,7 @@ Task 1 (Badge height) ─┬─ Task 2 (Select bg) ─┬─ Task 3 (Grid cols)
 
 ---
 
-- [ ] 2. Select 배경색 추가
+- [x] 2. Select 배경색 추가
 
   **What to do**:
   - `frontend/components/feature/novels/novel-filters.tsx` line 108 수정
@@ -156,7 +156,7 @@ Task 1 (Badge height) ─┬─ Task 2 (Select bg) ─┬─ Task 3 (Grid cols)
 
 ---
 
-- [ ] 3. 그리드 2컬럼으로 제한
+- [x] 3. 그리드 2컬럼으로 제한
 
   **What to do**:
   - `frontend/components/feature/novels/infinite-novel-list.tsx` line 112 수정
@@ -182,7 +182,7 @@ Task 1 (Badge height) ─┬─ Task 2 (Select bg) ─┬─ Task 3 (Grid cols)
 
 ---
 
-- [ ] 4. 베테랑 → 멤버십 이름 변경
+- [x] 4. 베테랑 → 멤버십 이름 변경
 
   **What to do**:
   - `frontend/components/feature/novels/category-tabs.tsx` line 10 수정
@@ -211,7 +211,7 @@ Task 1 (Badge height) ─┬─ Task 2 (Select bg) ─┬─ Task 3 (Grid cols)
 
 ---
 
-- [ ] 5. 스크롤 padding 문제 조사 및 수정
+- [x] 5. 스크롤 padding 문제 조사 및 수정
 
   **What to do**:
   - 스크롤 시 padding-top 증가 원인 조사
@@ -245,7 +245,7 @@ Task 1 (Badge height) ─┬─ Task 2 (Select bg) ─┬─ Task 3 (Grid cols)
 
 ---
 
-- [ ] 6. 최종 검증
+- [x] 6. 최종 검증
 
   **What to do**:
   - 모든 테스트 실행

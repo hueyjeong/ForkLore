@@ -5,10 +5,15 @@ import { cn } from "@/lib/utils"
 
 const Tabs = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { defaultValue?: string }
->(({ className, defaultValue, children, ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & { defaultValue?: string; onValueChange?: (value: string) => void }
+>(({ className, defaultValue, onValueChange, children, ...props }, ref) => {
   // Simple context for active tab
   const [active, setActive] = React.useState(defaultValue)
+  
+  const handleSetActive = React.useCallback((value: string) => {
+    setActive(value)
+    onValueChange?.(value)
+  }, [onValueChange])
   
   return (
     <div
@@ -19,7 +24,7 @@ const Tabs = React.forwardRef<
     >
       {React.Children.map(children, child => {
         if (React.isValidElement(child)) {
-           return React.cloneElement(child, { active, setActive } as any)
+           return React.cloneElement(child, { active, setActive: handleSetActive } as any)
         }
         return child
       })}

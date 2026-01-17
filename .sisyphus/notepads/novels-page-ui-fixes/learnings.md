@@ -1,0 +1,1 @@
+- Added `min-h-6` to the badge+title wrapper in `novelpia-card.tsx` to ensure consistent card height even when badges are absent.

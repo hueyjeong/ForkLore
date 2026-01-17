@@ -82,7 +82,7 @@ export function NovelFilters() {
             </Button>
           ))}
         </div>
-        <ScrollBar orientation="horizontal" />
+        <ScrollBar />
       </ScrollArea>
 
       {/* Status Filter and Sort */}

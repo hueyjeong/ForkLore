@@ -103,6 +103,35 @@ export type MockNovel = z.infer<typeof NovelSchema>;
 export type MockChapter = z.infer<typeof ChapterSchema>;
 export type MockSubscription = z.infer<typeof SubscriptionSchema>;
 
+// Enums from types/branches.types.ts
+export const BranchTypeEnum = z.enum(['MAIN', 'SIDE_STORY', 'FAN_FIC', 'IF_STORY']);
+export const BranchVisibilityEnum = z.enum(['PRIVATE', 'PUBLIC', 'LINKED']);
+export const CanonStatusEnum = z.enum(['NON_CANON', 'CANDIDATE', 'MERGED']);
+
+// Branch Schema (from branches.types.ts)
+export const BranchSchema = z.object({
+  id: z.number(),
+  novel_id: z.number(),
+  name: z.string(),
+  description: z.string(),
+  cover_image_url: z.string(),
+  is_main: z.boolean(),
+  branch_type: BranchTypeEnum,
+  visibility: BranchVisibilityEnum,
+  canon_status: CanonStatusEnum,
+  parent_branch_id: z.number().nullable(),
+  fork_point_chapter: z.number().nullable(),
+  vote_count: z.number(),
+  vote_threshold: z.number(),
+  view_count: z.number(),
+  chapter_count: z.number(),
+  author: AuthorSchema,
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export type MockBranch = z.infer<typeof BranchSchema>;
+
 // Wiki Schemas (from wiki.types.ts)
 export const WikiTagSchema = z.object({
   id: z.number(),
@@ -128,7 +157,7 @@ export const WikiEntrySchema = z.object({
   image_url: z.string(),
   first_appearance: z.number().nullable(),
   hidden_note: z.string(),
-  ai_metadata: z.record(z.unknown()).nullable(),
+  ai_metadata: z.record(z.string(), z.unknown()).nullable(),
   tags: z.array(WikiTagSchema),
   snapshots: z.array(WikiSnapshotSchema),
   snapshot: WikiSnapshotSchema.nullable(),

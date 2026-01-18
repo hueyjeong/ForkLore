@@ -2,7 +2,8 @@ import { Page, Route } from '@playwright/test';
 import {
   MockUser, MockNovel, MockChapter,
   MockSubscription,
-  MockWikiEntry
+  MockWikiEntry,
+  MockBranch
 } from '../fixtures/mock-schemas';
 
 interface ApiResponse<T> {
@@ -177,5 +178,54 @@ export class MockHelper {
       hasPrev: false,
     };
     await this.mockRoute(new RegExp(`/branches/${branchId}/wikis`), response);
+  }
+
+  /**
+   * Mocks branch creation endpoint
+   */
+  async mockBranchCreation(novelId: number | string, newBranch: MockBranch) {
+    const numericId = Number(novelId);
+    // Use exact match or regex depending on how strict we want to be
+    await this.mockRoute(new RegExp(`/novels/${numericId}/branches$`), newBranch, 201);
+  }
+
+  /**
+   * Mocks branch creation conflict (409)
+   */
+  async mockBranchConflict(novelId: number | string) {
+    const numericId = Number(novelId);
+    await this.page.route(new RegExp(`/novels/${numericId}/branches$`), async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: false,
+            data: null,
+            message: 'Concurrent fork detected',
+            serverTime: new Date().toISOString(),
+          }),
+        });
+      } else {
+        await route.fallback();
+      }
+    });
+  }
+
+  /**
+   * Mocks branches list for a novel
+   */
+  async mockBranchList(novelId: number | string, branches: MockBranch[]) {
+    const numericId = Number(novelId);
+    const response: PaginatedResponse<MockBranch> = {
+      results: branches,
+      total: branches.length,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
+    };
+    await this.mockRoute(new RegExp(`/novels/${numericId}/branches(\\?.*)?$`), response);
   }
 }

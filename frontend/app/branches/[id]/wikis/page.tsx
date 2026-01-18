@@ -3,11 +3,11 @@ import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface WikiListPageProps {
-  params: Promise<{ branchId: string }>;
+  params: Promise<{ id: string }>;
 }
 
 export default async function WikiListPage({ params }: WikiListPageProps) {
-  const { branchId } = await params;
+  const { id: branchId } = await params;
   const id = parseInt(branchId);
 
   return (

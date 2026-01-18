@@ -21,7 +21,7 @@ const SORT_OPTIONS = [
   { value: 'latest', label: '최신순' },
 ];
 
-export function NovelFilters() {
+export function NovelFilters({ showSearch = true }: { showSearch?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -57,15 +57,17 @@ export function NovelFilters() {
   return (
     <div className="space-y-4">
       {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="작품 검색..."
-          className="pl-10"
-          defaultValue={currentSearch}
-          onChange={handleSearch}
-        />
-      </div>
+      {showSearch && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="작품 검색..."
+            className="pl-10"
+            defaultValue={currentSearch}
+            onChange={handleSearch}
+          />
+        </div>
+      )}
 
       {/* Genre Filter */}
       <ScrollArea className="w-full whitespace-nowrap">

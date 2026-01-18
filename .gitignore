@@ -24,9 +24,10 @@ target/
 .devcontainer/docker-compose.override.yml
 .devcontainer/init.sh
 
-# AI Agent
-.agent/
-GEMINI.md
+# Sisyphus
+.sisyphus/notepads/
+.sisyphus/boulder.json
+
 
 # Authentication & Secret (IMPORTANT)
 .env

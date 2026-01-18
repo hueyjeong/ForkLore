@@ -60,3 +60,24 @@
 - **Total Tests**: 45 passing
 - **Test Files**: 10
 - **Coverage**: All components have tests
+
+## Session: 2026-01-19 (User Profile & Library)
+
+### Discoveries
+1. **Missing Types**: `Purchase` type was missing in `interactions.types.ts` although referenced in instructions. Added it manually.
+2. **API Consistency**: `PaginatedResponse` uses `results` instead of `items`, and `PageParams` uses `limit` instead of `size`. Corrected implementation to match common types.
+
+### Implementation Details
+1. **UserProfile**:
+   - Client Component using `getMyProfile` and `getWalletBalance`.
+   - Used Framer Motion for entrance animations.
+   - Shadcn UI (Card, Avatar, Badge) for layout.
+
+2. **MyLibrary**:
+   - Client Component using `getPurchases`.
+   - Grid layout for purchased items.
+   - Empty state handling.
+
+3. **Pages**:
+   - Created `/profile` and `/library` routes.
+   - Wrapped components in container for proper spacing.

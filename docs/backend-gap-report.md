@@ -36,3 +36,17 @@ This document tracks API endpoints that are missing, incomplete, or behaving une
 
 - [ ] Need a user with `is_author=true` and 50+ published branches.
 - [ ] Need a novel with circular branch references (if allowed).
+
+## 🚧 Frontend Feature Gaps (Impacts E2E)
+| Feature | Status | Test |
+|---------|--------|------|
+| Paragraph Comments | Missing UI | `tests/e2e/reader/context-aware.spec.ts` (Skipped) |
+| Wiki Context Filtering | Not Integrated | `tests/e2e/reader/context-aware.spec.ts` (Skipped) |
+| Author Editor | Missing UI | `tests/e2e/author/studio.spec.ts` (Skipped) |
+| Fork Button | Missing UI | `tests/e2e/branching/fork-lifecycle.spec.ts` (Skipped) |
+
+## 🔧 Test Infrastructure Issues
+| Issue | Impact | Recommendation |
+|-------|--------|----------------|
+| `MockHelper` Regex | Mocks intercept page navigation (return JSON) | Add `resourceType() !== 'document'` check to all mocks. |
+| Auth Selectors | Logout button detection flaky | Add `data-testid` to user menu triggers. |

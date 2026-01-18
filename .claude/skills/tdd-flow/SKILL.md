@@ -1,5 +1,5 @@
 ---
-name: TDD Flow
+name: tdd-flow
 description: RED-GREEN-REFACTOR 워크플로우를 강제하는 TDD 개발 스킬
 allowed-tools:
   - Read

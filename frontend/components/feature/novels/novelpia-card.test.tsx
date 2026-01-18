@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { NovelpiaCard } from './novelpia-card';
-import { Novel } from '@/lib/types';
+import { Novel, Genre, AgeRating, NovelStatus } from '@/types/novels.types';
 
 // Mock next/image
 vi.mock('next/image', () => ({
@@ -17,21 +17,27 @@ vi.mock('next/link', () => ({
 
 describe('NovelpiaCard', () => {
   const mockNovel: Novel = {
-    id: '1',
+    id: 1,
     title: '테스트 소설',
-    author: '테스트 작가',
-    coverUrl: '/test-cover.jpg',
-    views: '1200000', // 1.2M
-    rating: 4.5,
-    status: '연재중',
-    tags: ['판타지', '하렘', '일상'],
+    author: {
+      id: 1,
+      nickname: '테스트 작가'
+    },
+    cover_image_url: '/test-cover.jpg',
+    total_view_count: 1200000, // 1.2M
+    total_like_count: 53200, // 53.2K
+    total_chapter_count: 224,
     description: '이것은 테스트 소설의 설명입니다.',
-    episodeCount: 224,
-    recommendCount: 53200, // 53.2K
-    isExclusive: true,
-    isPremium: true,
-    updatedAt: new Date(Date.now() - 16 * 60 * 1000).toISOString(), // 16분 전
-    genre: 'Fantasy',
+    genre: Genre.FANTASY,
+    age_rating: AgeRating.AGE_15,
+    status: NovelStatus.ONGOING,
+    is_exclusive: true,
+    is_premium: true,
+    allow_branching: true,
+    branch_count: 0,
+    linked_branch_count: 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date(Date.now() - 16 * 60 * 1000).toISOString(), // 16분 전
   };
 
   it('renders novel information correctly', () => {
@@ -50,10 +56,10 @@ describe('NovelpiaCard', () => {
     expect(screen.getByText('224')).toBeDefined();
     expect(screen.getByText('53.2K')).toBeDefined();
 
-    // Check for hashtags
+    // Check for hashtags (mapped from Genre/AgeRating)
+    // Genre.FANTASY -> '판타지', AgeRating.AGE_15 -> '15세 이용가'
     expect(screen.getByText('#판타지')).toBeDefined();
-    expect(screen.getByText('#하렘')).toBeDefined();
-    expect(screen.getByText('#일상')).toBeDefined();
+    expect(screen.getByText('#15세 이용가')).toBeDefined();
 
     // Check for relative time
     expect(screen.getByText('16분전 UP')).toBeDefined();
@@ -63,16 +69,10 @@ describe('NovelpiaCard', () => {
     expect(img.getAttribute('src')).toBe('/test-cover.jpg');
   });
 
-  it('renders correctly with RankingNovel type (id as number)', () => {
-    const rankingNovel = { ...mockNovel, id: 123 };
-    render(<NovelpiaCard novel={rankingNovel as any} />);
-    expect(screen.getByText('테스트 소설')).toBeDefined();
-  });
-
   it('formats "just now" for very recent updates', () => {
     const recentNovel = {
       ...mockNovel,
-      updatedAt: new Date(Date.now() - 30 * 1000).toISOString(),
+      updated_at: new Date(Date.now() - 30 * 1000).toISOString(),
     };
     render(<NovelpiaCard novel={recentNovel} />);
     expect(screen.getByText('방금 전 UP')).toBeDefined();

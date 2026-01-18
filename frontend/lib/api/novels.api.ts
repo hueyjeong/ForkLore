@@ -2,8 +2,8 @@ import { apiClient } from '@/lib/api-client';
 import { ApiResponse, PaginatedResponse } from '@/types/common';
 import {
   Novel,
-  CreateNovelRequest,
-  UpdateNovelRequest,
+  NovelCreateRequest,
+  NovelUpdateRequest,
   NovelListParams,
 } from '@/types/novels.types';
 
@@ -33,7 +33,7 @@ export async function getNovel(id: number): Promise<Novel> {
 /**
  * Create a new novel
  */
-export async function createNovel(data: CreateNovelRequest): Promise<Novel> {
+export async function createNovel(data: NovelCreateRequest): Promise<Novel> {
   const response = await apiClient.post<ApiResponse<Novel>>(BASE_URL, data);
   return response.data.data;
 }
@@ -43,7 +43,7 @@ export async function createNovel(data: CreateNovelRequest): Promise<Novel> {
  */
 export async function updateNovel(
   id: number,
-  data: UpdateNovelRequest
+  data: NovelUpdateRequest
 ): Promise<Novel> {
   const response = await apiClient.patch<ApiResponse<Novel>>(
     `${BASE_URL}/${id}`,

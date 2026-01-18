@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { Virtuoso } from 'react-virtuoso';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { NovelpiaCard } from './novelpia-card';
-import { NOVELS_LIST, type Novel } from '@/lib/mock-data';
-
-const ITEMS_PER_PAGE = 12;
+import { getNovels } from '@/lib/api/novels.api';
+import { Genre, NovelStatus, NovelListParams } from '@/types/novels.types';
+import { Loader2 } from 'lucide-react';
 
 interface InfiniteNovelListProps {
   genre?: string;
@@ -15,12 +16,23 @@ interface InfiniteNovelListProps {
   searchQuery?: string;
 }
 
-function parseViews(views: string): number {
-  const num = parseFloat(views);
-  if (views.includes('M')) return num * 1000000;
-  if (views.includes('K')) return num * 1000;
-  return num;
-}
+const genreMap: Record<string, Genre> = {
+  '판타지': Genre.FANTASY,
+  '로맨스': Genre.ROMANCE,
+  '무협': Genre.MARTIAL,
+  'SF': Genre.SF,
+  '스릴러': Genre.THRILLER,
+  '미스터리': Genre.MYSTERY,
+  '역사': Genre.HISTORY,
+  '현대': Genre.MODERN,
+  '게임': Genre.GAME,
+};
+
+const statusMap: Record<string, NovelStatus> = {
+  '연재중': NovelStatus.ONGOING,
+  '완결': NovelStatus.COMPLETED,
+  '휴재': NovelStatus.HIATUS,
+};
 
 export function InfiniteNovelList({ 
   genre, 
@@ -29,66 +41,90 @@ export function InfiniteNovelList({
   sort = 'popular',
   searchQuery 
 }: InfiniteNovelListProps) {
-  const [loadedCount, setLoadedCount] = useState(ITEMS_PER_PAGE);
+  
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError
+  } = useInfiniteQuery({
+    queryKey: ['novels', genre, status, category, sort, searchQuery],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params: NovelListParams = {
+        page: pageParam,
+        limit: 12,
+      };
 
-  const filteredNovels = useMemo(() => {
-    let result = [...NOVELS_LIST];
-
-    if (genre && genre !== '전체') {
-      result = result.filter(novel => novel.genre === genre);
-    }
-
-    if (status && status !== '전체') {
-      result = result.filter(novel => novel.status === status);
-    }
-
-    if (category && category !== '전체') {
-      switch (category) {
-        case '멤버십':
-          result = result.filter(novel => novel.isPremium);
-          break;
-        case '독점':
-          result = result.filter(novel => novel.isExclusive);
-          break;
-        case '신작':
-          result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-          break;
-        case '완결':
-          result = result.filter(novel => novel.status === '완결');
-          break;
+      if (genre && genre !== '전체') {
+        const mappedGenre = genreMap[genre];
+        if (mappedGenre) params.genre = mappedGenre;
       }
-    }
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(novel => 
-        novel.title.toLowerCase().includes(query) ||
-        novel.author.toLowerCase().includes(query)
-      );
-    }
+      if (status && status !== '전체') {
+        const mappedStatus = statusMap[status];
+        if (mappedStatus) params.status = mappedStatus;
+      }
 
-    if (sort === 'popular') {
-      result.sort((a, b) => parseViews(b.views) - parseViews(a.views));
-    } else if (sort === 'latest') {
-      result.sort((a, b) => 
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
-    }
+      if (category && category !== '전체') {
+        switch (category) {
+          case '멤버십':
+            params.is_premium = true;
+            break;
+          case '독점':
+            params.is_exclusive = true;
+            break;
+          case '완결':
+            params.status = NovelStatus.COMPLETED;
+            break;
+          case '신작':
+            break;
+        }
+      }
 
-    return result;
-  }, [genre, status, sort, searchQuery]);
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
 
-  const displayedNovels = useMemo(() => {
-    return filteredNovels.slice(0, loadedCount);
-  }, [filteredNovels, loadedCount]);
+      if (category === '신작') {
+        params.sort = 'created_at';
+        params.order = 'desc';
+      } else if (sort === 'popular') {
+        params.sort = 'total_view_count';
+        params.order = 'desc';
+      } else if (sort === 'latest') {
+        params.sort = 'created_at';
+        params.order = 'desc';
+      }
 
-  const loadMore = useCallback(() => {
-    if (loadedCount < filteredNovels.length) {
-      setLoadedCount(prev => Math.min(prev + ITEMS_PER_PAGE, filteredNovels.length));
-    }
-  }, [loadedCount, filteredNovels.length]);
+      return getNovels(params);
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.hasNext ? lastPage.page + 1 : undefined,
+  });
 
-  if (filteredNovels.length === 0) {
+  const novels = useMemo(() => {
+    return data?.pages.flatMap((page) => page.results) || [];
+  }, [data]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center py-20 text-red-500">
+        데이터를 불러오는 중 오류가 발생했습니다.
+      </div>
+    );
+  }
+
+  if (novels.length === 0) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
         표시할 작품이 없습니다
@@ -99,10 +135,14 @@ export function InfiniteNovelList({
   return (
     <Virtuoso
       useWindowScroll
-      data={displayedNovels}
-      endReached={loadMore}
+      data={novels}
+      endReached={() => {
+        if (hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      }}
       overscan={200}
-      itemContent={(index, novel) => (
+      itemContent={(_, novel) => (
         <div className="mb-4">
           <NovelpiaCard novel={novel} />
         </div>
@@ -116,6 +156,13 @@ export function InfiniteNovelList({
         Item: ({ children, ...props }) => (
           <div {...props}>{children}</div>
         ),
+        Footer: () => (
+          isFetchingNextPage ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : null
+        )
       }}
     />
   );

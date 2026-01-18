@@ -1,23 +1,25 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
+import { getNovels } from '@/lib/api/novels.api';
 import { RankingList } from './ranking-list';
-import { RANKING_NOVELS, type RankingNovel } from '@/lib/mock-data';
-import { parseViews } from '@/lib/utils';
-
-function sortByViews(novels: RankingNovel[]): RankingNovel[] {
-  return [...novels].sort((a, b) => parseViews(b.views) - parseViews(a.views));
-}
-
-function sortByRating(novels: RankingNovel[]): RankingNovel[] {
-  return [...novels].sort((a, b) => b.rating - a.rating);
-}
 
 export function RankingTabs() {
-  const dailyRanking = useMemo(() => sortByViews(RANKING_NOVELS), []);
-  const weeklyRanking = useMemo(() => sortByRating(RANKING_NOVELS), []);
-  const monthlyRanking = useMemo(() => sortByViews(RANKING_NOVELS).reverse(), []);
+  const { data: dailyData, isLoading: isDailyLoading } = useQuery({
+    queryKey: ['novels', 'ranking', 'daily'],
+    queryFn: () => getNovels({ sort: 'total_view_count', limit: 10 }),
+  });
+
+  const { data: weeklyData, isLoading: isWeeklyLoading } = useQuery({
+    queryKey: ['novels', 'ranking', 'weekly'],
+    queryFn: () => getNovels({ sort: 'total_like_count', limit: 10 }),
+  });
+
+  const { data: monthlyData, isLoading: isMonthlyLoading } = useQuery({
+    queryKey: ['novels', 'ranking', 'monthly'],
+    queryFn: () => getNovels({ sort: 'total_view_count', limit: 10 }),
+  });
 
   return (
     <Tabs defaultValue="daily" className="w-full">
@@ -27,14 +29,15 @@ export function RankingTabs() {
         <TabsTrigger value="monthly">월간</TabsTrigger>
       </TabsList>
       <TabsContent value="daily" className="mt-6">
-        <RankingList novels={dailyRanking} />
+        <RankingList novels={dailyData?.results || []} isLoading={isDailyLoading} />
       </TabsContent>
       <TabsContent value="weekly" className="mt-6">
-        <RankingList novels={weeklyRanking} />
+        <RankingList novels={weeklyData?.results || []} isLoading={isWeeklyLoading} />
       </TabsContent>
       <TabsContent value="monthly" className="mt-6">
-        <RankingList novels={monthlyRanking} />
+        <RankingList novels={monthlyData?.results || []} isLoading={isMonthlyLoading} />
       </TabsContent>
     </Tabs>
   );
 }
+

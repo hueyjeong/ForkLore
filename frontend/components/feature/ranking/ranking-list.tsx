@@ -1,9 +1,10 @@
 import { cn } from '@/lib/utils';
-import type { RankingNovel } from '@/lib/mock-data';
+import type { Novel } from '@/types/novels.types';
 import { NovelpiaCard } from '@/components/feature/novels/novelpia-card';
 
 interface RankingListProps {
-  novels: RankingNovel[];
+  novels: Novel[];
+  isLoading?: boolean;
 }
 
 function getRankBadgeClass(rank: number): string {
@@ -13,7 +14,22 @@ function getRankBadgeClass(rank: number): string {
   return 'text-muted-foreground';
 }
 
-export function RankingList({ novels }: RankingListProps) {
+export function RankingList({ novels, isLoading }: RankingListProps) {
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center font-serif text-xl font-bold text-muted-foreground/20">
+              {i + 1}
+            </div>
+            <div className="flex-1 h-32 rounded-lg bg-muted/50 animate-pulse" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (novels.length === 0) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">

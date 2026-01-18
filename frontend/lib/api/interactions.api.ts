@@ -7,9 +7,23 @@ import {
   LikeToggleResponse,
   ReportCreate,
   Report,
+  Purchase,
 } from '@/types/interactions.types';
 
 const BASE_URL = '/chapters';
+
+/**
+ * Get list of purchases
+ */
+export async function getPurchases(
+  params?: PageParams
+): Promise<PaginatedResponse<Purchase>> {
+  const response = await apiClient.get<ApiResponse<PaginatedResponse<Purchase>>>(
+    '/purchases',
+    { params }
+  );
+  return response.data.data;
+}
 
 /**
  * Get list of comments for a chapter

@@ -20,6 +20,7 @@ export enum AccessType {
 // =============================================================================
 
 export interface ChapterNav {
+  id: number;
   chapter_number: number;
   title: string;
 }

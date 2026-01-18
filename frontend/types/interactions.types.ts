@@ -165,3 +165,14 @@ export interface ReportAction {
   action: 'resolve' | 'reject'
   resolution_note?: string
 }
+
+// =============================================================================
+// Purchase Types
+// =============================================================================
+
+export interface Purchase {
+  id: number
+  chapter: ChapterBrief
+  cost: number
+  purchased_at: string
+}

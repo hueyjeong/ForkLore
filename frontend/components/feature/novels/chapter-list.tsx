@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getBranches } from '@/lib/api/branches.api';
@@ -9,38 +11,41 @@ import { Chapter } from '@/types/chapters.types';
 import { AlertCircle } from 'lucide-react';
 
 interface ChapterListProps {
-  novelId: number;
+  novelId?: number;
+  branchId?: number;
 }
 
-export function ChapterList({ novelId }: ChapterListProps) {
-  // 1. Fetch Branches to find the Main Branch
+export function ChapterList({ novelId, branchId }: ChapterListProps) {
+  // 1. Fetch Branches to find the Main Branch (only if branchId is not provided)
   const { 
     data: branchesData, 
     isLoading: isBranchesLoading, 
     error: branchesError 
   } = useQuery({
     queryKey: ['branches', novelId],
-    queryFn: () => getBranches(novelId),
+    queryFn: () => getBranches(novelId!),
+    enabled: !!novelId && !branchId,
   });
 
-  // 2. Find Main Branch
-  const mainBranch = useMemo(() => {
-    return branchesData?.results.find((b: Branch) => b.is_main);
-  }, [branchesData]);
+  // 2. Find Main Branch or use provided branchId
+  const targetBranchId = useMemo(() => {
+    if (branchId) return branchId;
+    return branchesData?.results.find((b: Branch) => b.is_main)?.id;
+  }, [branchesData, branchId]);
 
-  // 3. Fetch Chapters for Main Branch (enabled only if mainBranch exists)
+  // 3. Fetch Chapters for Target Branch (enabled only if targetBranchId exists)
   const { 
     data: chaptersData, 
     isLoading: isChaptersLoading, 
     error: chaptersError 
   } = useQuery({
-    queryKey: ['chapters', mainBranch?.id],
-    queryFn: () => getChapters(mainBranch!.id),
-    enabled: !!mainBranch,
+    queryKey: ['chapters', targetBranchId],
+    queryFn: () => getChapters(targetBranchId!),
+    enabled: !!targetBranchId,
   });
 
   // Loading State
-  if (isBranchesLoading || (mainBranch && isChaptersLoading)) {
+  if ((!branchId && isBranchesLoading) || (targetBranchId && isChaptersLoading)) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -66,8 +71,8 @@ export function ChapterList({ novelId }: ChapterListProps) {
     );
   }
 
-  // No Main Branch Found
-  if (branchesData && !mainBranch) {
+  // No Main Branch Found (Only check if we were looking for it)
+  if (!branchId && branchesData && !targetBranchId) {
      return (
       <div className="p-4 border rounded-lg bg-muted flex items-center gap-2">
         <AlertCircle className="h-4 w-4" />

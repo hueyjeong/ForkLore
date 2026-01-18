@@ -1,5 +1,7 @@
-import environ
+from datetime import timedelta
 from pathlib import Path
+
+import environ
 
 env = environ.Env(
     DEBUG=(bool, False),
@@ -164,8 +166,6 @@ REST_FRAMEWORK = {
     },
 }
 
-from datetime import timedelta
-
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -195,3 +195,5 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
 GEMINI_EMBEDDING_MODEL = "models/text-embedding-001"
 GEMINI_EMBEDDING_DIMENSION = 3072
+
+TOSS_PAYMENTS_SECRET_KEY = env("TOSS_PAYMENTS_SECRET_KEY", default=None)

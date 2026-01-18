@@ -1,5 +1,5 @@
 ---
-name: Commit Push PR
+name: commit-push-pr
 description: Git 커밋, Push, PR 생성 워크플로우를 표준화하는 스킬
 allowed-tools:
   - Bash

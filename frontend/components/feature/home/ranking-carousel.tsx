@@ -37,7 +37,7 @@ export function RankingCarousel() {
               <div className="overflow-hidden rounded-xl shadow-md transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
                 <div className="relative aspect-[2/3] w-full">
                   <Image
-                    src={novel.cover}
+                    src={novel.coverUrl}
                     alt={novel.title}
                     fill
                     className="object-cover"

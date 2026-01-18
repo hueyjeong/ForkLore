@@ -28,51 +28,20 @@ function getRelativeTime(dateString: string): string {
   return `${diffInDays}일전`;
 }
 
+import { getAgeRatingLabel, getGenreLabel } from '@/lib/utils/mappings';
+
+// ...
+
 export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
   const relativeTime = getRelativeTime(novel.updated_at);
+  const tags = [getGenreLabel(novel.genre), getAgeRatingLabel(novel.age_rating)];
 
   return (
     <Link 
       href={`/novels/${novel.id}`}
-      className={cn('flex gap-4 p-4 border rounded-lg bg-card text-card-foreground shadow-sm hover:border-primary/50 transition-colors', className)}
-    >
-      <div className="relative w-24 sm:w-32 aspect-[3/4] flex-shrink-0 overflow-hidden rounded-md border">
-        <Image
-          src={novel.cover_image_url || '/placeholder.png'}
-          alt={novel.title}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 96px, 128px"
-        />
-      </div>
-
-      <div className="flex flex-col flex-1 min-w-0 py-0.5">
-        <div className="flex items-start justify-between gap-2 mb-1.5">
-          <div className="flex flex-wrap items-center gap-2 overflow-hidden min-h-6">
-            <NovelBadge isPremium={novel.is_premium} isExclusive={novel.is_exclusive} />
-            <h3 className="font-bold text-base sm:text-lg truncate" title={novel.title}>
-              {novel.title}
-            </h3>
-          </div>
-          <span className="text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
-            {novel.author.nickname}
-          </span>
-        </div>
-
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-3 h-10">
-          {novel.description}
-        </p>
-
-        <StatsRow
-          views={novel.total_view_count}
-          episodeCount={novel.total_chapter_count}
-          recommendCount={novel.total_like_count}
-          className="mb-3"
-        />
-
-        <HashtagPills tags={[novel.genre, novel.age_rating]} maxDisplay={5} />
-
-        <div className="mt-auto flex justify-end">
+// ...
+        <HashtagPills tags={tags} maxDisplay={5} />
+// ...
           <span className="text-xs text-muted-foreground font-medium">
             {relativeTime} UP
           </span>

@@ -3,13 +3,46 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronRight, Trophy, Star } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { ChevronRight, Trophy, Eye, ThumbsUp } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { RANKING_NOVELS } from '@/lib/mock-data';
+import { useQuery } from '@tanstack/react-query';
+import { getNovels } from '@/lib/api/novels.api';
+import { Novel } from '@/types/novels.types';
 
 export function RankingCarousel() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['novels', 'ranking'],
+    queryFn: () => getNovels({ sort: 'total_view_count', limit: 10 }),
+  });
+
+  const novels = data?.results || [];
+
+  if (isLoading) {
+    return (
+      <div className="w-full space-y-4 py-8">
+        <div className="flex items-center justify-between px-4">
+          <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="flex space-x-4 overflow-hidden px-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="w-[160px] md:w-[200px] shrink-0 space-y-3">
+              <div className="aspect-[2/3] w-full animate-pulse rounded-xl bg-muted" />
+              <div className="space-y-2">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return null;
+  }
+
   return (
     <div className="w-full space-y-4 py-8">
       <div className="flex items-center justify-between px-4">
@@ -24,7 +57,7 @@ export function RankingCarousel() {
 
       <ScrollArea className="w-full whitespace-nowrap px-4">
         <div className="flex w-max space-x-4 pb-4">
-          {RANKING_NOVELS.map((novel, index) => (
+          {novels.map((novel: Novel, index: number) => (
             <Link key={novel.id} href={`/novels/${novel.id}`} className="group relative block w-[160px] md:w-[200px]">
               {/* Rank Badge */}
               <div className="absolute -left-2 -top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-background font-bold shadow-lg ring-2 ring-primary/20">
@@ -35,13 +68,19 @@ export function RankingCarousel() {
 
               {/* Cover */}
               <div className="overflow-hidden rounded-xl shadow-md transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
-                <div className="relative aspect-[2/3] w-full">
-                  <Image
-                    src={novel.coverUrl}
-                    alt={novel.title}
-                    fill
-                    className="object-cover"
-                  />
+                <div className="relative aspect-[2/3] w-full bg-muted">
+                  {novel.cover_image_url ? (
+                    <Image
+                      src={novel.cover_image_url}
+                      alt={novel.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                      No Image
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
               </div>
@@ -51,10 +90,14 @@ export function RankingCarousel() {
                 <h3 className="line-clamp-2 text-base font-semibold leading-tight group-hover:text-primary transition-colors">
                   {novel.title}
                 </h3>
-                <p className="text-xs text-muted-foreground">{novel.author}</p>
+                <p className="text-xs text-muted-foreground">{novel.author.nickname}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>👁️ {novel.views}</span>
-                  <span className="flex items-center text-yellow-500">★ {novel.rating}</span>
+                  <span className="flex items-center gap-1">
+                    <Eye className="h-3 w-3" /> {novel.total_view_count.toLocaleString()}
+                  </span>
+                  <span className="flex items-center gap-1 text-yellow-500">
+                    <ThumbsUp className="h-3 w-3" /> {novel.total_like_count.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </Link>

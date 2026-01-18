@@ -1,13 +1,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Novel, RankingNovel } from '@/lib/types';
+import { Novel } from '@/types/novels.types';
 import { NovelBadge } from './novel-badge';
 import { StatsRow } from './stats-row';
 import { HashtagPills } from './hashtag-pills';
-import { cn, parseViews } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { getAgeRatingLabel, getGenreLabel } from '@/lib/utils/mappings';
 
 interface NovelpiaCardProps {
-  novel: Novel | RankingNovel;
+  novel: Novel;
   className?: string;
 }
 
@@ -29,8 +30,8 @@ function getRelativeTime(dateString: string): string {
 }
 
 export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
-  const relativeTime = getRelativeTime(novel.updatedAt);
-  const views = parseViews(novel.views);
+  const relativeTime = getRelativeTime(novel.updated_at);
+  const tags = [getGenreLabel(novel.genre), getAgeRatingLabel(novel.age_rating)];
 
   return (
     <Link 
@@ -39,7 +40,7 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
     >
       <div className="relative w-24 sm:w-32 aspect-[3/4] flex-shrink-0 overflow-hidden rounded-md border">
         <Image
-          src={novel.coverUrl}
+          src={novel.cover_image_url || '/placeholder.png'}
           alt={novel.title}
           fill
           className="object-cover"
@@ -50,13 +51,13 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
       <div className="flex flex-col flex-1 min-w-0 py-0.5">
         <div className="flex items-start justify-between gap-2 mb-1.5">
           <div className="flex flex-wrap items-center gap-2 overflow-hidden min-h-6">
-            <NovelBadge isPremium={novel.isPremium} isExclusive={novel.isExclusive} />
+            <NovelBadge isPremium={novel.is_premium} isExclusive={novel.is_exclusive} />
             <h3 className="font-bold text-base sm:text-lg truncate" title={novel.title}>
               {novel.title}
             </h3>
           </div>
           <span className="text-sm text-muted-foreground whitespace-nowrap flex-shrink-0">
-            {novel.author}
+            {novel.author.nickname}
           </span>
         </div>
 
@@ -65,14 +66,13 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
         </p>
 
         <StatsRow
-          views={views}
-          episodeCount={novel.episodeCount}
-          recommendCount={novel.recommendCount}
-          rating={novel.rating}
+          views={novel.total_view_count}
+          episodeCount={novel.total_chapter_count}
+          recommendCount={novel.total_like_count}
           className="mb-3"
         />
 
-        <HashtagPills tags={novel.tags} maxDisplay={5} />
+        <HashtagPills tags={tags} maxDisplay={5} />
 
         <div className="mt-auto flex justify-end">
           <span className="text-xs text-muted-foreground font-medium">

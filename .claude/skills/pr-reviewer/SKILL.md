@@ -1,5 +1,5 @@
 ---
-name: PR Reviewer
+name: pr-reviewer
 description: 코드 리뷰 체크리스트를 적용하는 PR 검토 스킬
 allowed-tools:
   - Read

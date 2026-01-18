@@ -41,11 +41,11 @@
 | 공통 에러 핸들링 | ✅ 완료 | API 래퍼 + 토큰 관리 유틸리티 |
 
 **수락 확인 기준**:
-- [ ] vitest.config.ts 존재
-- [ ] playwright.config.ts 존재
-- [ ] 테스트 유틸리 파일 생성
-- [ ] 환경 변수 설정 완료
-- [ ] 공통 에러 핸들링 구현
+- [x] vitest.config.ts 존재
+- [x] playwright.config.ts 존재
+- [x] 테스트 유틸리 파일 생성
+- [x] 환경 변수 설정 완료
+- [x] 공통 에러 핸들링 구현
 
 ---
 

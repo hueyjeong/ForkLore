@@ -47,8 +47,6 @@ class Novel(SoftDeleteModel):
     )
 
     allow_branching = models.BooleanField("브랜치 허용", default=True)
-    is_exclusive = models.BooleanField("독점작", default=False)
-    is_premium = models.BooleanField("프리미엄", default=False)
 
     total_view_count = models.BigIntegerField("총 조회수", default=0)
     total_like_count = models.BigIntegerField("총 좋아요", default=0)

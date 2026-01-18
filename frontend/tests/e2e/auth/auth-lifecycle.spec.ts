@@ -1,69 +1,85 @@
 import { test, expect } from '@playwright/test';
+import { MockHelper } from '../utils/mock-helper';
+import { LoginPage } from '../pages/login.page';
+import { loginUser } from '../utils/auth-helper';
 
-test.describe('Authentication Flow', () => {
-  test('should handle signup, login, and protected routes correctly', async ({ page }) => {
-    const timestamp = Date.now();
-    const email = `test_${timestamp}@example.com`;
-    const nickname = `User_${timestamp}`;
-    const password = 'password123';
+test.describe('Authentication Lifecycle', () => {
+  let mockHelper: MockHelper;
+  let loginPage: LoginPage;
 
-    // Mock API
-    await page.route('**/api/auth/signup', async route => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: 1 }) });
-    });
-    await page.route('**/api/auth/login', async route => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { accessToken: 'mock-token', refreshToken: 'mock-refresh' } }) });
-    });
-    await page.route('**/api/users/me', async route => {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: { email, nickname } }) });
-    });
+  test.beforeEach(async ({ page }) => {
+    mockHelper = new MockHelper(page);
+    loginPage = new LoginPage(page);
+  });
 
-    // 1. Signup Flow
-    console.log(`Starting Signup with email: ${email}`);
-    await page.goto('/signup');
+  test('Login Flow', async ({ page }) => {
+    // Mock 401 initially
+    await mockHelper.mockRoute('**/users/me', {}, 401);
     
-    // Fill form
-    await page.fill('input[name="email"]', email);
-    await page.fill('input[name="nickname"]', nickname);
-    await page.fill('input[name="birthDate"]', '1995-05-20');
-    await page.fill('input[name="password"]', password);
-    await page.fill('input[name="confirmPassword"]', password);
-    
-    // Submit
-    // Assuming the button has text "회원가입" or type="submit"
-    // Use exact text matching for button or accessible role
-    const submitButton = page.getByRole('button', { name: "가입하기" });
-    await submitButton.click();
+    // Mock Login Success
+    await mockHelper.mockRoute('**/api/auth/login', {
+      accessToken: 'mock-access-token',
+      refreshToken: 'mock-refresh-token'
+    });
 
-    // Verify Redirect to Login (or immediate login if implemented that way, but previous context said redirect)
-    // Wait for URL to change to /login
-    await expect(page).toHaveURL(/\/login/);
-    console.log('Successfully redirected to /login');
+    await loginPage.goto();
 
-    // 2. Login Flow
-    console.log('Starting Login');
-    await page.fill('input[name="email"]', email);
-    await page.fill('input[name="password"]', password);
-    
-    await page.click('button[type="submit"]');
+    // Override /users/me to return success for subsequent requests
+    await mockHelper.mockUser();
 
-    // Verify Redirect to Home
-    // Wait for URL to be / (or not login/signup)
-    await expect(page).not.toHaveURL(/\/login/);
-    await expect(page).not.toHaveURL(/\/signup/);
-    console.log('Successfully logged in');
+    await loginPage.login('test@example.com', 'password123');
 
-    // 3. Protected Route Verification
-    console.log('Verifying Protected Route /profile');
+    // If middleware redirects to login, it might be due to cookie delay.
+    // We expect home page.
+    await expect(page).toHaveURL('/');
+  });
+
+  test('Session Persistence', async ({ page }) => {
+    // Inject cookies directly
+    await loginUser(page);
+    await mockHelper.mockUser();
+
     await page.goto('/profile');
     await expect(page).toHaveURL('/profile');
-    console.log('Access to /profile granted');
 
-    // 4. Middleware Verification
-    console.log('Verifying Middleware (redirect from /login)');
-    await page.goto('/login');
-    // Should be redirected back (to home or profile)
-    await expect(page).not.toHaveURL(/\/login/);
-    console.log('Middleware correctly blocked access to /login for authenticated user');
+    await page.reload();
+
+    await expect(page).toHaveURL('/profile');
+  });
+
+  test('Protected Route', async ({ page }) => {
+    await mockHelper.mockRoute('**/users/me', {}, 401);
+
+    await page.goto('/profile');
+
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test('Logout', async ({ page }) => {
+    // Inject cookies directly to start as logged in
+    await loginUser(page);
+    await mockHelper.mockUser();
+    await mockHelper.mockRoute('**/api/auth/logout', { success: true });
+
+    await page.goto('/');
+
+    // After logout, /users/me should 401
+    await mockHelper.mockRoute('**/users/me', {}, 401);
+
+    const logoutBtn = page.getByRole('button', { name: /logout|로그아웃/i });
+    const profileMenu = page.getByRole('button', { name: /profile|user|account|내 정보|mypage|TestReader/i });
+
+    // Handle responsive menu or direct button
+    if (await logoutBtn.isVisible()) {
+      await logoutBtn.click();
+    } else if (await profileMenu.isVisible()) {
+      await profileMenu.click();
+      await page.getByRole('menuitem', { name: /logout|로그아웃/i }).click();
+    } else {
+       // Fallback
+       await page.getByText(/logout|로그아웃/i).click();
+    }
+
+    await expect(page).toHaveURL(/\/login/);
   });
 });

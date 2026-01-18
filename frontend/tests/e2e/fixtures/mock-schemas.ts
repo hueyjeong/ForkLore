@@ -102,3 +102,38 @@ export type MockUser = z.infer<typeof UserSchema>;
 export type MockNovel = z.infer<typeof NovelSchema>;
 export type MockChapter = z.infer<typeof ChapterSchema>;
 export type MockSubscription = z.infer<typeof SubscriptionSchema>;
+
+// Wiki Schemas (from wiki.types.ts)
+export const WikiTagSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  color: z.string(),
+  icon: z.string(),
+  description: z.string(),
+  display_order: z.number(),
+  created_at: z.string(),
+});
+
+export const WikiSnapshotSchema = z.object({
+  id: z.number(),
+  content: z.string(),
+  valid_from_chapter: z.number(),
+  contributor_type: z.enum(['USER', 'AI']),
+  created_at: z.string(),
+});
+
+export const WikiEntrySchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  image_url: z.string(),
+  first_appearance: z.number().nullable(),
+  hidden_note: z.string(),
+  ai_metadata: z.record(z.unknown()).nullable(),
+  tags: z.array(WikiTagSchema),
+  snapshots: z.array(WikiSnapshotSchema),
+  snapshot: WikiSnapshotSchema.nullable(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+
+export type MockWikiEntry = z.infer<typeof WikiEntrySchema>;

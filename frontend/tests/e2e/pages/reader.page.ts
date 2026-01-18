@@ -69,4 +69,9 @@ export class ReaderPage {
   async expectContent(text: string | RegExp) {
     await expect(this.content).toContainText(text);
   }
+
+  async selectText(text: string) {
+    // Double click to select the word/text
+    await this.content.getByText(text).first().dblclick();
+  }
 }

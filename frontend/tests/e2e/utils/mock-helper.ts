@@ -1,7 +1,8 @@
 import { Page, Route } from '@playwright/test';
 import {
   MockUser, MockNovel, MockChapter,
-  MockSubscription
+  MockSubscription,
+  MockWikiEntry
 } from '../fixtures/mock-schemas';
 
 interface ApiResponse<T> {
@@ -160,5 +161,21 @@ export class MockHelper {
       hasPrev: false,
     };
     await this.mockRoute(new RegExp(`/branches/${branchId}/chapters`), response);
+  }
+
+  /**
+   * Mocks wikis list for a branch
+   */
+  async mockWikiList(branchId: number | string, wikis: MockWikiEntry[]) {
+    const response: PaginatedResponse<MockWikiEntry> = {
+      results: wikis,
+      total: wikis.length,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
+    };
+    await this.mockRoute(new RegExp(`/branches/${branchId}/wikis`), response);
   }
 }

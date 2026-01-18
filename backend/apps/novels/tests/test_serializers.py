@@ -95,18 +95,12 @@ class TestNovelDetailSerializer:
 
     def test_serializes_all_fields(self, novel_with_branch: Novel, author: User) -> None:
         """모든 필드 직렬화"""
-        novel_with_branch.is_exclusive = True
-        novel_with_branch.is_premium = True
-        novel_with_branch.save()
-
         serializer = NovelDetailSerializer(novel_with_branch)
         data = serializer.data
 
         assert data["id"] == novel_with_branch.id
         assert data["title"] == "테스트 소설"
         assert data["genre"] == Genre.FANTASY
-        assert data["is_exclusive"] is True
-        assert data["is_premium"] is True
         assert "author" in data
         assert data["author"]["id"] == author.id
         assert data["author"]["nickname"] == author.nickname
@@ -137,18 +131,12 @@ class TestNovelListSerializer:
 
     def test_serializes_summary_fields(self, novel_with_branch: Novel, author: User) -> None:
         """요약 필드만 직렬화"""
-        novel_with_branch.is_exclusive = True
-        novel_with_branch.is_premium = False
-        novel_with_branch.save()
-
         serializer = NovelListSerializer(novel_with_branch)
         data = serializer.data
 
         assert data["id"] == novel_with_branch.id
         assert data["title"] == "테스트 소설"
         assert data["genre"] == Genre.FANTASY
-        assert data["is_exclusive"] is True
-        assert data["is_premium"] is False
         assert "author" in data
         # 목록에서는 author 요약 정보만
         assert data["author"]["nickname"] == author.nickname

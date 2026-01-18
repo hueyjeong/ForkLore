@@ -1,5 +1,5 @@
 ---
-name: api-pattern
+name: API Pattern
 description: ForkLore API 규칙을 검증하고 적용하는 스킬
 allowed-tools:
   - Read

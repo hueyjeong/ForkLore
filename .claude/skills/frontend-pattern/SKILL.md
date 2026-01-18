@@ -1,5 +1,5 @@
 ---
-name: frontend-pattern
+name: Frontend Pattern
 description: React 19 및 Next.js 16 패턴을 적용하는 스킬
 allowed-tools:
   - Read

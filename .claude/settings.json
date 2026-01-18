@@ -18,12 +18,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "case \"$TOOL_INPUT\" in *.py) cd \"$CLAUDE_PROJECT_DIR/backend\" && poetry run ruff check --fix \"$TOOL_INPUT\" 2>/dev/null || true ;; esac",
+            "command": "if [[ \"$TOOL_INPUT\" =~ \\.py$ ]]; then cd \"$CLAUDE_PROJECT_DIR/backend\" && poetry run ruff check --fix \"$TOOL_INPUT\" 2>/dev/null || true; fi",
             "timeout": 10
           },
           {
-            "type": "command",
-            "command": "case \"$TOOL_INPUT\" in *.ts|*.tsx) cd \"$CLAUDE_PROJECT_DIR/frontend\" && pnpm eslint --fix \"$TOOL_INPUT\" 2>/dev/null || true ;; esac",
+            "type": "command", 
+            "command": "if [[ \"$TOOL_INPUT\" =~ \\.(ts|tsx)$ ]]; then cd \"$CLAUDE_PROJECT_DIR/frontend\" && pnpm eslint --fix \"$TOOL_INPUT\" 2>/dev/null || true; fi",
             "timeout": 10
           }
         ]

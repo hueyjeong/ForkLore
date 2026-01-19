@@ -109,6 +109,9 @@ class ChapterViewSet(viewsets.ViewSet):
 
     def list(self, request: Request, branch_pk: int | None = None) -> Response:
         """List chapters for a branch."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         service = ChapterService()
 
         # Check if user is branch author (can see drafts)
@@ -130,7 +133,13 @@ class ChapterViewSet(viewsets.ViewSet):
         self, request: Request, branch_pk: int | None = None, pk: int | None = None
     ) -> Response:
         """Get chapter detail by chapter_number."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         service = ChapterService()
+
+        if pk is None:
+            raise ValidationError("잘못된 회차 번호입니다.")
 
         try:
             chapter_number = int(pk)
@@ -196,6 +205,9 @@ class ChapterViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="draft")
     def draft(self, request: Request, branch_pk: int | None = None) -> Response:
         """Auto-save chapter draft."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         # Check if user is branch author
         try:
             branch = Branch.objects.get(pk=branch_pk)
@@ -379,19 +391,22 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         if not chapter:
             raise NotFound("회차를 찾을 수 없습니다.")
 
+        # pk is validated by _get_chapter returning a valid chapter
+        chapter_id = chapter.id
+
         if request.method == "POST":
             serializer = BookmarkCreateSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
 
             bookmark = BookmarkService.add_bookmark(
                 user=request.user,
-                chapter_id=pk,
+                chapter_id=chapter_id,
                 scroll_position=serializer.validated_data.get("scroll_position", 0),
                 note=serializer.validated_data.get("note", ""),
             )
             return Response(BookmarkSerializer(bookmark).data, status=status.HTTP_201_CREATED)
         else:  # DELETE
-            BookmarkService.remove_bookmark(user=request.user, chapter_id=pk)
+            BookmarkService.remove_bookmark(user=request.user, chapter_id=chapter_id)
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
@@ -419,7 +434,7 @@ class ChapterDetailViewSet(viewsets.ViewSet):
 
         log = ReadingService.record_reading(
             user=request.user,
-            chapter_id=pk,
+            chapter_id=chapter.id,
             progress=float(serializer.validated_data["progress"]),
         )
         return Response(ReadingLogSerializer(log).data)
@@ -460,6 +475,9 @@ class WikiEntryViewSet(viewsets.ViewSet):
 
     def list(self, request: Request, branch_pk: int | None = None) -> Response:
         """List wiki entries for a branch."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         tag_id = request.query_params.get("tag")
         tag_id = int(tag_id) if tag_id else None
 
@@ -478,6 +496,9 @@ class WikiEntryViewSet(viewsets.ViewSet):
 
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new wiki entry."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         serializer = WikiEntryCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -535,6 +556,9 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
 
     def retrieve(self, request: Request, pk: int | None = None) -> Response:
         """Get wiki detail, optionally with context-aware snapshot."""
+        if pk is None:
+            raise NotFound("위키를 찾을 수 없습니다.")
+
         chapter = request.query_params.get("chapter")
         chapter = int(chapter) if chapter else None
 
@@ -548,6 +572,9 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
 
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a wiki entry."""
+        if pk is None:
+            raise NotFound("위키를 찾을 수 없습니다.")
+
         serializer = WikiEntryUpdateSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
@@ -567,6 +594,9 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a wiki entry."""
+        if pk is None:
+            raise NotFound("위키를 찾을 수 없습니다.")
+
         try:
             WikiService.delete(wiki_id=pk, user=request.user)
         except PermissionError:
@@ -584,6 +614,9 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
     @action(detail=True, methods=["put"])
     def tags(self, request: Request, pk: int | None = None) -> Response:
         """Update wiki tags."""
+        if pk is None:
+            raise NotFound("위키를 찾을 수 없습니다.")
+
         serializer = WikiTagUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -630,12 +663,18 @@ class WikiTagViewSet(viewsets.ViewSet):
 
     def list(self, request: Request, branch_pk: int | None = None) -> Response:
         """List tag definitions for a branch."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         tags = WikiService.list_tags(branch_id=branch_pk)
         serializer = WikiTagDefinitionSerializer(tags, many=True)
         return Response(serializer.data)
 
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new tag definition."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         serializer = WikiTagDefinitionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -666,6 +705,9 @@ class WikiTagDetailViewSet(viewsets.ViewSet):
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a tag definition."""
+        if pk is None:
+            raise NotFound("태그를 찾을 수 없습니다.")
+
         try:
             WikiService.delete_tag(tag_id=pk, user=request.user)
         except PermissionError:
@@ -704,6 +746,9 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
 
     def list(self, request: Request, wiki_pk: int | None = None) -> Response:
         """List snapshots for a wiki."""
+        if wiki_pk is None:
+            raise NotFound("위키를 찾을 수 없습니다.")
+
         try:
             wiki = WikiService.retrieve(wiki_id=wiki_pk)
         except ValueError as e:
@@ -714,6 +759,9 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
 
     def create(self, request: Request, wiki_pk: int | None = None) -> Response:
         """Create a new snapshot."""
+        if wiki_pk is None:
+            raise NotFound("위키를 찾을 수 없습니다.")
+
         serializer = WikiSnapshotCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -768,6 +816,9 @@ class MapViewSet(viewsets.ViewSet):
 
     def list(self, request: Request, branch_pk: int | None = None) -> Response:
         """List maps for a branch."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         maps = MapService.list(branch_id=branch_pk)
 
         paginator = StandardPagination()
@@ -778,6 +829,9 @@ class MapViewSet(viewsets.ViewSet):
 
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
         """Create a new map."""
+        if branch_pk is None:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
         serializer = MapCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -830,6 +884,9 @@ class MapDetailViewSet(viewsets.ViewSet):
 
     def retrieve(self, request: Request, pk: int | None = None) -> Response:
         """Get map detail, optionally with context-aware snapshot."""
+        if pk is None:
+            raise NotFound("지도를 찾을 수 없습니다.")
+
         chapter = request.query_params.get("currentChapter")
         chapter = int(chapter) if chapter else None
 
@@ -843,6 +900,9 @@ class MapDetailViewSet(viewsets.ViewSet):
 
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
         """Update a map."""
+        if pk is None:
+            raise NotFound("지도를 찾을 수 없습니다.")
+
         serializer = MapUpdateSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
@@ -862,6 +922,9 @@ class MapDetailViewSet(viewsets.ViewSet):
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
         """Delete a map."""
+        if pk is None:
+            raise NotFound("지도를 찾을 수 없습니다.")
+
         try:
             MapService.delete(map_id=pk, user=request.user)
         except PermissionError:
@@ -900,6 +963,9 @@ class MapSnapshotViewSet(viewsets.ViewSet):
 
     def list(self, request: Request, map_pk: int | None = None) -> Response:
         """List snapshots for a map."""
+        if map_pk is None:
+            raise NotFound("지도를 찾을 수 없습니다.")
+
         try:
             map_obj = MapService.retrieve(map_id=map_pk)
         except ValueError as e:
@@ -910,6 +976,9 @@ class MapSnapshotViewSet(viewsets.ViewSet):
 
     def create(self, request: Request, map_pk: int | None = None) -> Response:
         """Create a new map snapshot."""
+        if map_pk is None:
+            raise NotFound("지도를 찾을 수 없습니다.")
+
         serializer = MapSnapshotCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -966,6 +1035,9 @@ class MapLayerViewSet(viewsets.ViewSet):
 
     def create(self, request: Request, snapshot_pk: int | None = None) -> Response:
         """Create a new layer."""
+        if snapshot_pk is None:
+            raise NotFound("스냅샷을 찾을 수 없습니다.")
+
         serializer = MapLayerCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -1022,6 +1094,9 @@ class MapObjectViewSet(viewsets.ViewSet):
 
     def create(self, request: Request, layer_pk: int | None = None) -> Response:
         """Create a new object."""
+        if layer_pk is None:
+            raise NotFound("레이어를 찾을 수 없습니다.")
+
         serializer = MapObjectCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

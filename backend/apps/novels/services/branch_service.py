@@ -3,6 +3,7 @@ from django.db.models import F, QuerySet
 from django.utils import timezone
 
 from apps.users.models import User
+from common.exceptions import ConflictError
 
 from ..models import (
     Branch,
@@ -88,6 +89,7 @@ class BranchService:
         parent_branch_id: int,
         author: User,
         data: dict,
+        parent_version: int | None = None,
     ) -> Branch:
         """
         Create a forked branch from a parent branch.
@@ -97,6 +99,7 @@ class BranchService:
             parent_branch_id: The parent branch's primary key
             author: The user creating the fork
             data: Dict containing branch fields (name, description, etc.)
+            parent_version: Optimistic locking version of parent branch
 
         Returns:
             Created Branch instance
@@ -104,6 +107,7 @@ class BranchService:
         Raises:
             PermissionError: If novel doesn't allow branching
             ValueError: If required fields are missing
+            ConflictError: If parent branch version mismatch
         """
         novel = Novel.objects.get(id=novel_id, deleted_at__isnull=True)
 
@@ -114,6 +118,9 @@ class BranchService:
             raise ValueError("브랜치 이름은 필수입니다.")
 
         parent_branch = Branch.objects.get(id=parent_branch_id, deleted_at__isnull=True)
+
+        if parent_version is not None and parent_branch.version != parent_version:
+            raise ConflictError("브랜치 버전이 변경되었습니다. 최신 상태를 확인해주세요.")
 
         branch = Branch.objects.create(
             novel=novel,
@@ -132,6 +139,44 @@ class BranchService:
         # Increment novel's branch_count
         Novel.objects.filter(id=novel_id).update(branch_count=F("branch_count") + 1)
 
+        return branch
+
+    @transaction.atomic
+    def update(
+        self,
+        branch_id: int,
+        author: User,
+        data: dict,
+    ) -> Branch:
+        """
+        Update branch details.
+
+        Args:
+            branch_id: The branch's primary key
+            author: The user attempting the update
+            data: Dict containing fields to update
+
+        Returns:
+            Updated Branch instance
+
+        Raises:
+            PermissionError: If user is not the owner
+        """
+        branch = Branch.objects.get(id=branch_id, deleted_at__isnull=True)
+
+        if branch.author != author:
+            raise PermissionError("브랜치 수정 권한이 없습니다.")
+
+        if "name" in data:
+            branch.name = data["name"]
+        if "description" in data:
+            branch.description = data["description"]
+        if "cover_image_url" in data:
+            branch.cover_image_url = data["cover_image_url"]
+
+        branch.version = F("version") + 1
+        branch.save()
+        branch.refresh_from_db()
         return branch
 
     @transaction.atomic
@@ -166,7 +211,9 @@ class BranchService:
 
         old_visibility = branch.visibility
         branch.visibility = visibility
+        branch.version = F("version") + 1
         branch.save()
+        branch.refresh_from_db()
 
         # Update novel's linked_branch_count if visibility changed to/from LINKED
         if old_visibility != visibility:
@@ -200,7 +247,9 @@ class BranchService:
 
         BranchVote.objects.create(user=user, branch=branch)
 
-        Branch.objects.filter(id=branch_id).update(vote_count=F("vote_count") + 1)
+        Branch.objects.filter(id=branch_id).update(
+            vote_count=F("vote_count") + 1, version=F("version") + 1
+        )
 
         return True
 
@@ -220,7 +269,7 @@ class BranchService:
 
         if deleted_count > 0:
             Branch.objects.filter(id=branch_id, vote_count__gt=0).update(
-                vote_count=F("vote_count") - 1
+                vote_count=F("vote_count") - 1, version=F("version") + 1
             )
             return True
 

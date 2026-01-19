@@ -54,6 +54,7 @@ from apps.contents.serializers import (
 )
 from apps.contents.services import ChapterService, WikiService
 from apps.novels.models import Branch
+from apps.novels.services.draft_service import DraftService
 from common.pagination import StandardPagination
 
 
@@ -174,6 +175,52 @@ class ChapterViewSet(viewsets.ViewSet):
 
         response_serializer = ChapterDetailSerializer(chapter)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        summary="초안 자동 저장",
+        description="회차 초안을 Redis에 임시 저장합니다.",
+        tags=["Chapters"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "content": {"type": "string"},
+                    "title": {"type": "string"},
+                    "chapter_id": {"type": "integer", "nullable": True},
+                },
+                "required": ["content"],
+            }
+        },
+        responses={200: {"type": "object", "properties": {"success": {"type": "boolean"}}}},
+    )
+    @action(detail=False, methods=["post"], url_path="draft")
+    def draft(self, request: Request, branch_pk: int | None = None) -> Response:
+        """Auto-save chapter draft."""
+        # Check if user is branch author
+        try:
+            branch = Branch.objects.get(pk=branch_pk)
+        except Branch.DoesNotExist:
+            raise NotFound("브랜치를 찾을 수 없습니다.")
+
+        if branch.author != request.user:
+            raise PermissionDenied("권한이 없습니다.")
+
+        # Validation
+        content = request.data.get("content")
+        if content is None:
+            raise ValidationError("Content is required.")
+
+        title = request.data.get("title", "")
+        chapter_id = request.data.get("chapter_id")
+
+        DraftService().save_draft(
+            branch_id=int(branch_pk),
+            chapter_id=chapter_id,
+            title=title,
+            content=content,
+        )
+
+        return Response({"success": True}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(

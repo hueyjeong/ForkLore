@@ -121,23 +121,29 @@ def sync_drafts_to_db() -> str:
                     continue
 
                 try:
-                    chapter = Chapter.objects.get(id=chapter_id)
+                    # Wrap each chapter update in its own transaction
+                    # This ensures partial success - if one chapter fails,
+                    # others that succeeded remain saved
+                    from django.db import transaction
 
-                    # Constraint: Only update if status is DRAFT
-                    if chapter.status != ChapterStatus.DRAFT:
-                        continue
+                    with transaction.atomic():
+                        chapter = Chapter.objects.get(id=chapter_id)
 
-                    # Check if update is needed
-                    if chapter.title != title or chapter.content != content:
-                        chapter.title = title
-                        chapter.content = content
+                        # Constraint: Only update if status is DRAFT
+                        if chapter.status != ChapterStatus.DRAFT:
+                            continue
 
-                        # Update derived fields using service logic
-                        chapter.content_html = service.convert_markdown(content)
-                        chapter.word_count = service.calculate_word_count(content)
+                        # Check if update is needed
+                        if chapter.title != title or chapter.content != content:
+                            chapter.title = title
+                            chapter.content = content
 
-                        chapter.save()
-                        updated_count += 1
+                            # Update derived fields using service logic
+                            chapter.content_html = service.convert_markdown(content)
+                            chapter.word_count = service.calculate_word_count(content)
+
+                            chapter.save()
+                            updated_count += 1
 
                 except Chapter.DoesNotExist:
                     # Silently ignore if chapter was deleted from DB

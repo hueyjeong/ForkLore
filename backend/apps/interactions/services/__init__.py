@@ -118,12 +118,20 @@ class SubscriptionService:
 
         # Determine price and process payment
         price = PLAN_PRICES.get(plan_type, 0)
+
+        # Track whether payment was successfully confirmed
+        # Only set to True AFTER confirm_payment succeeds
+        payment_confirmed = False
+
+        # Confirm payment OUTSIDE try block
+        # PaymentFailedException will propagate up without triggering cancel
         if price > 0 and payment_id and order_id:
             PaymentService().confirm_payment(
                 payment_key=payment_id,
                 order_id=order_id,
                 amount=price,
             )
+            payment_confirmed = True
 
         try:
             with transaction.atomic():
@@ -156,7 +164,9 @@ class SubscriptionService:
                         status=SubscriptionStatus.ACTIVE,
                     )
         except Exception as e:
-            if price > 0 and payment_id:
+            # Only cancel payment if it was successfully confirmed
+            # This prevents trying to cancel a payment that was never approved
+            if payment_confirmed:
                 PaymentService().cancel_payment(payment_id, "System Error: Transaction failed")
             raise e
 
@@ -912,13 +922,19 @@ class WalletService:
         if amount <= 0:
             raise ValueError("충전 금액은 0보다 커야 합니다")
 
-        # Confirm payment if details provided
+        # Track whether payment was successfully confirmed
+        # Only set to True AFTER confirm_payment succeeds
+        payment_confirmed = False
+
+        # Confirm payment if details provided (OUTSIDE try block)
+        # PaymentFailedException will propagate up without triggering cancel
         if payment_key and order_id:
             PaymentService().confirm_payment(
                 payment_key=payment_key,
                 order_id=order_id,
                 amount=amount,
             )
+            payment_confirmed = True
 
         try:
             with transaction.atomic():
@@ -953,7 +969,9 @@ class WalletService:
                     )
                     tx.save()
         except Exception as e:
-            if payment_key:
+            # Only cancel payment if it was successfully confirmed
+            # This prevents trying to cancel a payment that was never approved
+            if payment_confirmed:
                 PaymentService().cancel_payment(payment_key, "System Error: Transaction failed")
             raise e
 

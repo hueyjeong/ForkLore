@@ -10,10 +10,13 @@ Contains:
 from datetime import timedelta
 from typing import Any
 
+from django.db import transaction
 from django.db.models import QuerySet
 from django.utils import timezone
 
 from apps.contents.models import AccessType, Chapter
+from apps.interactions.constants import PLAN_PRICES
+from apps.interactions.exceptions import PaymentFailedException
 from apps.interactions.models import (
     AIUsageLog,
     PlanType,
@@ -22,6 +25,7 @@ from apps.interactions.models import (
     Subscription,
     SubscriptionStatus,
 )
+from apps.interactions.services.payment_service import PaymentService
 from apps.users.models import User
 
 
@@ -83,12 +87,14 @@ class AccessService:
 class SubscriptionService:
     """Service for managing subscriptions."""
 
+    @transaction.atomic
     def subscribe(
         self,
         user: User,
         plan_type: str = PlanType.BASIC,
         days: int = 30,
         payment_id: str = "",
+        order_id: str = "",
     ) -> Subscription:
         """
         Create or extend a subscription.
@@ -101,18 +107,35 @@ class SubscriptionService:
             plan_type: BASIC or PREMIUM
             days: Number of days to subscribe
             payment_id: Payment reference ID
+            order_id: Order ID for payment
 
         Returns:
             Subscription instance
+
+        Raises:
+            PaymentFailedException: If payment fails
         """
         now = timezone.now()
 
+        # Determine price and process payment
+        price = PLAN_PRICES.get(plan_type, 0)
+        if price > 0 and payment_id and order_id:
+            PaymentService().confirm_payment(
+                payment_key=payment_id,
+                order_id=order_id,
+                amount=price,
+            )
+
         # Check for existing active subscription
-        existing = Subscription.objects.filter(
-            user=user,
-            status=SubscriptionStatus.ACTIVE,
-            expires_at__gt=now,
-        ).first()
+        existing = (
+            Subscription.objects.filter(
+                user=user,
+                status=SubscriptionStatus.ACTIVE,
+                expires_at__gt=now,
+            )
+            .select_for_update()
+            .first()
+        )
 
         if existing:
             # Extend existing subscription
@@ -853,16 +876,21 @@ class WalletService:
     def charge(
         user: User,
         amount: int,
+        payment_key: str = "",
+        order_id: str = "",
         description: str = "",
     ) -> dict:
         """
         Charge coins to user's wallet.
 
         Creates wallet if it doesn't exist.
+        Verifies payment if payment_key and order_id are provided.
 
         Args:
             user instance
             amount: Amount to charge (must be positive)
+            payment_key: Payment reference key (optional)
+            order_id: Order ID (optional)
             description: Optional description
 
         Returns:
@@ -870,6 +898,7 @@ class WalletService:
 
         Raises:
             ValueError: If amount is not positive
+            PaymentFailedException: If payment confirmation fails
         """
         from django.db import transaction
 
@@ -877,6 +906,14 @@ class WalletService:
 
         if amount <= 0:
             raise ValueError("충전 금액은 0보다 커야 합니다")
+
+        # Confirm payment if details provided
+        if payment_key and order_id:
+            PaymentService().confirm_payment(
+                payment_key=payment_key,
+                order_id=order_id,
+                amount=amount,
+            )
 
         with transaction.atomic():
             # Get or create wallet with lock
@@ -896,7 +933,19 @@ class WalletService:
                 amount=amount,
                 balance_after=wallet.balance,
                 description=description,
+                reference_type="payment" if payment_key else "",
+                reference_id=None,  # storing key in description or separate field might be better but strictly following schema
             )
+
+            # If we want to store payment info, we might need fields in CoinTransaction
+            # For now, let's append to description if provided
+            if payment_key:
+                tx.description = (
+                    f"{description} (Payment: {payment_key})"
+                    if description
+                    else f"Payment: {payment_key}"
+                )
+                tx.save()
 
         return {"wallet": wallet, "transaction": tx}
 

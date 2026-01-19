@@ -191,6 +191,13 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Asia/Seoul"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
+CELERY_BEAT_SCHEDULE = {
+    "sync_drafts_to_db": {
+        "task": "apps.contents.tasks.sync_drafts_to_db",
+        "schedule": timedelta(minutes=1),
+    },
+}
+
 
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
 GEMINI_EMBEDDING_MODEL = "models/text-embedding-001"

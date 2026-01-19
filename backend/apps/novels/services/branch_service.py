@@ -37,7 +37,9 @@ class BranchService:
         Returns:
             QuerySet of branches
         """
-        queryset = Branch.objects.filter(novel_id=novel_id, deleted_at__isnull=True)
+        queryset = Branch.objects.filter(novel_id=novel_id, deleted_at__isnull=True).select_related(
+            "author"
+        )
 
         if visibility:
             queryset = queryset.filter(visibility=visibility)

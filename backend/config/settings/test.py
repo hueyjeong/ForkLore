@@ -15,3 +15,8 @@ PASSWORD_HASHERS = [
 
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# N+1 Detection
+INSTALLED_APPS += ["nplusone.ext.django"]
+MIDDLEWARE.insert(0, "nplusone.ext.django.NPlusOneMiddleware")
+NPLUSONE_RAISE = True  # Raise error on N+1

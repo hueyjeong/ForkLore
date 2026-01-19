@@ -1026,7 +1026,9 @@ class MapLayerViewSet(viewsets.ViewSet):
     def list(self, request: Request, snapshot_pk: int | None = None) -> Response:
         """List layers for a snapshot."""
         try:
-            snapshot = MapSnapshot.objects.prefetch_related("layers").get(id=snapshot_pk)
+            snapshot = MapSnapshot.objects.prefetch_related("layers__map_objects").get(
+                id=snapshot_pk
+            )
         except MapSnapshot.DoesNotExist:
             raise NotFound("스냅샷을 찾을 수 없습니다.")
 

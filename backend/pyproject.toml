@@ -37,6 +37,7 @@ ipython = "^8.30"
 django-debug-toolbar = "^4.4"
 ruff = "^0.8"
 pre-commit = "^4.0"
+nplusone = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]

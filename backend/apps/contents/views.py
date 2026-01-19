@@ -463,7 +463,12 @@ class WikiEntryViewSet(viewsets.ViewSet):
         tag_id = request.query_params.get("tag")
         tag_id = int(tag_id) if tag_id else None
 
-        wikis = WikiService.list(branch_id=branch_pk, tag_id=tag_id)
+        current_chapter = request.query_params.get("currentChapter")
+        current_chapter = int(current_chapter) if current_chapter else None
+
+        wikis = WikiService.list(
+            branch_id=branch_pk, tag_id=tag_id, current_chapter=current_chapter
+        )
 
         paginator = StandardPagination()
         page = paginator.paginate_queryset(wikis, request)

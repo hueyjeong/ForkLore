@@ -9,7 +9,7 @@ from datetime import datetime
 
 import markdown
 from django.core.exceptions import PermissionDenied
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.utils import timezone
 
 from apps.contents.models import (
@@ -376,6 +376,7 @@ class WikiService:
     def list(
         branch_id: int,
         tag_id: int | None = None,
+        current_chapter: int | None = None,
     ) -> QuerySet[WikiEntry]:
         """
         List wiki entries for a branch.
@@ -383,6 +384,7 @@ class WikiService:
         Args:
             branch_id: Branch ID
             tag_id: Filter by tag ID (optional)
+            current_chapter: Filter by current reading chapter (optional)
 
         Returns:
             QuerySet of WikiEntry
@@ -391,6 +393,11 @@ class WikiService:
 
         if tag_id is not None:
             qs = qs.filter(tags__id=tag_id)
+
+        if current_chapter is not None:
+            qs = qs.filter(
+                Q(first_appearance__lte=current_chapter) | Q(first_appearance__isnull=True)
+            )
 
         return qs.order_by("name")
 

@@ -133,8 +133,8 @@ def sync_drafts_to_db() -> str:
                         chapter.content = content
 
                         # Update derived fields using service logic
-                        chapter.content_html = service._convert_markdown(content)
-                        chapter.word_count = service._calculate_word_count(content)
+                        chapter.content_html = service.convert_markdown(content)
+                        chapter.word_count = service.calculate_word_count(content)
 
                         chapter.save()
                         updated_count += 1

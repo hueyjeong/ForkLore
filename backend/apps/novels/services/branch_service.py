@@ -247,9 +247,7 @@ class BranchService:
 
         BranchVote.objects.create(user=user, branch=branch)
 
-        Branch.objects.filter(id=branch_id).update(
-            vote_count=F("vote_count") + 1, version=F("version") + 1
-        )
+        Branch.objects.filter(id=branch_id).update(vote_count=F("vote_count") + 1)
 
         return True
 
@@ -269,7 +267,7 @@ class BranchService:
 
         if deleted_count > 0:
             Branch.objects.filter(id=branch_id, vote_count__gt=0).update(
-                vote_count=F("vote_count") - 1, version=F("version") + 1
+                vote_count=F("vote_count") - 1
             )
             return True
 

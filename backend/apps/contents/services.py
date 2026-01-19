@@ -54,10 +54,10 @@ class ChapterService:
         next_number = (last_chapter.chapter_number + 1) if last_chapter else 1
 
         # Convert markdown to HTML
-        content_html = self._convert_markdown(content)
+        content_html = self.convert_markdown(content)
 
         # Calculate word count
-        word_count = self._calculate_word_count(content)
+        word_count = self.calculate_word_count(content)
 
         chapter = Chapter.objects.create(
             branch=branch,
@@ -105,8 +105,8 @@ class ChapterService:
 
         if content is not None:
             chapter.content = content
-            chapter.content_html = self._convert_markdown(content)
-            chapter.word_count = self._calculate_word_count(content)
+            chapter.content_html = self.convert_markdown(content)
+            chapter.word_count = self.calculate_word_count(content)
 
         if access_type is not None:
             chapter.access_type = access_type
@@ -205,12 +205,12 @@ class ChapterService:
 
         return qs
 
-    def _convert_markdown(self, content: str) -> str:
+    def convert_markdown(self, content: str) -> str:
         """Convert markdown content to HTML."""
         md = markdown.Markdown(extensions=["extra", "codehilite", "toc"])
         return md.convert(content)
 
-    def _calculate_word_count(self, content: str) -> int:
+    def calculate_word_count(self, content: str) -> int:
         """
         Calculate word count from content.
         For Korean, counts characters. For English, counts words.

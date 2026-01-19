@@ -87,7 +87,6 @@ class AccessService:
 class SubscriptionService:
     """Service for managing subscriptions."""
 
-    @transaction.atomic
     def subscribe(
         self,
         user: User,
@@ -126,34 +125,40 @@ class SubscriptionService:
                 amount=price,
             )
 
-        # Check for existing active subscription
-        existing = (
-            Subscription.objects.filter(
-                user=user,
-                status=SubscriptionStatus.ACTIVE,
-                expires_at__gt=now,
-            )
-            .select_for_update()
-            .first()
-        )
+        try:
+            with transaction.atomic():
+                # Check for existing active subscription
+                existing = (
+                    Subscription.objects.filter(
+                        user=user,
+                        status=SubscriptionStatus.ACTIVE,
+                        expires_at__gt=now,
+                    )
+                    .select_for_update()
+                    .first()
+                )
 
-        if existing:
-            # Extend existing subscription
-            existing.expires_at = existing.expires_at + timedelta(days=days)
-            existing.plan_type = plan_type
-            if payment_id:
-                existing.payment_id = payment_id
-            existing.save()
-            return existing
-        else:
-            # Create new subscription
-            return Subscription.objects.create(
-                user=user,
-                plan_type=plan_type,
-                expires_at=now + timedelta(days=days),
-                payment_id=payment_id,
-                status=SubscriptionStatus.ACTIVE,
-            )
+                if existing:
+                    # Extend existing subscription
+                    existing.expires_at = existing.expires_at + timedelta(days=days)
+                    existing.plan_type = plan_type
+                    if payment_id:
+                        existing.payment_id = payment_id
+                    existing.save()
+                    return existing
+                else:
+                    # Create new subscription
+                    return Subscription.objects.create(
+                        user=user,
+                        plan_type=plan_type,
+                        expires_at=now + timedelta(days=days),
+                        payment_id=payment_id,
+                        status=SubscriptionStatus.ACTIVE,
+                    )
+        except Exception as e:
+            if price > 0 and payment_id:
+                PaymentService().cancel_payment(payment_id, "System Error: Transaction failed")
+            raise e
 
     def cancel(self, user: User) -> bool:
         """
@@ -915,37 +920,42 @@ class WalletService:
                 amount=amount,
             )
 
-        with transaction.atomic():
-            # Get or create wallet with lock
-            wallet, created = Wallet.objects.select_for_update().get_or_create(
-                user=user,
-                defaults={"balance": 0},
-            )
-
-            # Update balance
-            wallet.balance += amount
-            wallet.save()
-
-            # Create transaction record
-            tx = CoinTransaction.objects.create(
-                wallet=wallet,
-                transaction_type=TransactionType.CHARGE,
-                amount=amount,
-                balance_after=wallet.balance,
-                description=description,
-                reference_type="payment" if payment_key else "",
-                reference_id=None,  # storing key in description or separate field might be better but strictly following schema
-            )
-
-            # If we want to store payment info, we might need fields in CoinTransaction
-            # For now, let's append to description if provided
-            if payment_key:
-                tx.description = (
-                    f"{description} (Payment: {payment_key})"
-                    if description
-                    else f"Payment: {payment_key}"
+        try:
+            with transaction.atomic():
+                # Get or create wallet with lock
+                wallet, created = Wallet.objects.select_for_update().get_or_create(
+                    user=user,
+                    defaults={"balance": 0},
                 )
-                tx.save()
+
+                # Update balance
+                wallet.balance += amount
+                wallet.save()
+
+                # Create transaction record
+                tx = CoinTransaction.objects.create(
+                    wallet=wallet,
+                    transaction_type=TransactionType.CHARGE,
+                    amount=amount,
+                    balance_after=wallet.balance,
+                    description=description,
+                    reference_type="payment" if payment_key else "",
+                    reference_id=None,  # storing key in description or separate field might be better but strictly following schema
+                )
+
+                # If we want to store payment info, we might need fields in CoinTransaction
+                # For now, let's append to description if provided
+                if payment_key:
+                    tx.description = (
+                        f"{description} (Payment: {payment_key})"
+                        if description
+                        else f"Payment: {payment_key}"
+                    )
+                    tx.save()
+        except Exception as e:
+            if payment_key:
+                PaymentService().cancel_payment(payment_key, "System Error: Transaction failed")
+            raise e
 
         return {"wallet": wallet, "transaction": tx}
 

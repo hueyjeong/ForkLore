@@ -60,3 +60,8 @@ class ForbiddenException(BusinessException):
 class UnauthorizedException(BusinessException):
     def __init__(self, message: str = "인증이 필요합니다.") -> None:
         super().__init__(message, status.HTTP_401_UNAUTHORIZED)
+
+
+class ConflictError(BusinessException):
+    def __init__(self, message: str = "데이터가 변경되었습니다. 다시 시도해주세요.") -> None:
+        super().__init__(message, status.HTTP_409_CONFLICT)

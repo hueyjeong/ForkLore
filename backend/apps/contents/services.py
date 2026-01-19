@@ -9,7 +9,7 @@ from datetime import datetime
 
 import markdown
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q, QuerySet
+from django.db.models import F, Q, QuerySet
 from django.utils import timezone
 
 from apps.contents.models import (
@@ -137,10 +137,11 @@ class ChapterService:
         chapter.published_at = timezone.now()
         chapter.save()
 
-        # Update branch chapter_count
+        # Update branch chapter_count and version
         branch = chapter.branch
-        branch.chapter_count += 1
-        branch.save(update_fields=["chapter_count"])
+        branch.chapter_count = F("chapter_count") + 1
+        branch.version = F("version") + 1
+        branch.save(update_fields=["chapter_count", "version"])
 
         return chapter
 

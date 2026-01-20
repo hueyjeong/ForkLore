@@ -11,7 +11,7 @@ from datetime import timedelta
 from typing import Any
 
 from django.db import DatabaseError, IntegrityError, transaction
-from django.db.models import QuerySet
+from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 
 from apps.contents.models import AccessType, Chapter
@@ -326,7 +326,7 @@ class ReadingService:
 
         return (
             ReadingLog.objects.filter(user=user)
-            .select_related("chapter", "chapter__branch", "chapter__branch__novel")
+            .select_related("chapter")
             .order_by("-read_at")[:limit]
         )
 
@@ -426,7 +426,8 @@ class BookmarkService:
                 "note": note,
             },
         )
-        return bookmark
+        # Reload with select_related to avoid N+1 in serializer
+        return Bookmark.objects.select_related("chapter").get(id=bookmark.id)
 
     @staticmethod
     def remove_bookmark(user: User, chapter_id: int) -> None:
@@ -454,11 +455,7 @@ class BookmarkService:
         """
         from apps.interactions.models import Bookmark
 
-        return (
-            Bookmark.objects.filter(user=user)
-            .select_related("chapter", "chapter__branch", "chapter__branch__novel")
-            .order_by("-created_at")
-        )
+        return Bookmark.objects.filter(user=user).select_related("chapter").order_by("-created_at")
 
 
 class CommentService:
@@ -595,7 +592,8 @@ class CommentService:
                 chapter_id=chapter_id,
                 deleted_at__isnull=True,
             )
-            .select_related("user", "parent")
+            .select_related("user")
+            .annotate(reply_count=Count("replies", filter=Q(replies__deleted_at__isnull=True)))
             .order_by("-created_at")
         )
 

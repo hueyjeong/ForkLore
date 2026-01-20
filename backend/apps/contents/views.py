@@ -392,11 +392,12 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         from apps.interactions.serializers import BookmarkCreateSerializer, BookmarkSerializer
         from apps.interactions.services import BookmarkService
 
-        chapter = self._get_chapter(pk)
-        if not chapter:
+        # Use simple get without select_related - bookmark doesn't need branch
+        try:
+            chapter = Chapter.objects.get(pk=pk)
+        except Chapter.DoesNotExist:
             raise NotFound("회차를 찾을 수 없습니다.")
 
-        # pk is validated by _get_chapter returning a valid chapter
         chapter_id = chapter.id
 
         if request.method == "POST":
@@ -430,8 +431,10 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         from apps.interactions.serializers import ReadingLogSerializer, ReadingProgressSerializer
         from apps.interactions.services import ReadingService
 
-        chapter = self._get_chapter(pk)
-        if not chapter:
+        # Use simple get without select_related - reading progress doesn't need branch
+        try:
+            chapter = Chapter.objects.get(pk=pk)
+        except Chapter.DoesNotExist:
             raise NotFound("회차를 찾을 수 없습니다.")
 
         serializer = ReadingProgressSerializer(data=request.data)
@@ -761,11 +764,11 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
             raise NotFound("위키를 찾을 수 없습니다.")
 
         try:
-            wiki = WikiService.retrieve(wiki_id=wiki_pk)
+            wiki = WikiService.retrieve_for_snapshots(wiki_id=wiki_pk)
         except ValueError as e:
             raise NotFound(str(e))
 
-        serializer = WikiSnapshotSerializer(wiki.snapshots.all(), many=True)
+        serializer = WikiSnapshotSerializer(wiki.snapshots, many=True)
         return Response(serializer.data)
 
     def create(self, request: Request, wiki_pk: int | None = None) -> Response:

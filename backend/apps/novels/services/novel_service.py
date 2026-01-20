@@ -74,7 +74,7 @@ class NovelService:
         Returns:
             QuerySet of novels
         """
-        queryset = Novel.objects.filter(deleted_at__isnull=True)
+        queryset = Novel.objects.filter(deleted_at__isnull=True).select_related("author")
 
         if filters:
             if "genre" in filters:

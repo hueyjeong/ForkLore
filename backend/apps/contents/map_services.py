@@ -135,7 +135,11 @@ class MapService:
             ValueError: If map not found
         """
         try:
-            return Map.objects.prefetch_related("snapshots__layers__map_objects").get(id=map_id)
+            return (
+                Map.objects.select_related("branch")
+                .prefetch_related("snapshots__layers__map_objects")
+                .get(id=map_id)
+            )
         except Map.DoesNotExist as e:
             raise ValueError("존재하지 않는 지도입니다.") from e
 

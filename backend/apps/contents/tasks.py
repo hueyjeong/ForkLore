@@ -11,7 +11,6 @@ import redis
 from celery import shared_task
 from django.conf import settings
 from django.db import DatabaseError, transaction
-from django.db.models import F
 from django.utils import timezone
 
 from apps.contents.models import Chapter, ChapterStatus
@@ -90,12 +89,13 @@ def sync_drafts_to_db() -> str:
                 if len(parts) != 3:
                     continue
 
-                _prefix, _branch_id, chapter_id_str = parts
+                _prefix, branch_id_str, chapter_id_str = parts
 
                 try:
+                    branch_id = int(branch_id_str)
                     chapter_id = int(chapter_id_str)
                 except ValueError:
-                    logger.warning(f"Invalid chapter_id in key: {key_str}")
+                    logger.warning(f"Invalid IDs in key: {key_str}")
                     continue
 
                 # Get data from Redis
@@ -119,7 +119,9 @@ def sync_drafts_to_db() -> str:
                     # This ensures partial success - if one chapter fails,
                     # others that succeeded remain saved
                     with transaction.atomic():
-                        chapter = Chapter.objects.get(id=chapter_id)
+                        chapter = Chapter.objects.select_for_update().get(
+                            id=chapter_id, branch_id=branch_id
+                        )
 
                         # Constraint: Only update if status is DRAFT
                         if chapter.status != ChapterStatus.DRAFT:

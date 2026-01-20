@@ -9,7 +9,7 @@ from datetime import datetime
 
 import markdown
 from django.core.exceptions import PermissionDenied
-from django.db.models import F, Q, QuerySet
+from django.db.models import F, Prefetch, Q, QuerySet
 from django.utils import timezone
 
 from apps.contents.models import (
@@ -365,11 +365,30 @@ class WikiService:
             ValueError: If wiki not found
         """
         try:
-            return (
-                WikiEntry.objects.select_related("branch")
-                .prefetch_related("tags", "snapshots")
-                .get(id=wiki_id)
-            )
+            return WikiEntry.objects.prefetch_related(
+                "tags", Prefetch("snapshots", WikiSnapshot.objects.order_by("valid_from_chapter"))
+            ).get(id=wiki_id)
+        except WikiEntry.DoesNotExist as e:
+            raise ValueError("존재하지 않는 위키입니다.") from e
+
+    @staticmethod
+    def retrieve_for_snapshots(wiki_id: int) -> WikiEntry:
+        """
+        Retrieve a wiki entry for snapshot listing (lightweight, no tags prefetch).
+
+        Args:
+            wiki_id: WikiEntry ID
+
+        Returns:
+            WikiEntry instance
+
+        Raises:
+            ValueError: If wiki not found
+        """
+        try:
+            return WikiEntry.objects.prefetch_related(
+                Prefetch("snapshots", WikiSnapshot.objects.order_by("valid_from_chapter"))
+            ).get(id=wiki_id)
         except WikiEntry.DoesNotExist as e:
             raise ValueError("존재하지 않는 위키입니다.") from e
 

@@ -48,6 +48,8 @@ test.describe('Reader Context Awareness', () => {
     await mockHelper.mockChapter(11, chapter2);
   });
 
+  // TODO: Blocked - Wiki context filtering not integrated in frontend
+  // Waiting on: WikiService.list current_chapter parameter implementation
   test.fixme('Wiki Visibility by Chapter', async ({ page }) => {
      // Mock 2 Wiki Entries
      const entryA: MockWikiEntry = { 
@@ -86,6 +88,8 @@ test.describe('Reader Context Awareness', () => {
      await expect(page.getByText('Wiki B')).toBeVisible();
   });
 
+  // TODO: Blocked - Paragraph-level comment UI not implemented
+  // Waiting on: ParagraphCommentModal component
   test.fixme('Paragraph Comment', async ({ page }) => {
     // Navigate to Chapter 1
     await readerPage.goto(1, 10);

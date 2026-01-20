@@ -221,7 +221,7 @@ class CommentSerializer(serializers.ModelSerializer):
     """Serializer for comment."""
 
     user = UserBriefSerializer(read_only=True)
-    reply_count = serializers.SerializerMethodField()
+    reply_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Comment
@@ -242,9 +242,6 @@ class CommentSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = fields
-
-    def get_reply_count(self, obj: Comment) -> int:
-        return obj.replies.filter(deleted_at__isnull=True).count()
 
 
 # =============================================================================

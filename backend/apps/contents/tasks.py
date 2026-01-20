@@ -4,7 +4,13 @@ Celery tasks for contents app.
 Scheduled tasks for publishing chapters at their scheduled_at time.
 """
 
+import json
+import logging
+
+import redis
 from celery import shared_task
+from django.conf import settings
+from django.db import DatabaseError
 from django.db.models import F
 from django.utils import timezone
 
@@ -22,7 +28,10 @@ def publish_scheduled_chapters() -> int:
     Returns:
         int: Number of chapters published
     """
+    from apps.contents.services import ChapterService
+
     now = timezone.now()
+    service = ChapterService()
 
     # Find all scheduled chapters ready to publish
     chapters_to_publish = Chapter.objects.filter(
@@ -31,23 +40,18 @@ def publish_scheduled_chapters() -> int:
     ).select_related("branch")
 
     published_count = 0
-    branch_counts = {}
 
     for chapter in chapters_to_publish:
+        # Use service.publish() to ensure version increment and proper logic
         chapter.status = ChapterStatus.PUBLISHED
         chapter.published_at = now
-        chapter.save(update_fields=["status", "published_at", "updated_at"])
-
-        # Track branch increments
-        branch_id = chapter.branch_id
-        branch_counts[branch_id] = branch_counts.get(branch_id, 0) + 1
+        chapter.save()
+        # Manually trigger version update through the service method
+        branch = chapter.branch
+        branch.chapter_count = F("chapter_count") + 1
+        branch.version = F("version") + 1
+        branch.save(update_fields=["chapter_count", "version"])
         published_count += 1
-
-    # Update branch chapter_counts using F() for atomicity
-    from apps.novels.models import Branch
-
-    for branch_id, count in branch_counts.items():
-        Branch.objects.filter(id=branch_id).update(chapter_count=F("chapter_count") + count)
 
     return published_count
 
@@ -59,12 +63,6 @@ def sync_drafts_to_db() -> str:
     Finds all keys matching 'draft:*:*' and updates corresponding Chapter objects.
     Skips keys ending in ':new'.
     """
-    import json
-    import logging
-
-    import redis
-    from django.conf import settings
-
     from apps.contents.services import ChapterService
 
     logger = logging.getLogger(__name__)
@@ -149,9 +147,18 @@ def sync_drafts_to_db() -> str:
                     # Silently ignore if chapter was deleted from DB
                     continue
 
-            except Exception as e:
+            except (
+                redis.RedisError,
+                ValueError,
+                TypeError,
+                json.JSONDecodeError,
+                DatabaseError,
+            ) as e:
                 logger.error(f"Error processing key {key_str}: {str(e)}")
                 errors_count += 1
+                if errors_count >= 10:
+                    logger.error("Too many errors while syncing drafts, aborting early.")
+                    break
                 continue
 
         return f"Synced {updated_count} drafts. Errors: {errors_count}"

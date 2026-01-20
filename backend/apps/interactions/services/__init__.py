@@ -10,13 +10,12 @@ Contains:
 from datetime import timedelta
 from typing import Any
 
-from django.db import transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import QuerySet
 from django.utils import timezone
 
 from apps.contents.models import AccessType, Chapter
 from apps.interactions.constants import PLAN_PRICES
-from apps.interactions.exceptions import PaymentFailedException
 from apps.interactions.models import (
     AIUsageLog,
     PlanType,
@@ -163,7 +162,7 @@ class SubscriptionService:
                         payment_id=payment_id,
                         status=SubscriptionStatus.ACTIVE,
                     )
-        except Exception as e:
+        except (django.db.IntegrityError, django.db.DatabaseError, ValueError) as e:
             # Only cancel payment if it was successfully confirmed
             # This prevents trying to cancel a payment that was never approved
             if payment_confirmed:
@@ -968,11 +967,11 @@ class WalletService:
                         else f"Payment: {payment_key}"
                     )
                     tx.save()
-        except Exception as e:
+        except (django.db.IntegrityError, django.db.DatabaseError, ValueError) as e:
             # Only cancel payment if it was successfully confirmed
             # This prevents trying to cancel a payment that was never approved
             if payment_confirmed:
-                PaymentService().cancel_payment(payment_key, "System Error: Transaction failed")
+                PaymentService().cancel_payment(payment_id, "System Error: Transaction failed")
             raise e
 
         return {"wallet": wallet, "transaction": tx}

@@ -219,8 +219,8 @@ class ChapterViewSet(viewsets.ViewSet):
 
         # Validation
         content = request.data.get("content")
-        if content is None:
-            raise ValidationError("Content is required.")
+        if content is None or (isinstance(content, str) and not content.strip()):
+            raise ValidationError("내용은 필수입니다.")
 
         title = request.data.get("title", "")
         chapter_id = request.data.get("chapter_id")

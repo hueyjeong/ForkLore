@@ -12,6 +12,12 @@ MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 INTERNAL_IPS = ["127.0.0.1"]
 
+# N+1 Query Detection for development
+INSTALLED_APPS += ["nplusone.ext.django"]
+MIDDLEWARE.insert(1, "nplusone.ext.django.NPlusOneMiddleware")
+NPLUSONE_LOG_LEVEL = "WARNING"  # Log N+1 warnings in development
+NPLUSONE_RAISE = False  # Don't raise errors, just log
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -35,6 +41,11 @@ LOGGING = {
         "django.db.backends": {
             "handlers": ["console"],
             "level": "DEBUG",
+            "propagate": False,
+        },
+        "nplusone": {
+            "handlers": ["console"],
+            "level": "WARNING",
             "propagate": False,
         },
     },

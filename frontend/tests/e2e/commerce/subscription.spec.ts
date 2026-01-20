@@ -1,12 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { MockHelper } from '../utils/mock-helper';
 import { loginUser } from '../utils/auth-helper';
-import { MockSubscription } from '../fixtures/mock-schemas';
 
 test.describe('Commerce - Subscription', () => {
   test('Subscription Flow (Mocked)', async ({ page }) => {
-    const mockHelper = new MockHelper(page);
-
     // 1. Login
     await loginUser(page);
     // Explicitly mock user with flexible regex to handle potential API prefix issues
@@ -54,12 +50,21 @@ test.describe('Commerce - Subscription', () => {
 
     // 4. Verify Not Subscribed UI
     // Expect to see pricing cards with "Subscribe" links
-    // We check for the Premium card's subscribe button specifically
-    const premiumSubscribeBtn = page.getByRole('link', { name: 'Subscribe' }).last();
+    // Use data-testid for stable selection regardless of order
+    const premiumSubscribeBtn = page.getByTestId('subscribe-premium');
     await expect(premiumSubscribeBtn).toBeVisible();
 
     // 5. Setup Success Mock
-    const newSubscription: MockSubscription = {
+    const newSubscription: {
+      id: number;
+      plan_type: string;
+      status: string;
+      started_at: string;
+      expires_at: string;
+      cancelled_at: string | null;
+      auto_renew: boolean;
+      created_at: string;
+    } = {
       id: 1,
       plan_type: 'PREMIUM',
       status: 'ACTIVE',

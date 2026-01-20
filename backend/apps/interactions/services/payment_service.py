@@ -64,7 +64,13 @@ class TossPaymentAdapter:
 
     def _is_mock_mode(self) -> bool:
         """Check if mock mode should be used."""
-        return self.secret_key is None or self.secret_key.startswith("test_")
+        # Prefer an explicit setting to control mock mode. If the setting is
+        # not defined, fall back to treating a missing secret key as mock mode.
+        use_mock = getattr(settings, "TOSS_PAYMENTS_USE_MOCK", None)
+        if use_mock is not None:
+            return bool(use_mock)
+
+        return self.secret_key is None
 
     def approve(self, payment_key: str, order_id: str, amount: int) -> dict[str, Any]:
         """
@@ -105,6 +111,8 @@ class TossPaymentAdapter:
                     if "message" in details:
                         error_msg = details["message"]
                 except ValueError:
+                    # If the error response body is not valid JSON, ignore parsing failures
+                    # and fall back to the default error message and details.
                     pass
 
             raise PaymentFailedException(message=error_msg, details=details) from e
@@ -138,6 +146,8 @@ class TossPaymentAdapter:
                     if "message" in details:
                         error_msg = details["message"]
                 except ValueError:
+                    # If the error response body is not valid JSON, ignore parsing failures
+                    # and fall back to the default error message and details.
                     pass
 
             raise PaymentFailedException(message=error_msg, details=details) from e

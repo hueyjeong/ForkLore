@@ -1,7 +1,6 @@
-import { Page, Route } from '@playwright/test';
+import { Page } from '@playwright/test';
 import {
   MockUser, MockNovel, MockChapter,
-  MockSubscription,
   MockWikiEntry,
   MockBranch
 } from '../fixtures/mock-schemas';

@@ -11,7 +11,6 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.contents.views import ChapterViewSet
 from apps.novels.models import Branch
 from apps.users.models import User
 from apps.contents.models import Chapter

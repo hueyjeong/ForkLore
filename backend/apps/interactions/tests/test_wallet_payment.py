@@ -2,13 +2,13 @@
 Tests for WalletService payment integration.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from model_bakery import baker
 
 from apps.interactions.exceptions import PaymentFailedException
-from apps.interactions.models import CoinTransaction, TransactionType
+from apps.interactions.models import CoinTransaction
 from apps.interactions.services import WalletService
 
 

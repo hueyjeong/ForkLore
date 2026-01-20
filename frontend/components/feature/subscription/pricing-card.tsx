@@ -64,7 +64,7 @@ export function PricingCard({
             Current Plan
           </Button>
         ) : (
-          <Button className="w-full" asChild variant={isPremium ? 'default' : 'outline'} disabled={isLoading}>
+          <Button className="w-full" asChild variant={isPremium ? 'default' : 'outline'} disabled={isLoading} data-testid={`subscribe-${planType.toLowerCase()}`}>
             <Link href={`/subscriptions/checkout?plan=${planType}`}>
               Subscribe
             </Link>

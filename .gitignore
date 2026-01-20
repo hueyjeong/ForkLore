@@ -28,6 +28,9 @@ target/
 .sisyphus/notepads/
 .sisyphus/boulder.json
 
+# Agent skills (external repository)
+.agent/skills/
+
 
 # Authentication & Secret (IMPORTANT)
 .env

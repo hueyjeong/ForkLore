@@ -90,7 +90,7 @@ class TestBranchConcurrency:
         assert updated_branch.version == 2
         assert updated_branch.visibility == "PUBLIC"
 
-    def test_vote_increments_version(self):
+    def test_vote_does_not_increment_version(self):
         """Test voting does NOT increment version (to avoid conflicts)"""
         service = BranchService()
         user = baker.make("users.User")
@@ -102,7 +102,7 @@ class TestBranchConcurrency:
         assert branch.version == 1  # Should NOT increment
         assert branch.vote_count == 1
 
-    def test_unvote_increments_version(self):
+    def test_unvote_does_not_increment_version(self):
         """Test unvoting does NOT increment version"""
         service = BranchService()
         user = baker.make("users.User")

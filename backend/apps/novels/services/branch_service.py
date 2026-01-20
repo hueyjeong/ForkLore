@@ -169,14 +169,17 @@ class BranchService:
         if branch.author != author:
             raise PermissionError("브랜치 수정 권한이 없습니다.")
 
-        if "name" in data:
-            branch.name = data["name"]
-        if "description" in data:
-            branch.description = data["description"]
-        if "cover_image_url" in data:
-            branch.cover_image_url = data["cover_image_url"]
+        allowed_fields = ["name", "description", "cover_image_url"]
+        has_changes = False
 
-        branch.version = F("version") + 1
+        for field in allowed_fields:
+            if field in data and getattr(branch, field) != data[field]:
+                setattr(branch, field, data[field])
+                has_changes = True
+
+        if has_changes:
+            branch.version = F("version") + 1
+
         branch.save()
         branch.refresh_from_db()
         return branch

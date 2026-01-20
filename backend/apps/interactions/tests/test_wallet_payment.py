@@ -100,3 +100,15 @@ class TestWalletServiceChargePayment:
 
             # Verify wallet update
             assert result["wallet"].balance == 500
+
+
+class TestTossPaymentAdapterMockMode:
+    """Tests for TossPaymentAdapter mock mode behavior."""
+
+    def test_empty_string_secret_key_uses_mock_mode(self):
+        """Empty string secret key should trigger mock mode."""
+        from apps.interactions.services.payment_service import TossPaymentAdapter
+
+        adapter = TossPaymentAdapter()
+        adapter.secret_key = ""
+        assert adapter._is_mock_mode() is True

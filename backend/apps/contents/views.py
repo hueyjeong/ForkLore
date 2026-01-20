@@ -219,11 +219,16 @@ class ChapterViewSet(viewsets.ViewSet):
 
         # Validation
         content = request.data.get("content")
-        if content is None or (isinstance(content, str) and not content.strip()):
+        if content is None or not isinstance(content, str) or not content.strip():
             raise ValidationError("내용은 필수입니다.")
 
         title = request.data.get("title", "")
         chapter_id = request.data.get("chapter_id")
+        if chapter_id is not None:
+            try:
+                chapter_id = int(chapter_id)
+            except (ValueError, TypeError):
+                raise ValidationError("유효하지 않은 회차 ID입니다.")
 
         DraftService().save_draft(
             branch_id=int(branch_pk),
@@ -482,7 +487,13 @@ class WikiEntryViewSet(viewsets.ViewSet):
         tag_id = int(tag_id) if tag_id else None
 
         current_chapter = request.query_params.get("currentChapter")
-        current_chapter = int(current_chapter) if current_chapter else None
+        if current_chapter:
+            try:
+                current_chapter = int(current_chapter)
+            except (ValueError, TypeError):
+                raise ValidationError("currentChapter must be a number")
+        else:
+            current_chapter = None
 
         wikis = WikiService.list(
             branch_id=branch_pk, tag_id=tag_id, current_chapter=current_chapter

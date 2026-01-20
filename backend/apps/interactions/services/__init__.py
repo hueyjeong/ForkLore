@@ -162,7 +162,7 @@ class SubscriptionService:
                         payment_id=payment_id,
                         status=SubscriptionStatus.ACTIVE,
                     )
-        except (django.db.IntegrityError, django.db.DatabaseError, ValueError) as e:
+        except (IntegrityError, DatabaseError, ValueError) as e:
             # Only cancel payment if it was successfully confirmed
             # This prevents trying to cancel a payment that was never approved
             if payment_confirmed:
@@ -967,11 +967,11 @@ class WalletService:
                         else f"Payment: {payment_key}"
                     )
                     tx.save()
-        except (django.db.IntegrityError, django.db.DatabaseError, ValueError) as e:
+        except (IntegrityError, DatabaseError, ValueError) as e:
             # Only cancel payment if it was successfully confirmed
             # This prevents trying to cancel a payment that was never approved
             if payment_confirmed:
-                PaymentService().cancel_payment(payment_id, "System Error: Transaction failed")
+                PaymentService().cancel_payment(payment_key, "System Error: Transaction failed")
             raise e
 
         return {"wallet": wallet, "transaction": tx}

@@ -25,6 +25,7 @@ test.describe('Authentication Lifecycle', () => {
     await loginPage.goto();
 
     // Override /users/me to return success for subsequent requests
+    await page.unroute('**/users/me');
     await mockHelper.mockUser();
 
     await loginPage.login('test@example.com', 'password123');
@@ -37,6 +38,7 @@ test.describe('Authentication Lifecycle', () => {
   test('Session Persistence', async ({ page }) => {
     // Inject cookies directly
     await loginUser(page);
+    await page.unroute('**/users/me');
     await mockHelper.mockUser();
 
     await page.goto('/profile');
@@ -58,6 +60,7 @@ test.describe('Authentication Lifecycle', () => {
   test('Logout', async ({ page }) => {
     // Inject cookies directly to start as logged in
     await loginUser(page);
+    await page.unroute('**/users/me');
     await mockHelper.mockUser();
     await mockHelper.mockRoute('**/api/auth/logout', { success: true });
 

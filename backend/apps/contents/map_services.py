@@ -214,8 +214,8 @@ class MapService:
             valid_from_chapter=valid_from_chapter,
             base_image_url=base_image_url,
         )
-        # Reload with prefetch to avoid N+1 when serializer accesses layers
-        return MapSnapshot.objects.prefetch_related("layers").get(id=snapshot.id)
+        snapshot._prefetched_objects_cache = {"layers": MapLayer.objects.none()}
+        return snapshot
 
     @staticmethod
     def get_snapshot_for_chapter(map_id: int, chapter_number: int) -> MapSnapshot | None:
@@ -312,8 +312,8 @@ class MapService:
             is_visible=is_visible,
             style_json=style_json,
         )
-        # Reload with prefetch to avoid N+1 when serializer accesses map_objects
-        return MapLayer.objects.prefetch_related("map_objects").get(id=layer.id)
+        layer._prefetched_objects_cache = {"map_objects": MapObject.objects.none()}
+        return layer
 
     @staticmethod
     def update_layer(

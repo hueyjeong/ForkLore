@@ -80,13 +80,15 @@ export class MockHelper {
   async mockRoute<T>(
     urlPattern: string | RegExp,
     data: T,
-    statusCode = 200
+    statusCode = 200,
+    message?: string
   ): Promise<void> {
     await this.page.route(urlPattern, async (route) => {
       const response: ApiResponse<T> = {
         success: statusCode >= 200 && statusCode < 300,
         data,
         serverTime: new Date().toISOString(),
+        ...(message && { message }),
       };
 
       await route.fulfill({
@@ -184,8 +186,26 @@ export class MockHelper {
    */
   async mockBranchCreation(novelId: number | string, newBranch: MockBranch) {
     const numericId = Number(novelId);
-    // Use exact match or regex depending on how strict we want to be
-    await this.mockRoute(new RegExp(`/novels/${numericId}/branches$`), newBranch, 201);
+    const pattern = new RegExp(`/novels/${numericId}/branches$`);
+
+    await this.page.route(pattern, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+
+      const response: ApiResponse<MockBranch> = {
+        success: true,
+        data: newBranch,
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify(response),
+      });
+    });
   }
 
   /**
@@ -216,6 +236,8 @@ export class MockHelper {
    */
   async mockBranchList(novelId: number | string, branches: MockBranch[]) {
     const numericId = Number(novelId);
+    const pattern = new RegExp(`/novels/${numericId}/branches(\\?.*)?$`);
+
     const response: PaginatedResponse<MockBranch> = {
       results: branches,
       total: branches.length,
@@ -225,6 +247,24 @@ export class MockHelper {
       hasNext: false,
       hasPrev: false,
     };
-    await this.mockRoute(new RegExp(`/novels/${numericId}/branches(\\?.*)?$`), response);
+
+    await this.page.route(pattern, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+
+      const apiResponse: ApiResponse<PaginatedResponse<MockBranch>> = {
+        success: true,
+        data: response,
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse),
+      });
+    });
   }
 }

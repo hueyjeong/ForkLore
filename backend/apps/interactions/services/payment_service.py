@@ -70,7 +70,7 @@ class TossPaymentAdapter:
         if use_mock is not None:
             return bool(use_mock)
 
-        return self.secret_key is None
+        return not self.secret_key
 
     def approve(self, payment_key: str, order_id: str, amount: int) -> dict[str, Any]:
         """

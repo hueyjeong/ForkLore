@@ -133,6 +133,10 @@ class NovelService:
         if novel.author != author:
             raise PermissionError("소설 수정 권한이 없습니다.")
 
+        # Validate title if provided
+        if "title" in data and not str(data["title"]).strip():
+            raise ValueError("제목은 필수입니다.")
+
         # Update allowed fields
         allowed_fields = [
             "title",

@@ -10,7 +10,7 @@ import logging
 import redis
 from celery import shared_task
 from django.conf import settings
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 from django.db.models import F
 from django.utils import timezone
 
@@ -42,16 +42,12 @@ def publish_scheduled_chapters() -> int:
     published_count = 0
 
     for chapter in chapters_to_publish:
-        # Use service.publish() to ensure version increment and proper logic
-        chapter.status = ChapterStatus.PUBLISHED
-        chapter.published_at = now
-        chapter.save()
-        # Manually trigger version update through the service method
-        branch = chapter.branch
-        branch.chapter_count = F("chapter_count") + 1
-        branch.version = F("version") + 1
-        branch.save(update_fields=["chapter_count", "version"])
-        published_count += 1
+        try:
+            service.publish(chapter)
+            published_count += 1
+        except ValueError:
+            # Chapter already published, skip
+            pass
 
     return published_count
 
@@ -122,8 +118,6 @@ def sync_drafts_to_db() -> str:
                     # Wrap each chapter update in its own transaction
                     # This ensures partial success - if one chapter fails,
                     # others that succeeded remain saved
-                    from django.db import transaction
-
                     with transaction.atomic():
                         chapter = Chapter.objects.get(id=chapter_id)
 

@@ -49,6 +49,7 @@ test.describe('Fork Lifecycle', () => {
     await mockHelper.mockBranchList('1', [mainBranch]);
   });
 
+  // TODO: #239 - Branch creation flow requires backend fork endpoint implementation
   test.fixme('Scenario 1: Successful Forking', async ({ page }) => {
     const newBranch: MockBranch = {
       id: 101,
@@ -97,6 +98,7 @@ test.describe('Fork Lifecycle', () => {
     await expect(page.getByText(/created successfully|fork created/i)).toBeVisible();
   });
 
+  // TODO: #239 - Branch creation flow requires backend fork endpoint implementation
   test.fixme('Scenario 2: Concurrent Forking Conflict', async ({ page }) => {
     // Mock conflict (409)
     await mockHelper.mockBranchConflict('1');

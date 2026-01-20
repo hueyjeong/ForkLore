@@ -44,14 +44,20 @@ test.describe('Accessibility & Performance', () => {
 
     const lcp = await page.evaluate(() => {
       return new Promise<number>((resolve) => {
+        let timeoutId: ReturnType<typeof setTimeout>;
         const observer = new PerformanceObserver((entryList) => {
           const entries = entryList.getEntries();
           const lastEntry = entries[entries.length - 1];
+          clearTimeout(timeoutId);
+          observer.disconnect();
           resolve(lastEntry.startTime);
         });
         observer.observe({ type: 'largest-contentful-paint', buffered: true });
-        
-        setTimeout(() => resolve(0), 5000);
+
+        timeoutId = setTimeout(() => {
+          observer.disconnect();
+          resolve(Number.POSITIVE_INFINITY);
+        }, 5000);
       });
     });
 

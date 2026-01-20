@@ -118,6 +118,10 @@ class SubscriptionService:
         # Determine price and process payment
         price = PLAN_PRICES.get(plan_type, 0)
 
+        # Enforce payment details for paid plans
+        if price > 0 and (not payment_id or not order_id):
+            raise ValueError("결제 정보가 필요합니다.")
+
         # Track whether payment was successfully confirmed
         # Only set to True AFTER confirm_payment succeeds
         payment_confirmed = False
@@ -909,7 +913,7 @@ class WalletService:
             Dict with 'wallet' and 'transaction' keys
 
         Raises:
-            ValueError: If amount is not positive
+            ValueError: If amount is not positive or payment details missing
             PaymentFailedException: If payment confirmation fails
         """
         from django.db import transaction

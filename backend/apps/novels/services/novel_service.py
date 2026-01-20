@@ -32,13 +32,15 @@ class NovelService:
         Raises:
             ValueError/KeyError: If required fields are missing
         """
-        # Validate required fields
-        if "title" not in data or not data["title"]:
+        # Validate required fields - strip and check for empty
+        raw_title = data.get("title")
+        title = str(raw_title).strip() if raw_title is not None else ""
+        if not title:
             raise ValueError("제목은 필수입니다.")
 
         novel = Novel.objects.create(
             author=author,
-            title=data["title"],
+            title=title,
             description=data.get("description", ""),
             cover_image_url=data.get("cover_image_url", ""),
             genre=data.get("genre", Genre.FANTASY),
@@ -133,9 +135,12 @@ class NovelService:
         if novel.author != author:
             raise PermissionError("소설 수정 권한이 없습니다.")
 
-        # Validate title if provided
-        if "title" in data and not str(data["title"]).strip():
-            raise ValueError("제목은 필수입니다.")
+        # Validate title if provided - strip and normalize
+        if "title" in data:
+            title = str(data["title"]).strip()
+            if not title:
+                raise ValueError("제목은 필수입니다.")
+            data["title"] = title
 
         # Update allowed fields
         allowed_fields = [

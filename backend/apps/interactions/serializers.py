@@ -32,6 +32,7 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     plan_type = serializers.ChoiceField(choices=PlanType.choices, default=PlanType.BASIC)
     days = serializers.IntegerField(min_value=1, default=30)
     payment_id = serializers.CharField(required=False, allow_blank=True, default="")
+    order_id = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 class SubscriptionDetailSerializer(serializers.ModelSerializer):

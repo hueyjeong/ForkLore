@@ -174,6 +174,9 @@ class BranchService:
 
         for field in allowed_fields:
             if field in data and getattr(branch, field) != data[field]:
+                # Validate name is not empty/whitespace
+                if field == "name" and not str(data[field]).strip():
+                    raise ValueError("브랜치 이름은 필수입니다.")
                 setattr(branch, field, data[field])
                 has_changes = True
 

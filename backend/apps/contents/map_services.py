@@ -123,16 +123,16 @@ class MapService:
     @staticmethod
     def retrieve(map_id: int) -> Map:
         """
-        Retrieve a map by ID.
-
-        Args:
-            map_id: Map ID
-
+        Fetches the Map with the given ID.
+        
+        Parameters:
+            map_id (int): ID of the Map to fetch.
+        
         Returns:
-            Map instance
-
+            Map: The Map instance with snapshots, layers, and map_objects prefetched.
+        
         Raises:
-            ValueError: If map not found
+            ValueError: If no Map with the given ID exists.
         """
         try:
             return Map.objects.prefetch_related("snapshots__layers__map_objects").get(id=map_id)
@@ -183,20 +183,20 @@ class MapService:
         base_image_url: str = "",
     ) -> MapSnapshot:
         """
-        Create a new map snapshot.
-
-        Args:
-            map_id: Map ID
-            user: User creating the snapshot
-            valid_from_chapter: Chapter number from which this snapshot is valid
-            base_image_url: Base image URL (optional)
-
+        Create a new MapSnapshot for a map that becomes effective from a specific chapter.
+        
+        Parameters:
+            map_id (int): ID of the map to attach the snapshot to.
+            user (User): User creating the snapshot.
+            valid_from_chapter (int): Chapter number from which this snapshot is effective (inclusive).
+            base_image_url (str): Optional base image URL for the snapshot.
+        
         Returns:
-            Created MapSnapshot instance
-
+            MapSnapshot: The created MapSnapshot, reloaded with its layers prefetched.
+        
         Raises:
-            PermissionDenied: If user is not branch author
-            ValueError: If snapshot for this chapter already exists
+            PermissionDenied: If the user is not the author of the map's branch.
+            ValueError: If the map does not exist or a snapshot for the given chapter already exists.
         """
         try:
             map_obj = Map.objects.select_related("branch").get(id=map_id)
@@ -220,16 +220,10 @@ class MapService:
     @staticmethod
     def get_snapshot_for_chapter(map_id: int, chapter_number: int) -> MapSnapshot | None:
         """
-        Get the appropriate snapshot for a given chapter (spoiler prevention).
-
-        Returns the snapshot with the highest valid_from_chapter that is <= chapter_number.
-
-        Args:
-            map_id: Map ID
-            chapter_number: Current chapter being read
-
+        Return the MapSnapshot for which valid_from_chapter is the largest value less than or equal to chapter_number for the specified map.
+        
         Returns:
-            MapSnapshot instance or None if no valid snapshot exists
+            MapSnapshot | None: The matching MapSnapshot, or None if no snapshot applies.
         """
         return (
             MapSnapshot.objects.filter(
@@ -326,19 +320,19 @@ class MapService:
         style_json: dict | None = None,
     ) -> MapLayer:
         """
-        Update a map layer.
-
-        Args:
-            layer_id: MapLayer ID
-            user: User performing the update
-            name: New name (optional)
-            layer_type: New layer type (optional)
-            z_index: New z-index (optional)
-            is_visible: New visibility (optional)
-            style_json: New style JSON (optional)
-
+        Update fields of an existing map layer.
+        
+        Parameters:
+            layer_id (int): ID of the MapLayer to update.
+            user (User): User performing the update; must be the author of the layer's branch.
+            name (str | None): New name for the layer.
+            layer_type (str | None): New layer type.
+            z_index (int | None): New stacking order value.
+            is_visible (bool | None): New visibility flag.
+            style_json (dict | None): New style definition as a JSON-compatible dict.
+        
         Returns:
-            Updated MapLayer instance
+            MapLayer: The updated MapLayer instance.
         """
         try:
             layer = MapLayer.objects.select_related("snapshot__map__branch").get(id=layer_id)

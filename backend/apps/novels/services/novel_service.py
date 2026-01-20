@@ -20,17 +20,17 @@ class NovelService:
     @transaction.atomic
     def create(self, author: User, data: dict) -> Novel:
         """
-        Create a new novel with automatic main branch creation.
-
-        Args:
-            author: The user creating the novel
-            data: Dict containing novel fields (title, description, genre, etc.)
-
+        Create a novel and automatically create its main branch.
+        
+        Parameters:
+            author (User): The user who will be the novel's author.
+            data (dict): Novel attributes; must include a non-empty `title`. Optional keys: `description`, `cover_image_url`, `genre`, `age_rating`, `status`, `allow_branching`.
+        
         Returns:
-            Created Novel instance
-
+            Novel: The created Novel instance.
+        
         Raises:
-            ValueError/KeyError: If required fields are missing
+            ValueError: If `title` is missing or empty.
         """
         # Validate required fields
         if "title" not in data or not data["title"]:
@@ -65,14 +65,14 @@ class NovelService:
         sort: str | None = None,
     ) -> QuerySet[Novel]:
         """
-        List novels with optional filtering and sorting.
-
-        Args:
-            filters: Dict of filter conditions (genre, status, author, etc.)
-            sort: Sort order ("popular", "latest", "likes")
-
+        Retrieve non-deleted novels optionally filtered by specific fields and ordered by the requested sort.
+        
+        Parameters:
+            filters (dict | None): Optional filter map. Supported keys: `genre`, `status`, `author`, `age_rating`.
+            sort (str | None): Sort key. Supported values: `"popular"` (by total_view_count desc), `"likes"` (by total_like_count desc), `"latest"` or `None` (by created_at desc).
+        
         Returns:
-            QuerySet of novels
+            QuerySet[Novel]: QuerySet of Novel objects matching the provided filters and sort order.
         """
         queryset = Novel.objects.filter(deleted_at__isnull=True)
 

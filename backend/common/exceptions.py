@@ -59,9 +59,24 @@ class ForbiddenException(BusinessException):
 
 class UnauthorizedException(BusinessException):
     def __init__(self, message: str = "인증이 필요합니다.") -> None:
+        """
+        Initialize an UnauthorizedException with an optional message and set its HTTP status to 401 UNAUTHORIZED.
+        
+        Parameters:
+            message (str): Human-readable error message; defaults to "인증이 필요합니다." and is stored as the exception message. The exception's `status_code` is set to HTTP 401 UNAUTHORIZED.
+        """
         super().__init__(message, status.HTTP_401_UNAUTHORIZED)
 
 
 class ConflictError(BusinessException):
     def __init__(self, message: str = "데이터가 변경되었습니다. 다시 시도해주세요.") -> None:
+        """
+        Initialize a ConflictError with a message and HTTP 409 Conflict status.
+        
+        Parameters:
+            message (str): Human-readable error message; defaults to "데이터가 변경되었습니다. 다시 시도해주세요.".
+        
+        Description:
+            Sets the exception's message and HTTP status code to 409 (Conflict).
+        """
         super().__init__(message, status.HTTP_409_CONFLICT)

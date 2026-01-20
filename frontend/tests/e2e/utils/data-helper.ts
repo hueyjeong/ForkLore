@@ -1,6 +1,7 @@
 /**
- * Resets the test data to a clean state.
- * Currently a stub, but intended to call a backend cleanup endpoint.
+ * Reset test data to a clean, deterministic state for end-to-end tests.
+ *
+ * Performs whatever cleanup or reinitialization is required so tests run against a known dataset.
  */
 export async function resetTestData() {
   // TODO: Implement actual data reset logic (e.g., API call to /test/reset)

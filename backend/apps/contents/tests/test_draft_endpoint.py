@@ -17,7 +17,17 @@ from apps.contents.models import Chapter
 
 
 def get_tokens_for_user(user):
-    """Generate JWT tokens for a user."""
+    """
+    Generate access and refresh JWT tokens for the given user.
+    
+    Parameters:
+        user (django.contrib.auth.models.User): The user for whom to generate tokens.
+    
+    Returns:
+        dict: A mapping with keys:
+            - "access": Access token string.
+            - "refresh": Refresh token string.
+    """
     refresh = RefreshToken.for_user(user)
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
@@ -27,7 +37,11 @@ class TestChapterDraft:
     """Tests for POST /api/v1/branches/{branch_id}/chapters/draft/"""
 
     def test_save_draft_success(self):
-        """Should save draft successfully."""
+        """
+        Verifies that posting valid draft data to the branch draft endpoint saves a draft and indicates success.
+        
+        Asserts the response status is 200 and the JSON contains `"success": True`, and asserts `DraftService.save_draft` is called once with `branch_id` set to the branch's id, `chapter_id=None`, and the provided `title` and `content`.
+        """
         user = baker.make(User)
         client = APIClient()
         tokens = get_tokens_for_user(user)
@@ -56,7 +70,11 @@ class TestChapterDraft:
             )
 
     def test_save_draft_with_chapter_id(self):
-        """Should save draft for existing chapter."""
+        """
+        Saves a draft for an existing chapter.
+        
+        Verifies that POSTing draft data with `chapter_id` to the draft endpoint returns HTTP 200 and calls DraftService.save_draft once with the branch id, chapter id, title, and content.
+        """
         user = baker.make(User)
         client = APIClient()
         tokens = get_tokens_for_user(user)

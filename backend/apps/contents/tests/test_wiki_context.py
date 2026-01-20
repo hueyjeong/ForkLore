@@ -57,7 +57,9 @@ class TestWikiContextFiltering:
         assert len(results) == 2
 
     def test_list_wikis_future_chapter_is_hidden(self):
-        """미래 등장 위키는 숨겨져야 함"""
+        """
+        Ensure wikis whose first_appearance is after the current chapter are not returned by WikiService.list.
+        """
         branch = baker.make("novels.Branch")
 
         # Wiki appears in chapter 10

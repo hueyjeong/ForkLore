@@ -27,15 +27,15 @@ class BranchService:
         sort: str | None = None,
     ) -> QuerySet[Branch]:
         """
-        List branches for a novel with optional filtering and sorting.
-
-        Args:
-            novel_id: The novel's primary key
-            visibility: Filter by visibility (PRIVATE, PUBLIC, LINKED)
-            sort: Sort order ("votes", "latest", "views")
-
+        List branches for a novel with optional visibility filtering and sorting.
+        
+        Parameters:
+            novel_id (int): Primary key of the novel to list branches for.
+            visibility (str | None): Optional visibility filter; expected values include "PRIVATE", "PUBLIC", or "LINKED".
+            sort (str | None): Optional sort key: "votes" (by vote_count), "views" (by view_count), or any other value for latest (by created_at).
+        
         Returns:
-            QuerySet of branches
+            QuerySet[Branch]: QuerySet of non-deleted Branch objects for the novel, with author relation eager-loaded.
         """
         queryset = Branch.objects.filter(novel_id=novel_id, deleted_at__isnull=True).select_related(
             "author"
@@ -95,21 +95,21 @@ class BranchService:
     ) -> Branch:
         """
         Create a forked branch from a parent branch.
-
-        Args:
-            novel_id: The novel's primary key
-            parent_branch_id: The parent branch's primary key
-            author: The user creating the fork
-            data: Dict containing branch fields (name, description, etc.)
-            parent_version: Optimistic locking version of parent branch
-
+        
+        Parameters:
+            novel_id (int): ID of the novel to fork within.
+            parent_branch_id (int): ID of the parent branch to fork from.
+            author (User): User creating the new branch.
+            data (dict): Branch fields; must include `name`. May include `description`, `cover_image_url`, `branch_type`, `fork_point_chapter`.
+            parent_version (int | None): Optional optimistic-locking version expected for the parent branch.
+        
         Returns:
-            Created Branch instance
-
+            Branch: The newly created Branch instance.
+        
         Raises:
-            PermissionError: If novel doesn't allow branching
-            ValueError: If required fields are missing
-            ConflictError: If parent branch version mismatch
+            PermissionError: If the novel does not allow branching.
+            ValueError: If required data is missing (e.g., `name`).
+            ConflictError: If `parent_version` is provided and does not match the parent's current version.
         """
         novel = Novel.objects.get(id=novel_id, deleted_at__isnull=True)
 
@@ -151,18 +151,20 @@ class BranchService:
         data: dict,
     ) -> Branch:
         """
-        Update branch details.
-
-        Args:
-            branch_id: The branch's primary key
-            author: The user attempting the update
-            data: Dict containing fields to update
-
+        Update mutable fields of an existing branch owned by the specified author.
+        
+        Only the `name`, `description`, and `cover_image_url` keys in `data` are applied when present. The branch's `version` is incremented and the saved, refreshed Branch instance is returned.
+        
+        Parameters:
+            branch_id (int): Primary key of the branch to update.
+            author (User): User attempting the update; must be the branch owner.
+            data (dict): Dict containing fields to update; supported keys: `name`, `description`, `cover_image_url`.
+        
         Returns:
-            Updated Branch instance
-
+            Branch: The updated Branch instance with an incremented `version`.
+        
         Raises:
-            PermissionError: If user is not the owner
+            PermissionError: If `author` is not the branch owner.
         """
         branch = Branch.objects.get(id=branch_id, deleted_at__isnull=True)
 
@@ -189,19 +191,20 @@ class BranchService:
         visibility: str,
     ) -> Branch:
         """
-        Update branch visibility.
-
+        Change a branch's visibility, increment its version, and adjust the novel's linked-branch counter when needed.
+        
         Args:
-            branch_id: The branch's primary key
-            author: The user attempting the update
-            visibility: New visibility value
-
+            branch_id (int): Primary key of the branch to update (only non-deleted branches are considered).
+            author (User): User attempting the update; must be the branch's owner.
+            visibility (str): New visibility value to apply.
+        
         Returns:
-            Updated Branch instance
-
+            Branch: The updated Branch instance (refreshed from the database).
+        
         Raises:
-            PermissionError: If user is not the owner
-            ValueError: If trying to change main branch visibility
+            Branch.DoesNotExist: If no non-deleted branch with the given id exists.
+            PermissionError: If the provided author is not the branch owner.
+            ValueError: If attempting to change the visibility of the main branch.
         """
         branch = Branch.objects.get(id=branch_id, deleted_at__isnull=True)
 

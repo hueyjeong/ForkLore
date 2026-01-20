@@ -20,6 +20,19 @@ interface PricingCardProps {
   isLoading?: boolean;
 }
 
+/**
+ * Render a pricing card for a subscription plan.
+ *
+ * Displays plan title, description, price per month, feature list, and a footer button
+ * that either indicates the current plan or links to the checkout for subscribing.
+ *
+ * @param planType - The plan identifier (PlanType), controls title, description, and styling
+ * @param price - Price label to display (e.g., "$5")
+ * @param features - Ordered list of feature descriptions to render
+ * @param isCurrentPlan - If true, shows a disabled "Current Plan" button instead of a subscribe action
+ * @param isLoading - If true, disables the Subscribe button while an action is pending
+ * @returns The pricing card element
+ */
 export function PricingCard({
   planType,
   price,

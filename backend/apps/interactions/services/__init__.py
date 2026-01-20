@@ -95,23 +95,22 @@ class SubscriptionService:
         order_id: str = "",
     ) -> Subscription:
         """
-        Create or extend a subscription.
-
-        If user has an active subscription, extends from current expiry.
-        Otherwise, creates a new subscription starting now.
-
-        Args:
-            user instance
-            plan_type: BASIC or PREMIUM
-            days: Number of days to subscribe
-            payment_id: Payment reference ID
-            order_id: Order ID for payment
-
+        Create or extend a user's subscription.
+        
+        If the user has an active subscription, extend its expiry by `days`; otherwise create a new active subscription starting now.
+        
+        Parameters:
+            user (User): Subscriber.
+            plan_type (str): Subscription plan type (e.g., `PlanType.BASIC`, `PlanType.PREMIUM`).
+            days (int): Number of days to add to the subscription.
+            payment_id (str): External payment reference; required with `order_id` for paid plans to confirm payment.
+            order_id (str): External order identifier used when confirming payment.
+        
         Returns:
-            Subscription instance
-
+            Subscription: The created or extended subscription instance.
+        
         Raises:
-            PaymentFailedException: If payment fails
+            PaymentFailedException: If payment confirmation fails during paid subscription processing.
         """
         now = timezone.now()
 
@@ -171,16 +170,12 @@ class SubscriptionService:
 
     def cancel(self, user: User) -> bool:
         """
-        Cancel user's active subscription.
-
-        Sets status to CANCELLED and records cancellation time.
-        Subscription remains valid until expires_at.
-
-        Args:
-            user instance
-
+        Cancel the user's currently active subscription.
+        
+        Sets the subscription's status to CANCELLED, records the cancellation time, and disables auto-renew; the subscription remains valid until its existing expires_at.
+        
         Returns:
-            True if cancelled, False if no active subscription
+            `True` if an active subscription was found and cancelled, `False` otherwise.
         """
         subscription = Subscription.objects.filter(
             user=user,
@@ -895,24 +890,22 @@ class WalletService:
         description: str = "",
     ) -> dict:
         """
-        Charge coins to user's wallet.
-
-        Creates wallet if it doesn't exist.
-        Verifies payment if payment_key and order_id are provided.
-
-        Args:
-            user instance
-            amount: Amount to charge (must be positive)
-            payment_key: Payment reference key (optional)
-            order_id: Order ID (optional)
-            description: Optional description
-
+        Charge a user's coin wallet and record the corresponding transaction.
+        
+        Upserts the user's Wallet (creating it if missing), increases its balance by `amount`, and creates a CHARGE CoinTransaction. If both `payment_key` and `order_id` are provided, the payment is confirmed before updating the wallet; if the database transaction fails after confirmation, a payment cancellation will be attempted.
+        
+        Parameters:
+            amount (int): Amount to add to the wallet; must be greater than 0.
+            payment_key (str): External payment reference key to confirm (optional).
+            order_id (str): External order identifier to confirm (optional).
+            description (str): Optional description to store on the transaction.
+        
         Returns:
-            Dict with 'wallet' and 'transaction' keys
-
+            dict: Dictionary with keys "wallet" (the Wallet instance) and "transaction" (the created CoinTransaction).
+        
         Raises:
-            ValueError: If amount is not positive
-            PaymentFailedException: If payment confirmation fails
+            ValueError: If `amount` is not greater than 0.
+            PaymentFailedException: If external payment confirmation fails.
         """
         from django.db import transaction
 

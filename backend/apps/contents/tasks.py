@@ -20,11 +20,10 @@ from apps.contents.models import Chapter, ChapterStatus
 @shared_task
 def publish_scheduled_chapters() -> int:
     """
-    Publish all chapters whose scheduled_at time has passed.
-
-    This task should be run periodically (e.g., every minute) via celery-beat.
-    It finds all SCHEDULED chapters with scheduled_at <= now and publishes them.
-
+    Publish chapters whose scheduled_at time is in the past.
+    
+    Updates each chapter's status to PUBLISHED, sets its published_at timestamp to now, and increments the associated branch's chapter_count and version.
+    
     Returns:
         int: Number of chapters published
     """
@@ -59,9 +58,12 @@ def publish_scheduled_chapters() -> int:
 @shared_task
 def sync_drafts_to_db() -> str:
     """
-    Sync Redis drafts to the database.
-    Finds all keys matching 'draft:*:*' and updates corresponding Chapter objects.
-    Skips keys ending in ':new'.
+    Synchronize draft entries stored in Redis into Chapter records in the database.
+    
+    Scans Redis keys matching "draft:*:*" (skipping keys ending with ":new") and, for each valid draft payload, updates the corresponding Chapter when its status is DRAFT and its title or content differ from the stored values. Each chapter update is performed inside its own database transaction. The task counts successful updates and errors, aborting early if 10 errors occur.
+    
+    Returns:
+        result (str): A summary string in the form "Synced {updated_count} drafts. Errors: {errors_count}". If a Redis connection cannot be established, returns "Redis error: {error_message}".
     """
     from apps.contents.services import ChapterService
 

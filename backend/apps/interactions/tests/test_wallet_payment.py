@@ -20,7 +20,12 @@ def user(db):
 
 @pytest.fixture
 def wallet_service():
-    """Create WalletService instance."""
+    """
+    Provide a WalletService instance for tests.
+    
+    Returns:
+        WalletService: An initialized WalletService to be used by test cases.
+    """
     return WalletService()
 
 
@@ -62,7 +67,9 @@ class TestWalletServiceChargePayment:
             assert "Payment: test_payment_key" in result["transaction"].description
 
     def test_charge_fails_if_payment_fails(self, wallet_service, user):
-        """Should NOT update balance if payment fails."""
+        """
+        Do not update the user's wallet balance or create a CoinTransaction when payment confirmation raises PaymentFailedException.
+        """
         payment_key = "fail_payment_key"
         order_id = "fail_order_id"
         amount = 1000

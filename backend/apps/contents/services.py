@@ -37,17 +37,17 @@ class ChapterService:
         price: int = 0,
     ) -> Chapter:
         """
-        Create a new chapter in DRAFT status.
-
-        Args:
-            branch: Branch instance
-            title: Chapter title
-            content: Markdown content
-            access_type: FREE or SUBSCRIPTION
-            price: Price for subscription chapters
-
+        Create a new draft chapter for the given branch.
+        
+        Parameters:
+            branch (Branch): Branch to attach the chapter to.
+            title (str): Chapter title.
+            content (str): Markdown source of the chapter.
+            access_type (str): Access type, e.g. AccessType.FREE or AccessType.SUBSCRIPTION.
+            price (int): Price for subscription chapters.
+        
         Returns:
-            Created Chapter instance
+            Chapter: The created Chapter instance.
         """
         # Get next chapter number
         last_chapter = Chapter.objects.filter(branch=branch).order_by("-chapter_number").first()
@@ -82,20 +82,22 @@ class ChapterService:
         price: int | None = None,
     ) -> Chapter:
         """
-        Update a draft chapter.
-
-        Args:
-            chapter: Chapter to update
-            title: New title (optional)
-            content: New markdown content (optional)
-            access_type: New access type (optional)
-            price: New price (optional)
-
+        Apply optional updates to a chapter's fields.
+        
+        If `content` is provided for a chapter whose status is `PUBLISHED`, a ValueError is raised. Updating `content` also updates `content_html` and `word_count`.
+        
+        Parameters:
+            chapter (Chapter): Chapter to update.
+            title (str | None): New title (optional).
+            content (str | None): New markdown content (optional). When set, `content_html` and `word_count` are recalculated.
+            access_type (str | None): New access type (optional).
+            price (int | None): New price (optional).
+        
         Returns:
-            Updated Chapter instance
-
+            Chapter: The updated Chapter instance.
+        
         Raises:
-            ValueError: If chapter is already published
+            ValueError: If the chapter is published and `content` is provided.
         """
         if chapter.status == ChapterStatus.PUBLISHED and content is not None:
             raise ValueError("발행된 회차의 내용은 수정할 수 없습니다.")
@@ -119,16 +121,18 @@ class ChapterService:
 
     def publish(self, chapter: Chapter) -> Chapter:
         """
-        Publish a draft or scheduled chapter.
-
-        Args:
-            chapter: Chapter to publish
-
+        Mark the given chapter as published and update branch counters.
+        
+        Sets the chapter's status to PUBLISHED, assigns published_at to the current time, saves the chapter, and increments the parent branch's chapter_count and version.
+        
+        Parameters:
+            chapter (Chapter): The chapter to publish.
+        
         Returns:
-            Published Chapter instance
-
+            Chapter: The same chapter instance with status set to PUBLISHED and published_at populated.
+        
         Raises:
-            ValueError: If chapter is already published
+            ValueError: If the chapter is already in PUBLISHED status.
         """
         if chapter.status == ChapterStatus.PUBLISHED:
             raise ValueError("이미 발행된 회차입니다.")
@@ -206,14 +210,29 @@ class ChapterService:
         return qs
 
     def convert_markdown(self, content: str) -> str:
-        """Convert markdown content to HTML."""
+        """
+        Render Markdown source into HTML.
+        
+        This uses the Markdown processor with the "extra", "codehilite", and "toc" extensions to support extended syntax, code highlighting, and table-of-contents generation.
+        
+        Parameters:
+            content (str): Markdown source text to be converted.
+        
+        Returns:
+            html (str): HTML string produced from the Markdown input.
+        """
         md = markdown.Markdown(extensions=["extra", "codehilite", "toc"])
         return md.convert(content)
 
     def calculate_word_count(self, content: str) -> int:
         """
-        Calculate word count from content.
-        For Korean, counts characters. For English, counts words.
+        Return an approximate word count for mixed Korean/English markdown content.
+        
+        Parameters:
+            content (str): Text content, possibly containing Markdown syntax.
+        
+        Returns:
+            int: Number of word-like tokens (separated by whitespace). Returns 0 for empty or whitespace-only input.
         """
         # Remove markdown syntax
         plain_text = re.sub(r"[#*_`\[\]()>]", "", content)
@@ -380,15 +399,16 @@ class WikiService:
         current_chapter: int | None = None,
     ) -> QuerySet[WikiEntry]:
         """
-        List wiki entries for a branch.
-
-        Args:
-            branch_id: Branch ID
-            tag_id: Filter by tag ID (optional)
-            current_chapter: Filter by current reading chapter (optional)
-
+        Return wiki entries for a branch, optionally filtered by tag and by visibility at a given chapter.
+        
+        Parameters:
+            branch_id (int): ID of the branch whose wiki entries to list.
+            tag_id (int | None): If provided, include only entries associated with this tag ID.
+            current_chapter (int | None): If provided, include only entries whose `first_appearance` is less than
+                or equal to this chapter number or is null.
+        
         Returns:
-            QuerySet of WikiEntry
+            QuerySet[WikiEntry]: QuerySet of wiki entries for the branch ordered by name.
         """
         qs = WikiEntry.objects.filter(branch_id=branch_id).prefetch_related("tags")
 

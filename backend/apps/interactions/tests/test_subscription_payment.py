@@ -10,6 +10,13 @@ from apps.users.models import User
 @pytest.mark.django_db
 class TestSubscriptionPayment:
     def setup_method(self):
+        """
+        Prepare test fixtures before each test method by creating a SubscriptionService instance and a test user.
+        
+        Sets:
+            self.service: SubscriptionService instance used by tests.
+            self.user: Django User created with username "testuser" and a default password.
+        """
         self.service = SubscriptionService()
         self.user = User.objects.create_user(username="testuser", password="password")
 

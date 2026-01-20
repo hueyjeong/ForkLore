@@ -1,8 +1,11 @@
 import { Page } from '@playwright/test';
 
 /**
- * Logs in a user by setting authentication cookies directly.
- * Useful for tests that require an authenticated state but don't need to test the login flow itself.
+ * Set authentication cookies on the given Playwright page to establish an authenticated test state.
+ *
+ * @param page - Playwright Page whose context will receive the cookies
+ * @param accessToken - Value for the `access_token` cookie (default: `'mock-access-token'`)
+ * @param refreshToken - Value for the `refresh_token` cookie (default: `'mock-refresh-token'`)
  */
 export async function loginUser(page: Page, accessToken = 'mock-access-token', refreshToken = 'mock-refresh-token') {
   await page.context().addCookies([

@@ -108,7 +108,21 @@ class ChapterViewSet(viewsets.ViewSet):
         return [AllowAny()]
 
     def list(self, request: Request, branch_pk: int | None = None) -> Response:
-        """List chapters for a branch."""
+        """
+        List chapters for a branch, returning a paginated list visible to the requester.
+        
+        If the requester is the branch author, unpublished chapters (drafts) are included; otherwise only published chapters are returned.
+        
+        Parameters:
+            request (Request): The incoming HTTP request; used to determine authentication and user.
+            branch_pk (int | None): Primary key of the branch. If `None` or not found, a `NotFound` error is raised.
+        
+        Returns:
+            Response: Paginated response containing serialized chapter list data.
+        
+        Raises:
+            NotFound: If `branch_pk` is `None` or no branch with the given id exists.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -132,7 +146,23 @@ class ChapterViewSet(viewsets.ViewSet):
     def retrieve(
         self, request: Request, branch_pk: int | None = None, pk: int | None = None
     ) -> Response:
-        """Get chapter detail by chapter_number."""
+        """
+        Retrieve chapter details for a given chapter number within a branch.
+        
+        Fetches the chapter identified by branch_pk and chapter number pk and returns its serialized detail. Unpublished chapters are accessible only to the branch author; other users will receive a not-found response.
+        
+        Parameters:
+            request (Request): The incoming HTTP request (used to check user authentication).
+            branch_pk (int | None): ID of the branch containing the chapter.
+            pk (int | None): Chapter number within the branch.
+        
+        Returns:
+            Response: Serialized chapter detail data.
+        
+        Raises:
+            NotFound: If branch_pk is None, the branch does not exist, the chapter is not found, or the requester is not permitted to view an unpublished chapter.
+            ValidationError: If pk is missing or cannot be parsed as an integer.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -160,7 +190,20 @@ class ChapterViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
-        """Create a new chapter."""
+        """
+        Create a new chapter for the specified branch.
+        
+        Parameters:
+            branch_pk (int | None): Primary key of the branch to create the chapter under; returns 404 if not found.
+        
+        Returns:
+            Response: Serialized chapter detail data with HTTP 201 Created status.
+        
+        Raises:
+            NotFound: If the branch does not exist.
+            PermissionDenied: If the requesting user is not the branch author.
+            ValidationError: If request data fails serializer validation.
+        """
         # Get branch and verify ownership
         try:
             branch = Branch.objects.get(pk=branch_pk)
@@ -204,7 +247,22 @@ class ChapterViewSet(viewsets.ViewSet):
     )
     @action(detail=False, methods=["post"], url_path="draft")
     def draft(self, request: Request, branch_pk: int | None = None) -> Response:
-        """Auto-save chapter draft."""
+        """
+        Auto-saves a draft for a chapter in the specified branch.
+        
+        Validates that the branch exists and the requester is the branch author, requires non-empty `content`, and persists the draft via the DraftService.
+        
+        Parameters:
+            branch_pk (int | None): ID of the branch to which the draft belongs.
+        
+        Returns:
+            Response: A response containing `{"success": True}` on success.
+        
+        Raises:
+            NotFound: If `branch_pk` is None or the branch does not exist.
+            PermissionDenied: If the requesting user is not the branch author.
+            ValidationError: If `content` is missing or empty.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -383,7 +441,17 @@ class ChapterDetailViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=["post", "delete"], permission_classes=[IsAuthenticated])
     def bookmark(self, request: Request, pk: int | None = None) -> Response:
-        """Add or remove a bookmark."""
+        """
+        Handle adding or removing a bookmark for the specified chapter.
+        
+        On POST, validates input and creates a bookmark for the requesting user. On DELETE, removes the user's bookmark for the chapter.
+        
+        Returns:
+            Serialized bookmark data with HTTP 201 on successful create; empty response with HTTP 204 on successful delete.
+        
+        Raises:
+            NotFound: If the chapter identified by `pk` does not exist.
+        """
         from apps.interactions.serializers import BookmarkCreateSerializer, BookmarkSerializer
         from apps.interactions.services import BookmarkService
 
@@ -421,7 +489,15 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         permission_classes=[IsAuthenticated],
     )
     def reading_progress(self, request: Request, pk: int | None = None) -> Response:
-        """Record reading progress."""
+        """
+        Record and return a reading progress log for the specified chapter.
+        
+        Returns:
+            reading_log (dict): Serialized reading log data for the recorded progress.
+        
+        Raises:
+            NotFound: If the chapter identified by `pk` does not exist.
+        """
         from apps.interactions.serializers import ReadingLogSerializer, ReadingProgressSerializer
         from apps.interactions.services import ReadingService
 
@@ -474,7 +550,17 @@ class WikiEntryViewSet(viewsets.ViewSet):
         return [AllowAny()]
 
     def list(self, request: Request, branch_pk: int | None = None) -> Response:
-        """List wiki entries for a branch."""
+        """
+        List wiki entries for the specified branch.
+        
+        Accepts optional query parameters `tag` (tag id) and `currentChapter` (chapter number) to filter results. Raises `NotFound` when `branch_pk` is None.
+        
+        Parameters:
+            branch_pk (int | None): ID of the branch to list wikis for.
+        
+        Returns:
+            Response: Paginated response containing serialized wiki entry list.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -495,7 +581,20 @@ class WikiEntryViewSet(viewsets.ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
-        """Create a new wiki entry."""
+        """
+        Create a wiki entry under the specified branch.
+        
+        Parameters:
+            branch_pk (int | None): ID of the branch to create the wiki entry under.
+        
+        Returns:
+            dict: Serialized detail representation of the created wiki entry.
+        
+        Raises:
+            NotFound: If `branch_pk` is None or the branch cannot be found.
+            PermissionDenied: If the user is not allowed to create a wiki entry on the branch.
+            ValidationError: If input validation fails or the service reports a validation error.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -555,7 +654,20 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
         return [IsAuthenticated()]
 
     def retrieve(self, request: Request, pk: int | None = None) -> Response:
-        """Get wiki detail, optionally with context-aware snapshot."""
+        """
+        Retrieve a wiki entry's detail, optionally scoped to a chapter for context.
+        
+        The endpoint accepts an optional `chapter` query parameter (integer) to include chapter-aware snapshot/context in the returned representation.
+        
+        Parameters:
+            pk (int | None): ID of the wiki entry to retrieve.
+        
+        Returns:
+            dict: Serialized wiki detail data, possibly including chapter-scoped context when `chapter` is provided.
+        
+        Raises:
+            NotFound: If `pk` is None or the wiki entry does not exist.
+        """
         if pk is None:
             raise NotFound("위키를 찾을 수 없습니다.")
 
@@ -571,7 +683,17 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
-        """Update a wiki entry."""
+        """
+        Partially update a wiki entry identified by its ID.
+        
+        Returns:
+            dict: Serialized wiki detail representation.
+        
+        Raises:
+            NotFound: If `pk` is None or the wiki does not exist.
+            PermissionDenied: If the requesting user is not allowed to update the wiki.
+            ValidationError: If input data is invalid or service-level validation fails.
+        """
         if pk is None:
             raise NotFound("위키를 찾을 수 없습니다.")
 
@@ -593,7 +715,19 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
         return Response(response_serializer.data)
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
-        """Delete a wiki entry."""
+        """
+        Delete the specified wiki entry.
+        
+        Parameters:
+            pk: ID of the wiki to delete. If None, a NotFound error is raised.
+        
+        Returns:
+            Response: HTTP 204 No Content on successful deletion.
+        
+        Raises:
+            NotFound: If `pk` is None or the wiki does not exist.
+            PermissionDenied: If the requesting user is not authorized to delete the wiki.
+        """
         if pk is None:
             raise NotFound("위키를 찾을 수 없습니다.")
 
@@ -613,7 +747,20 @@ class WikiEntryDetailViewSet(viewsets.ViewSet):
     )
     @action(detail=True, methods=["put"])
     def tags(self, request: Request, pk: int | None = None) -> Response:
-        """Update wiki tags."""
+        """
+        Update tags for a wiki entry.
+        
+        Parameters:
+            pk (int | None): ID of the wiki to update.
+        
+        Returns:
+            dict: Serialized wiki entry data as returned by WikiEntryDetailSerializer.
+        
+        Raises:
+            NotFound: If `pk` is None or the wiki cannot be found.
+            PermissionDenied: If the requesting user is not authorized to update tags.
+            ValidationError: If input validation fails or the service raises a value error.
+        """
         if pk is None:
             raise NotFound("위키를 찾을 수 없습니다.")
 
@@ -662,7 +809,18 @@ class WikiTagViewSet(viewsets.ViewSet):
         return [AllowAny()]
 
     def list(self, request: Request, branch_pk: int | None = None) -> Response:
-        """List tag definitions for a branch."""
+        """
+        Retrieve wiki tag definitions for a branch.
+        
+        Parameters:
+            branch_pk (int | None): ID of the branch whose wiki tag definitions will be listed.
+        
+        Returns:
+            tags (list): Serialized wiki tag definition objects.
+        
+        Raises:
+            NotFound: If `branch_pk` is None.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -671,7 +829,21 @@ class WikiTagViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
-        """Create a new tag definition."""
+        """
+        Create a new wiki tag definition for a specific branch.
+        
+        Parameters:
+            request (Request): The incoming HTTP request containing tag data.
+            branch_pk (int | None): ID of the branch the tag will belong to.
+        
+        Returns:
+            dict: Serialized wiki tag definition returned in the response body with HTTP 201 status.
+        
+        Raises:
+            NotFound: If `branch_pk` is None.
+            PermissionDenied: If the user is not allowed to create a tag for the branch.
+            ValidationError: If input validation fails or the service reports a value error.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -704,7 +876,19 @@ class WikiTagDetailViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
-        """Delete a tag definition."""
+        """
+        Delete a wiki tag definition identified by `pk`.
+        
+        Parameters:
+            pk (int | None): ID of the tag to delete.
+        
+        Returns:
+            Response: HTTP 204 No Content on successful deletion.
+        
+        Raises:
+            NotFound: If `pk` is None or no tag exists with the given ID.
+            PermissionDenied: If the requesting user is not authorized to delete the tag.
+        """
         if pk is None:
             raise NotFound("태그를 찾을 수 없습니다.")
 
@@ -745,7 +929,18 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
         return [AllowAny()]
 
     def list(self, request: Request, wiki_pk: int | None = None) -> Response:
-        """List snapshots for a wiki."""
+        """
+        List snapshot entries for a wiki.
+        
+        Parameters:
+            wiki_pk (int | None): ID of the wiki whose snapshots should be listed.
+        
+        Returns:
+            list: Serialized list of the wiki's snapshots.
+        
+        Raises:
+            NotFound: If `wiki_pk` is None or if the wiki does not exist.
+        """
         if wiki_pk is None:
             raise NotFound("위키를 찾을 수 없습니다.")
 
@@ -758,7 +953,20 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request: Request, wiki_pk: int | None = None) -> Response:
-        """Create a new snapshot."""
+        """
+        Create a new wiki snapshot for the specified wiki.
+        
+        Parameters:
+            wiki_pk (int | None): ID of the wiki to attach the snapshot to.
+        
+        Returns:
+            response (Response): Serialized snapshot data with HTTP 201 Created.
+        
+        Raises:
+            NotFound: If `wiki_pk` is None or the wiki cannot be found.
+            PermissionDenied: If the requesting user is not authorized to add a snapshot.
+            ValidationError: If input validation fails or the service raises a value error.
+        """
         if wiki_pk is None:
             raise NotFound("위키를 찾을 수 없습니다.")
 
@@ -815,7 +1023,17 @@ class MapViewSet(viewsets.ViewSet):
         return [AllowAny()]
 
     def list(self, request: Request, branch_pk: int | None = None) -> Response:
-        """List maps for a branch."""
+        """
+        List maps belonging to the specified branch.
+        
+        Retrieves maps for the branch identified by `branch_pk`, paginates the results, and returns serialized list data suitable for the list endpoint. Raises NotFound if `branch_pk` is None.
+        
+        Parameters:
+            branch_pk (int | None): ID of the branch whose maps should be listed.
+        
+        Returns:
+            Paginated serialized map list data for the given branch.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -828,7 +1046,20 @@ class MapViewSet(viewsets.ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
     def create(self, request: Request, branch_pk: int | None = None) -> Response:
-        """Create a new map."""
+        """
+        Create a new map under the specified branch.
+        
+        Parameters:
+            branch_pk (int | None): ID of the branch to create the map under.
+        
+        Returns:
+            dict: Serialized map detail data.
+        
+        Raises:
+            NotFound: If `branch_pk` is None or the branch does not exist.
+            PermissionDenied: If the requesting user is not allowed to create a map in the branch.
+            ValidationError: If input data is invalid.
+        """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")
 
@@ -883,7 +1114,20 @@ class MapDetailViewSet(viewsets.ViewSet):
         return [IsAuthenticated()]
 
     def retrieve(self, request: Request, pk: int | None = None) -> Response:
-        """Get map detail, optionally with context-aware snapshot."""
+        """
+        Retrieve detailed map information, optionally scoped to a specific chapter.
+        
+        Accepts an optional query parameter `currentChapter` (integer) to provide chapter-aware context for the serialized map. Raises NotFound if `pk` is None or the map cannot be located.
+        
+        Parameters:
+            pk (int | None): ID of the map to retrieve.
+        
+        Returns:
+            dict: Serialized data from MapDetailSerializer, using `chapter` in context when `currentChapter` is provided.
+        
+        Raises:
+            NotFound: If `pk` is None or MapService.retrieve raises a ValueError indicating the map was not found.
+        """
         if pk is None:
             raise NotFound("지도를 찾을 수 없습니다.")
 
@@ -899,7 +1143,20 @@ class MapDetailViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def partial_update(self, request: Request, pk: int | None = None) -> Response:
-        """Update a map."""
+        """
+        Partially update a map identified by its ID.
+        
+        Parameters:
+            pk (int | None): ID of the map to update.
+        
+        Returns:
+            Response: Serialized updated map using MapDetailSerializer.
+        
+        Raises:
+            NotFound: If `pk` is None or the map does not exist.
+            PermissionDenied: If the requesting user is not authorized to update the map.
+            ValidationError: If provided data fails validation or update constraints.
+        """
         if pk is None:
             raise NotFound("지도를 찾을 수 없습니다.")
 
@@ -921,7 +1178,19 @@ class MapDetailViewSet(viewsets.ViewSet):
         return Response(response_serializer.data)
 
     def destroy(self, request: Request, pk: int | None = None) -> Response:
-        """Delete a map."""
+        """
+        Delete a map identified by its ID.
+        
+        Parameters:
+            pk (int | None): ID of the map to delete.
+        
+        Returns:
+            Response: HTTP 204 NO CONTENT on successful deletion.
+        
+        Raises:
+            NotFound: If `pk` is None or no map with the given ID exists.
+            PermissionDenied: If the requesting user is not authorized to delete the map.
+        """
         if pk is None:
             raise NotFound("지도를 찾을 수 없습니다.")
 
@@ -975,7 +1244,21 @@ class MapSnapshotViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request: Request, map_pk: int | None = None) -> Response:
-        """Create a new map snapshot."""
+        """
+        Create a new snapshot for the specified map.
+        
+        Parameters:
+            request (Request): The incoming HTTP request containing snapshot data.
+            map_pk (int | None): ID of the map to add the snapshot to; required.
+        
+        Returns:
+            Response: HTTP 201 response containing the created snapshot serialized by MapSnapshotSerializer.
+        
+        Raises:
+            NotFound: If `map_pk` is None (map not found).
+            PermissionDenied: If the user is not allowed to create a snapshot for the map.
+            ValidationError: If the provided data is invalid or MapService reports a value error.
+        """
         if map_pk is None:
             raise NotFound("지도를 찾을 수 없습니다.")
 
@@ -1024,7 +1307,18 @@ class MapLayerViewSet(viewsets.ViewSet):
         return [AllowAny()]
 
     def list(self, request: Request, snapshot_pk: int | None = None) -> Response:
-        """List layers for a snapshot."""
+        """
+        List map layers for the specified snapshot.
+        
+        Parameters:
+            snapshot_pk (int | None): ID of the MapSnapshot whose layers will be listed.
+        
+        Returns:
+            Response: DRF Response containing a serialized list of map layers.
+        
+        Raises:
+            NotFound: If no MapSnapshot exists with the given `snapshot_pk`.
+        """
         try:
             snapshot = MapSnapshot.objects.prefetch_related("layers__map_objects").get(
                 id=snapshot_pk
@@ -1036,7 +1330,21 @@ class MapLayerViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request: Request, snapshot_pk: int | None = None) -> Response:
-        """Create a new layer."""
+        """
+        Create a new map layer under the given snapshot.
+        
+        Parameters:
+            request (Request): The HTTP request containing layer data.
+            snapshot_pk (int | None): ID of the parent snapshot; raises NotFound if None.
+        
+        Returns:
+            response (dict): Serialized data of the created MapLayer.
+        
+        Raises:
+            NotFound: If `snapshot_pk` is None.
+            PermissionDenied: If the requesting user is not allowed to add a layer.
+            ValidationError: If input validation fails or service returns a value error.
+        """
         if snapshot_pk is None:
             raise NotFound("스냅샷을 찾을 수 없습니다.")
 
@@ -1095,7 +1403,17 @@ class MapObjectViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     def create(self, request: Request, layer_pk: int | None = None) -> Response:
-        """Create a new object."""
+        """
+        Create a new map object within the specified map layer.
+        
+        Validates the provided layer identifier and input data, enforces authorisation, and returns the created object's serialized representation.
+        
+        Parameters:
+            layer_pk (int | None): ID of the parent map layer.
+        
+        Returns:
+            dict: Serialized map object data.
+        """
         if layer_pk is None:
             raise NotFound("레이어를 찾을 수 없습니다.")
 

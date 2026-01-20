@@ -198,6 +198,17 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+# Cache Configuration (Redis) - aligned with Celery broker for consistency
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": env("REDIS_URL", default="redis://localhost:6379/0"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
 
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
 GEMINI_EMBEDDING_MODEL = "models/text-embedding-001"

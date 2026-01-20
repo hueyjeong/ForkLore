@@ -21,20 +21,24 @@ class ContentsConfig(AppConfig):
         if "migrate" in sys.argv or "makemigrations" in sys.argv:
             return
 
-        # Create or update the sync_drafts_to_db task
+        # Create or ensure the sync_drafts_to_db task exists in a safe, idempotent way
+        from django.db import OperationalError, ProgrammingError, transaction
+
         try:
-            schedule, _ = IntervalSchedule.objects.get_or_create(
-                every=5,
-                period=IntervalSchedule.MINUTES,
-            )
-            PeriodicTask.objects.update_or_create(
-                name="sync_drafts_to_db",
-                defaults={
-                    "task": "apps.contents.tasks.sync_drafts_to_db",
-                    "interval": schedule,
-                    "enabled": True,
-                },
-            )
-        except Exception:
+            with transaction.atomic():
+                schedule, _ = IntervalSchedule.objects.get_or_create(
+                    every=5,
+                    period=IntervalSchedule.MINUTES,
+                )
+                # Use get_or_create so concurrent starts simply reuse the same task
+                PeriodicTask.objects.get_or_create(
+                    name="sync_drafts_to_db",
+                    defaults={
+                        "task": "apps.contents.tasks.sync_drafts_to_db",
+                        "interval": schedule,
+                        "enabled": True,
+                    },
+                )
+        except (OperationalError, ProgrammingError):
             # Database might not be ready yet (e.g., during initial migration)
-            pass
+            return

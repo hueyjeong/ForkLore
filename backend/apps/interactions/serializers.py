@@ -222,7 +222,7 @@ class CommentSerializer(serializers.ModelSerializer):
     """Serializer for comment."""
 
     user = UserBriefSerializer(read_only=True)
-    reply_count = serializers.IntegerField(read_only=True)
+    reply_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Comment

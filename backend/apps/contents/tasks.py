@@ -63,9 +63,11 @@ def sync_drafts_to_db() -> str:
     logger = logging.getLogger(__name__)
 
     try:
-        # Initialize Redis client
-        redis_url = getattr(settings, "CELERY_BROKER_URL", "redis://localhost:6379/0")
-        client = redis.from_url(redis_url)
+        # Use django-redis to get the underlying Redis client
+        # This ensures we use the same Redis connection as DraftService (via Django cache)
+        from django_redis import get_redis_connection
+
+        client = get_redis_connection("default")
 
         # Pattern matching
         pattern = "draft:*:*"
@@ -156,6 +158,9 @@ def sync_drafts_to_db() -> str:
                     logger.error("Too many errors while syncing drafts, aborting early.")
                     break
                 continue
+            else:
+                # Reset consecutive error counter after successful iteration
+                errors_count = 0
 
         return f"Synced {updated_count} drafts. Errors: {errors_count}"
 

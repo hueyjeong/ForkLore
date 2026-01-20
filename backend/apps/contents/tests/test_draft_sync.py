@@ -21,10 +21,10 @@ class TestDraftSync:
         redis_key = f"draft:{chapter.branch.id}:{chapter.id}"
         new_data = {"title": "New Title", "content": "New Content"}
 
-        # Mock Redis
-        with patch("redis.from_url") as mock_redis_cls:
+        # Mock django-redis get_redis_connection
+        with patch("django_redis.get_redis_connection") as mock_get_conn:
             mock_client = MagicMock()
-            mock_redis_cls.return_value = mock_client
+            mock_get_conn.return_value = mock_client
 
             # Mock scan_iter to return our key (bytes)
             mock_client.scan_iter.return_value = [redis_key.encode("utf-8")]
@@ -46,9 +46,9 @@ class TestDraftSync:
         chapter = baker.make(Chapter, status=ChapterStatus.PUBLISHED, title="Published Title")
         redis_key = f"draft:{chapter.branch.id}:{chapter.id}"
 
-        with patch("redis.from_url") as mock_redis_cls:
+        with patch("django_redis.get_redis_connection") as mock_get_conn:
             mock_client = MagicMock()
-            mock_redis_cls.return_value = mock_client
+            mock_get_conn.return_value = mock_client
             mock_client.scan_iter.return_value = [redis_key.encode("utf-8")]
             mock_client.get.return_value = json.dumps(
                 {"title": "Hacked Title", "content": "Hacked Content"}
@@ -63,9 +63,9 @@ class TestDraftSync:
         """Test that keys ending in :new are skipped."""
         redis_key = "draft:1:new"
 
-        with patch("redis.from_url") as mock_redis_cls:
+        with patch("django_redis.get_redis_connection") as mock_get_conn:
             mock_client = MagicMock()
-            mock_redis_cls.return_value = mock_client
+            mock_get_conn.return_value = mock_client
             mock_client.scan_iter.return_value = [redis_key.encode("utf-8")]
 
             sync_drafts_to_db()
@@ -77,9 +77,9 @@ class TestDraftSync:
         """Test graceful handling of Redis errors."""
         import redis  # Import redis here or at top level
 
-        with patch("redis.from_url") as mock_redis_cls:
+        with patch("django_redis.get_redis_connection") as mock_get_conn:
             mock_client = MagicMock()
-            mock_redis_cls.return_value = mock_client
+            mock_get_conn.return_value = mock_client
             # Simulate Redis connection error
             mock_client.scan_iter.side_effect = redis.ConnectionError("Connection failed")
 

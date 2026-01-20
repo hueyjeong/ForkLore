@@ -218,6 +218,9 @@ class MapService:
             valid_from_chapter=valid_from_chapter,
             base_image_url=base_image_url,
         )
+        # Note: _prefetched_objects_cache is Django internal API.
+        # Used here to prevent N+1 queries when serializing newly created objects.
+        # If this breaks in future Django versions, replace with re-fetch + prefetch_related.
         snapshot._prefetched_objects_cache = {"layers": MapLayer.objects.none()}
         return snapshot
 
@@ -316,6 +319,9 @@ class MapService:
             is_visible=is_visible,
             style_json=style_json,
         )
+        # Note: _prefetched_objects_cache is Django internal API.
+        # Used here to prevent N+1 queries when serializing newly created objects.
+        # If this breaks in future Django versions, replace with re-fetch + prefetch_related.
         layer._prefetched_objects_cache = {"map_objects": MapObject.objects.none()}
         return layer
 

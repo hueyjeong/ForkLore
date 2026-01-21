@@ -496,15 +496,15 @@ class ChapterDetailViewSet(viewsets.ViewSet):
         요청 바디의 진행률 데이터를 검증한 뒤 ReadingService에 기록하고, 생성되거나 갱신된 읽기 로그의 직렬화된 데이터를 반환합니다.
         
         Parameters:
-        	request (Request): 요청 객체.
-        	pk (int | None): 대상 챕터의 기본 키(ID).
+            request (Request): 요청 객체.
+            pk (int | None): 대상 챕터의 기본 키(ID).
         
         Returns:
-        	reading_log (dict): 생성되거나 갱신된 읽기 로그의 직렬화된 표현.
+            reading_log (dict): 생성되거나 갱신된 읽기 로그의 직렬화된 표현.
         
         Raises:
-        	NotFound: 지정한 챕터를 찾을 수 없을 경우 발생합니다.
-        	ValidationError: 전송된 진행률 데이터가 유효하지 않을 경우 발생합니다.
+            NotFound: 지정한 챕터를 찾을 수 없을 경우 발생합니다.
+            ValidationError: 전송된 진행률 데이터가 유효하지 않을 경우 발생합니다.
         """
         from apps.interactions.serializers import ReadingLogSerializer, ReadingProgressSerializer
         from apps.interactions.services import ReadingService

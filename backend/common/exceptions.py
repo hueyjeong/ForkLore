@@ -59,21 +59,9 @@ class ForbiddenException(BusinessException):
 
 class UnauthorizedException(BusinessException):
     def __init__(self, message: str = "인증이 필요합니다.") -> None:
-        """
-        인증이 필요한 경우 사용할 예외 인스턴스를 초기화한다. 기본 메시지는 "인증이 필요합니다."이며 HTTP 401 상태 코드로 설정한다.
-        
-        Parameters:
-            message (str): 예외에 사용할 메시지. 기본값은 "인증이 필요합니다.".
-        """
         super().__init__(message, status.HTTP_401_UNAUTHORIZED)
 
 
 class ConflictError(BusinessException):
     def __init__(self, message: str = "데이터가 변경되었습니다. 다시 시도해주세요.") -> None:
-        """
-        충돌(HTTP 409) 상황을 나타내는 예외를 초기화합니다.
-        
-        Parameters:
-            message (str): 클라이언트에 전달될 오류 메시지. 기본값은 "데이터가 변경되었습니다. 다시 시도해주세요."이며, 예외는 HTTP 409 CONFLICT 상태 코드로 설정됩니다.
-        """
         super().__init__(message, status.HTTP_409_CONFLICT)

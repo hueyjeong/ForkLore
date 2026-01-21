@@ -15,11 +15,7 @@ class TestBranchConcurrency:
     """Tests for optimistic locking in Branch operations."""
 
     def test_fork_with_correct_version(self):
-        """
-        부모 브랜치의 버전이 일치할 때 포크가 정상적으로 생성되는지를 검증한다.
-        
-        일치하는 parent_version을 제공하면 새 브랜치를 생성하고, 생성된 브랜치의 parent_branch가 원본 부모 브랜치와 동일한지 확인한다.
-        """
+        """Should fork successfully when version matches."""
         service = BranchService()
         user = baker.make("users.User")
         novel = baker.make(Novel, allow_branching=True)
@@ -80,9 +76,7 @@ class TestBranchConcurrency:
         assert updated_branch.name == "Updated Name"
 
     def test_update_visibility_increments_version(self):
-        """
-        브랜치의 visibility를 변경하면 버전이 1 증가하는지 검증하는 테스트.
-        """
+        """Should increment version on visibility update."""
         service = BranchService()
         user = baker.make("users.User")
         branch = baker.make(Branch, author=user, version=1, is_main=False)

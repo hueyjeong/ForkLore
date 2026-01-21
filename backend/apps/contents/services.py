@@ -37,17 +37,17 @@ class ChapterService:
         price: int = 0,
     ) -> Chapter:
         """
-        브랜치에 새 장(chapter)을 생성하여 초안(DRAFT) 상태로 저장합니다.
-        
-        Parameters:
-            branch (Branch): 장을 생성할 브랜치 인스턴스
-            title (str): 장 제목
-            content (str): 마크다운 형식의 원문 콘텐츠
-            access_type (str): 접근 유형 (`AccessType.FREE` 또는 구독형)
-            price (int): 구독형일 때 적용되는 가격(정수)
-        
+        Create a new chapter in DRAFT status.
+
+        Args:
+            branch: Branch instance
+            title: Chapter title
+            content: Markdown content
+            access_type: FREE or SUBSCRIPTION
+            price: Price for subscription chapters
+
         Returns:
-            Chapter: 생성된 Chapter 인스턴스
+            Created Chapter instance
         """
         # Get next chapter number
         last_chapter = Chapter.objects.filter(branch=branch).order_by("-chapter_number").first()
@@ -82,22 +82,20 @@ class ChapterService:
         price: int | None = None,
     ) -> Chapter:
         """
-        초안 상태의 회차 정보를 갱신한다.
-        
-        content가 제공되면 마크다운을 HTML로 변환하고 content_html 및 word_count를 갱신한다.
-        
-        Parameters:
-            chapter (Chapter): 갱신할 Chapter 객체
-            title (str | None): 새 제목 (선택)
-            content (str | None): 새 마크다운 내용 (선택)
-            access_type (str | None): 접근 유형 (선택)
-            price (int | None): 가격 (선택)
-        
+        Update a draft chapter.
+
+        Args:
+            chapter: Chapter to update
+            title: New title (optional)
+            content: New markdown content (optional)
+            access_type: New access type (optional)
+            price: New price (optional)
+
         Returns:
-            Chapter: 갱신된 Chapter 인스턴스
-        
+            Updated Chapter instance
+
         Raises:
-            ValueError: 회차가 이미 발행되어 있고 content를 수정하려 할 경우 발생한다.
+            ValueError: If chapter is already published
         """
         if chapter.status == ChapterStatus.PUBLISHED and content is not None:
             raise ValueError("발행된 회차의 내용은 수정할 수 없습니다.")
@@ -121,16 +119,16 @@ class ChapterService:
 
     def publish(self, chapter: Chapter) -> Chapter:
         """
-        초안 또는 예약된 회차를 발행 상태로 전환합니다.
-        
-        Parameters:
-            chapter (Chapter): 발행할 Chapter 인스턴스
-        
+        Publish a draft or scheduled chapter.
+
+        Args:
+            chapter: Chapter to publish
+
         Returns:
-            Chapter: 발행된 Chapter 인스턴스
-        
+            Published Chapter instance
+
         Raises:
-            ValueError: chapter가 이미 발행된 상태일 경우
+            ValueError: If chapter is already published
         """
         if chapter.status == ChapterStatus.PUBLISHED:
             raise ValueError("이미 발행된 회차입니다.")
@@ -191,14 +189,14 @@ class ChapterService:
 
     def list(self, branch_id: int, published_only: bool = False) -> QuerySet[Chapter]:
         """
-        브랜치에 속한 챕터 목록을 조회한다.
-        
-        Parameters:
-            branch_id (int): 조회할 브랜치의 ID.
-            published_only (bool): True이면 공개 상태(PUBLISHED)인 챕터만 포함한다.
-        
+        List chapters for a branch.
+
+        Args:
+            branch_id: Branch ID
+            published_only: If True, only return published chapters
+
         Returns:
-            QuerySet[Chapter]: chapter_number 순으로 정렬된 챕터 쿼리셋.
+            QuerySet of chapters ordered by chapter_number
         """
         qs = Chapter.objects.filter(branch_id=branch_id).order_by("chapter_number")
 
@@ -208,23 +206,14 @@ class ChapterService:
         return qs
 
     def convert_markdown(self, content: str) -> str:
-        """
-        마크다운 형식의 텍스트를 HTML로 변환합니다.
-        
-        Returns:
-            html (str): 변환된 HTML 문자열
-        """
+        """Convert markdown content to HTML."""
         md = markdown.Markdown(extensions=["extra", "codehilite", "toc"])
         return md.convert(content)
 
     def calculate_word_count(self, content: str) -> int:
         """
-        문서 콘텐츠의 단어 수를 계산한다. 한국어는 문자 단위로, 영어는 공백으로 구분된 단어 단위로 계산한다.
-        
-        본문의 기본 마크다운 문법 기호(예: # * _ ` [ ] ( ) >)와 연속 공백을 제거한 뒤 공백으로 분리하여 개수를 반환한다.
-        
-        Returns:
-            int: 계산된 단어(또는 문자) 수. 내용이 비어있으면 0을 반환한다.
+        Calculate word count from content.
+        For Korean, counts characters. For English, counts words.
         """
         # Remove markdown syntax
         plain_text = re.sub(r"[#*_`\[\]()>]", "", content)
@@ -364,16 +353,16 @@ class WikiService:
     @staticmethod
     def retrieve(wiki_id: int) -> WikiEntry:
         """
-        ID에 해당하는 위키 항목을 관련 태그와 정렬된 스냅샷과 함께 조회합니다.
-        
-        Parameters:
-            wiki_id (int): 조회할 위키의 ID
-        
+        Retrieve a wiki entry by ID.
+
+        Args:
+            wiki_id: WikiEntry ID
+
         Returns:
-            WikiEntry: 태그가 프리페치되고 스냅샷이 valid_from_chapter 기준으로 오름차순 정렬된 WikiEntry 객체
-        
+            WikiEntry instance
+
         Raises:
-            ValueError: 지정한 ID의 위키가 존재하지 않을 경우
+            ValueError: If wiki not found
         """
         try:
             return WikiEntry.objects.prefetch_related(
@@ -385,16 +374,16 @@ class WikiService:
     @staticmethod
     def retrieve_for_snapshots(wiki_id: int) -> WikiEntry:
         """
-        위키 항목의 스냅샷을 가볍게(prefetch) 로드하여 해당 위키 항목을 반환한다.
-        
-        Parameters:
-            wiki_id (int): 조회할 위키 항목의 ID.
-        
+        Retrieve a wiki entry for snapshot listing (lightweight, no tags prefetch).
+
+        Args:
+            wiki_id: WikiEntry ID
+
         Returns:
-            WikiEntry: 스냅샷이 `valid_from_chapter` 오름차순으로 prefetched된 위키 항목.
-        
+            WikiEntry instance
+
         Raises:
-            ValueError: 지정한 ID의 위키가 존재하지 않을 경우.
+            ValueError: If wiki not found
         """
         try:
             return WikiEntry.objects.prefetch_related(
@@ -410,15 +399,15 @@ class WikiService:
         current_chapter: int | None = None,
     ) -> QuerySet[WikiEntry]:
         """
-        브랜치에 속한 위키 항목을 이름 순으로 조회한다.
-        
-        Parameters:
-            branch_id (int): 조회할 브랜치의 ID.
-            tag_id (int | None): 주어진 경우 해당 태그를 가진 항목만 필터한다.
-            current_chapter (int | None): 주어진 경우 first_appearance가 이 값보다 작거나 같거나 비어있는 항목만 포함하여 현재 챕터 기준으로 노출 가능한 항목을 필터한다.
-        
+        List wiki entries for a branch.
+
+        Args:
+            branch_id: Branch ID
+            tag_id: Filter by tag ID (optional)
+            current_chapter: Filter by current reading chapter (optional)
+
         Returns:
-            QuerySet[WikiEntry]: 조건에 맞는 WikiEntry 객체들의 QuerySet(이름 순 정렬).
+            QuerySet of WikiEntry
         """
         qs = WikiEntry.objects.filter(branch_id=branch_id).prefetch_related("tags")
 

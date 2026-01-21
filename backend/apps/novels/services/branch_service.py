@@ -27,15 +27,15 @@ class BranchService:
         sort: str | None = None,
     ) -> QuerySet[Branch]:
         """
-        소설의 삭제되지 않은 브랜치들을 선택한 가시성 필터와 정렬 기준으로 반환한다.
-        
-        Parameters:
-            novel_id (int): 대상 소설의 기본 키.
-            visibility (str | None): 선택적 필터. 허용 값: "PRIVATE", "PUBLIC", "LINKED".
-            sort (str | None): 정렬 기준. 허용 값: "votes" (투표수 내림차순), "views" (조회수 내림차순), 기본은 최신순 ("created_at" 내림차순).
-        
+        List branches for a novel with optional filtering and sorting.
+
+        Args:
+            novel_id: The novel's primary key
+            visibility: Filter by visibility (PRIVATE, PUBLIC, LINKED)
+            sort: Sort order ("votes", "latest", "views")
+
         Returns:
-            QuerySet[Branch]: 요청 조건에 맞는 Branch 인스턴스들의 쿼리셋(삭제된 항목 제외).
+            QuerySet of branches
         """
         queryset = Branch.objects.filter(novel_id=novel_id, deleted_at__isnull=True).select_related(
             "author"
@@ -94,22 +94,22 @@ class BranchService:
         parent_version: int | None = None,
     ) -> Branch:
         """
-        부모 브랜치로부터 새 포크 브랜치를 생성합니다.
-        
-        Parameters:
-            novel_id (int): 대상 소설의 PK.
-            parent_branch_id (int): 포크할 부모 브랜치의 PK.
-            author (User): 포크를 생성하는 사용자.
-            data (dict): 생성할 브랜치의 필드(예: name, description, cover_image_url 등).
-            parent_version (int | None): 부모 브랜치의 기대 버전(낙관적 락 검증에 사용).
-        
+        Create a forked branch from a parent branch.
+
+        Args:
+            novel_id: The novel's primary key
+            parent_branch_id: The parent branch's primary key
+            author: The user creating the fork
+            data: Dict containing branch fields (name, description, etc.)
+            parent_version: Optimistic locking version of parent branch
+
         Returns:
-            Branch: 생성된 Branch 인스턴스.
-        
+            Created Branch instance
+
         Raises:
-            PermissionError: 해당 소설에서 브랜치 생성이 허용되지 않을 때.
-            ValueError: 필수 필드(예: name)가 누락되거나 유효하지 않을 때.
-            ConflictError: 제공된 parent_version과 부모 브랜치의 현재 버전이 일치하지 않을 때.
+            PermissionError: If novel doesn't allow branching
+            ValueError: If required fields are missing
+            ConflictError: If parent branch version mismatch
         """
         novel = Novel.objects.get(id=novel_id, deleted_at__isnull=True)
 
@@ -151,19 +151,18 @@ class BranchService:
         data: dict,
     ) -> Branch:
         """
-        브랜치의 이름, 설명, 표지 URL을 업데이트하고 필요할 경우 버전을 증분하여 저장한다.
-        
-        Parameters:
-            branch_id (int): 업데이트할 브랜치의 식별자
-            author (User): 업데이트를 시도하는 사용자 (브랜치 소유자여야 함)
-            data (dict): 업데이트할 필드. 허용되는 키: `"name"`, `"description"`, `"cover_image_url"`
-        
+        Update branch details.
+
+        Args:
+            branch_id: The branch's primary key
+            author: The user attempting the update
+            data: Dict containing fields to update
+
         Returns:
-            Branch: 변경된 내용이 반영된 브랜치 인스턴스 (필드 변경 시 `version`이 1 증가함)
-        
+            Updated Branch instance
+
         Raises:
-            PermissionError: 요청한 사용자가 브랜치 소유자가 아닐 경우
-            ValueError: `name` 필드를 빈 문자열 또는 공백으로 설정하려 할 경우
+            PermissionError: If user is not the owner
         """
         branch = Branch.objects.get(id=branch_id, deleted_at__isnull=True)
 
@@ -196,19 +195,19 @@ class BranchService:
         visibility: str,
     ) -> Branch:
         """
-        브랜치의 공개 상태를 변경하고 관련된 소속 소설의 linked_branch_count와 브랜치 버전을 갱신한다.
-        
-        Parameters:
-            branch_id (int): 변경할 브랜치의 PK.
-            author (User): 변경을 시도하는 사용자(브랜치 소유자여야 함).
-            visibility (str): 설정할 공개 상태(BranchVisibility 열거형 값 중 하나).
-        
+        Update branch visibility.
+
+        Args:
+            branch_id: The branch's primary key
+            author: The user attempting the update
+            visibility: New visibility value
+
         Returns:
-            Branch: 갱신된 Branch 인스턴스.
-        
+            Updated Branch instance
+
         Raises:
-            PermissionError: author가 브랜치 소유자가 아닐 경우.
-            ValueError: 메인 브랜치의 공개 상태를 변경하려 할 경우.
+            PermissionError: If user is not the owner
+            ValueError: If trying to change main branch visibility
         """
         branch = Branch.objects.get(id=branch_id, deleted_at__isnull=True)
 

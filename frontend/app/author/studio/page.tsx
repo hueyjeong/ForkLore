@@ -126,7 +126,7 @@ export default function AuthorStudioPage() {
               <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
                 <p>No novels found</p>
                 <Button variant="link" asChild className="mt-2">
-                  <Link href="/publish">Create your first novel</Link>
+                  <Link href="/author/studio">Create your first novel</Link>
                 </Button>
               </div>
             ) : (

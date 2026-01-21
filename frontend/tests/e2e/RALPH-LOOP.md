@@ -1,16 +1,17 @@
-# Playwright Ralph Loop Runbook (ForkLore)
+# Playwright E2E Runbook (ForkLore)
 
-이 문서는 ForkLore에서 **요구된 주요 기능들이 전부 동작할 때까지** Playwright E2E를 반복 실행(=Ralph Loop)하기 위한 운영 지침입니다.
+이 문서는 ForkLore에서 Playwright E2E를 **팀이 직접 설계/작성/운영**하기 위한 지침입니다.
 
-> 핵심 철학: “스크린샷으로 판단”이 아니라 **런타임 에러(Next.js) 없음 + 실제 DB 데이터 렌더링**을 성공 조건으로 둡니다.
+> 핵심 철학: “스크린샷 픽셀 비교”가 아니라 **런타임 에러(Next.js) 없음 + 실제 DB 데이터 렌더링**을 성공 조건으로 둡니다.
 
-Ralph 스위트 테스트가 없을 경우 스스로 작성하여 테스트 하세요.
+> 중요: 과거의 “Ralph 전용 스위트/루프 자동화”는 코드에서 제거되었습니다.
+> 이 문서는 특정 스위트에 종속되지 않도록, **실제 라우트 트리(frontend/app)** 기준으로 작성됩니다.
 
 ---
 
 ## 1) 성공 조건 (Stop Condition)
 
-모든 Ralph 스위트 테스트가 아래 조건을 만족하며 통과하면 루프를 종료합니다.
+스위트가 아래 조건을 만족하며 통과하면(또는 목표 범위가 모두 충족되면) 사이클을 종료합니다.
 
 - **Next.js 런타임 에러 없음**
   - `pageerror` 이벤트가 0개
@@ -20,8 +21,9 @@ Ralph 스위트 테스트가 없을 경우 스스로 작성하여 테스트 하�
   - Suspense/스켈레톤/플레이스홀더에 머무르지 않음
 - **로그인 플로우는 실제 폼 로그인만 사용**
   - 소셜 로그인(NextAuth 등)은 테스트에서 클릭/사용하지 않음
-- **스크린샷은 성공 시에만 저장**
-  - 페이지별 **고정 파일명**으로 저장하여 무한 누적을 방지(덮어쓰기)
+- (선택) **스크린샷 정책**
+  - 실패 분석용: `trace`/`screenshot`은 Playwright 설정에 따름
+  - 성공 산출물용: 파일명 규칙(고정/누적)을 팀이 결정
 
 ---
 
@@ -64,7 +66,7 @@ Playwright 설정이 dual webServer로 백엔드(8001) + 프론트(3000)를 자�
 
 ```bash
 cd frontend
-pnpm e2e:ralph
+pnpm e2e
 ```
 
 리포트를 보고 싶을 때만 아래를 실행합니다(자동으로 뜨지 않음).
@@ -85,7 +87,7 @@ DB 초기화/시드는 테스트에서 `POST /api/e2e/reset` 호출로 수행합
 
 ### 4.1 한 사이클
 
-1. `pnpm e2e:ralph` 실행
+1. `pnpm e2e` 실행
 2. 실패하면 실패 원인을 아래로 분류
    - (A) 라우트/페이지 미구현(404)
    - (B) 인증/리다이렉트 문제(쿠키, 미들웨어)
@@ -102,30 +104,50 @@ DB 초기화/시드는 테스트에서 `POST /api/e2e/reset` 호출로 수행합
 
 ---
 
-## 5) 스크린샷 산출물 정책 (성공 시에만)
+## 5) (권장) 스크린샷/산출물 정책
 
-- 위치: `frontend/e2e-screenshots/`
-- 파일명: `success-<page>.png`
-- 같은 파일명은 매 실행마다 덮어씁니다(누적 금지).
+이 레포는 기본적으로 Playwright `outputDir`을 `frontend/e2e-screenshots/`로 사용합니다.
 
-예:
-- `success-home.png`
-- `success-login.png`
-- `success-profile.png`
-- `success-novels.png`
-- `success-ranking.png`
-- `success-novel-detail.png`
-- `success-branch-chapters.png`
-- `success-reader.png`
-- `success-wikis.png`
-- `success-wiki-detail.png`
-- `success-publish.png`
+권장:
+- 실패 분석은 `trace: on-first-retry`, `screenshot: only-on-failure`로 충분한 경우가 많습니다.
+- 성공 산출물이 필요하면, 팀 룰로 “고정 파일명 덮어쓰기” 또는 “빌드 번호 포함 누적” 중 하나를 선택하세요.
 
 ---
 
 ## 6) 기능/페이지 매트릭스 (검증 대상)
 
-Ralph 스위트는 아래를 최소 1회씩 검증합니다.
+아래는 **현재 `frontend/app` 기준으로 실제 존재하는 페이지 라우트**입니다.
+(동적 라우트는 `{}` 표기)
+
+### 6.1 주요 페이지 라우트
+
+- 홈: `/`
+- 로그인: `/login`
+- 회원가입: `/signup`
+- 소설 목록: `/novels`
+- 소설 상세: `/novels/{id}`
+- 리더: `/novels/{id}/reader/{chapterId}`
+- 브랜치(챕터 목록): `/branches/{id}`
+- 브랜치 위키(목록): `/branches/{id}/wikis`
+- 위키(목록): `/wikis?branchId={branchId}` (branchId 쿼리 필수)
+- 위키(상세): `/wikis/{id}`
+- 랭킹: `/ranking`
+- 커뮤니티: `/community`
+- 검색: `/search`
+- 프로필: `/profile`
+- 서재: `/library`
+- 지갑: `/wallet`
+- 구독: `/subscriptions`
+- 구독 결제: `/subscriptions/checkout`
+- 맵 뷰어: `/map-viewer`
+- 작가 스튜디오: `/author/studio`
+
+### 6.2 작성(Authoring) 관련 주의
+
+- 소설 작성/관리 화면으로 **실제 존재하는 경로는 `/author/studio`** 입니다.
+- `/publish`는 현재 `frontend/app`에 페이지가 없습니다.
+  - 하지만 UI/미들웨어에서 `/publish`가 참조되는 흔적이 있어(예: CTA 링크), 새 AI가 보면 “작성 페이지가 /publish”로 오해하기 쉽습니다.
+  - 문서/테스트/플로우 설계 시에는 `/author/studio`를 기준으로 하세요.
 
 - 메인 히어로 섹션: `/` (UI 존재)
 - 맞춤 추천 섹션: `/` (DB 기반 작품 카드 1개 이상)
@@ -140,12 +162,19 @@ Ralph 스위트는 아래를 최소 1회씩 검증합니다.
 - 소설 리더: `/novels/{id}/reader/{chapterId}` (DB 기반 chapter 렌더)
 - 위키 섹션: `/wikis?branchId={branchId}` (DB 기반 위키 카드 1개 이상)
 - 위키 페이지: `/wikis/{wikiId}` (DB 기반 위키 내용 렌더)
-- 소설 작성: `/publish` (**편집기 노출**)
-- 소설 임시저장: `/publish` 내 자동 저장/임시저장 플로우
-- 소설 수정: `/publish/...` (라우트/스펙 확정 후 테스트 강화)
-- 브랜치 추가: `/publish/...` (라우트/스펙 확정 후 테스트 강화)
+### 6.3 테스트 시나리오 예시(팀이 선택)
 
-> 주의: `/publish` 및 편집기 관련 라우트는 현재 미구현일 수 있으며, Ralph 스위트에서 **실패가 정상**입니다.
+- 메인 히어로/추천 섹션: `/` (UI 존재 + DB 기반 카드 1개 이상)
+- 로그인(소셜 제외): `/login` (폼 로그인 성공)
+- 회원가입: `/signup` (가입 후 흐름)
+- 회원 패널: `/profile` (DB 기반 프로필 노출)
+- 소설 목록: `/novels` (DB 기반 카드 1개 이상 + 페이징/무한스크롤)
+- 랭킹: `/ranking` (DB 기반 리스트 1개 이상)
+- 소설 상세: `/novels/{id}` (DB 기반 title/author 렌더)
+- 챕터 목록: `/branches/{id}` (DB 기반 챕터 row 1개 이상)
+- 리더: `/novels/{id}/reader/{chapterId}` (DB 기반 chapter 렌더)
+- 위키: `/branches/{id}/wikis` 또는 `/wikis?branchId={branchId}` (DB 기반 위키 카드 1개 이상)
+- 작가 스튜디오: `/author/studio` (로그인 필요, 내 작품/요청 데이터 렌더)
 
 ---
 
@@ -155,3 +184,9 @@ Ralph 스위트는 아래를 최소 1회씩 검증합니다.
 - 백엔드가 안 뜸: `cd backend && poetry install` 확인
 - E2E reset 실패: `http://localhost:8001/api/e2e/reset` 엔드포인트 확인
 - Next 콘솔 에러로 실패: 해당 에러 로그가 Ralph 테스트 출력에 포함되므로 먼저 해결
+
+---
+
+## 부록) 라우트 트리 근거
+
+이 문서의 라우트 목록은 `frontend/app/**/page.tsx`를 기준으로 합니다.

@@ -244,16 +244,16 @@ class ChapterViewSet(viewsets.ViewSet):
         챕터의 임시 초안(드래프트)을 검증 후 저장한다.
         
         Parameters:
-        	request (Request): 요청 객체로, 저장할 드래프트의 데이터(`content`, 선택적 `title`, 선택적 `chapter_id`)와 요청자 정보를 포함한다.
-        	branch_pk (int | None): 드래프트를 저장할 대상 브랜치의 ID.
+            request (Request): 요청 객체로, 저장할 드래프트의 데이터(`content`, 선택적 `title`, 선택적 `chapter_id`)와 요청자 정보를 포함한다.
+            branch_pk (int | None): 드래프트를 저장할 대상 브랜치의 ID.
         
         Returns:
-        	response (dict): {"success": True} — 드래프트가 성공적으로 저장되었음을 나타낸다.
+            response (dict): {"success": True} — 드래프트가 성공적으로 저장되었음을 나타낸다.
         
         Raises:
-        	NotFound: branch_pk가 누락되었거나 해당 브랜치가 존재하지 않을 때 발생한다.
-        	PermissionDenied: 요청 사용자가 브랜치 작성자가 아닐 때 발생한다.
-        	ValidationError: content가 비어있거나 chapter_id가 유효한 정수가 아닐 때 발생한다.
+            NotFound: branch_pk가 누락되었거나 해당 브랜치가 존재하지 않을 때 발생한다.
+            PermissionDenied: 요청 사용자가 브랜치 작성자가 아닐 때 발생한다.
+            ValidationError: content가 비어있거나 chapter_id가 유효한 정수가 아닐 때 발생한다.
         """
         if branch_pk is None:
             raise NotFound("브랜치를 찾을 수 없습니다.")

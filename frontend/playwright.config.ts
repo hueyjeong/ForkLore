@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: path.join(__dirname, '.env.e2e') });
 
 /**
  * True E2E Testing Configuration
@@ -37,7 +40,7 @@ export default defineConfig({
       timeout: 120000,
     },
     {
-      command: 'pnpm dev',
+      command: 'NEXT_PUBLIC_API_URL=http://localhost:8001/api/v1 pnpm dev',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,

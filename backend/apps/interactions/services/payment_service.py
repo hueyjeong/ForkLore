@@ -158,10 +158,10 @@ class TossPaymentAdapter:
         취소가 모드(mock)일 경우에는 즉시 모의 취소 응답을 반환한다. 실제 요청 실행 중 네트워크 또는 API 오류가 발생하면 `PaymentFailedException`을 발생시키며, 가능하면 API가 반환한 오류 메시지와 상세 JSON을 함께 포함한다.
         
         Returns:
-        	dict[str, Any]: 결제 취소에 대한 응답 JSON을 파싱한 딕셔너리
+            dict[str, Any]: 결제 취소에 대한 응답 JSON을 파싱한 딕셔너리
         
         Raises:
-        	PaymentFailedException: 취소 요청이 실패했을 때 (가능하면 `message`와 `details`에 API 오류 정보를 포함)
+            PaymentFailedException: 취소 요청이 실패했을 때 (가능하면 `message`와 `details`에 API 오류 정보를 포함)
         """
         if self._is_mock_mode():
             return {

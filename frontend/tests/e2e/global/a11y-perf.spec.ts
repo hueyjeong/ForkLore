@@ -1,16 +1,12 @@
-import { test, expect } from '@playwright/test';
-import { injectAxe, checkA11y } from 'axe-playwright';
-import { MockHelper } from '../utils/mock-helper';
+import { test, expect } from '@playwright/test'
+import { injectAxe, checkA11y } from 'axe-playwright'
+import { resetTestData } from '../utils/data-helper'
 
 test.describe('Accessibility & Performance', () => {
-  let mockHelper: MockHelper;
-
-  test.beforeEach(async ({ page }) => {
-    mockHelper = new MockHelper(page);
-    await mockHelper.mockUser();
-    await mockHelper.mockNovelList([]); 
-    await mockHelper.mockNovel(1);
-  });
+  // Reset database once per test file for True E2E testing
+  test.beforeAll(async () => {
+    await resetTestData()
+  })
 
   test('check accessibility on key pages', async ({ page }) => {
     const paths = ['/', '/novels', '/login'];
@@ -30,17 +26,16 @@ test.describe('Accessibility & Performance', () => {
                 detailedReport: true,
                 detailedReportOptions: { html: true },
             });
-        } catch (e) {
-            console.warn(`A11y violations found on ${path}:`, e.message);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : String(e)
+            console.warn(`A11y violations found on ${path}:`, message)
         }
       });
     }
   });
 
   test('measure LCP on novel detail page', async ({ page }) => {
-    await mockHelper.mockNovel(1, { title: 'Performance Test Novel' });
-    
-    await page.goto('/novels/1');
+    await page.goto('/novels/1')
 
     const lcp = await page.evaluate(() => {
       return new Promise<number>((resolve) => {

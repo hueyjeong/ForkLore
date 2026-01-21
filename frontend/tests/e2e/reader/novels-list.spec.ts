@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { resetTestData } from '../utils/data-helper'
 
 test.describe('Novels Page - Novelpia Style UI', () => {
+  test.beforeAll(async () => {
+    await resetTestData()
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/novels')
   })

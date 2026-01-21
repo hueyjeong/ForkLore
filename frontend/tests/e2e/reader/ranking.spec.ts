@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test'
+import { resetTestData } from '../utils/data-helper'
 
 test.describe('Ranking Page - Novelpia Style UI', () => {
+  // Reset database once per test file for True E2E testing
+  test.beforeAll(async () => {
+    await resetTestData()
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/ranking')
   })

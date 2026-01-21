@@ -1,14 +1,22 @@
 import { test, expect } from '@playwright/test'
+import { resetTestData } from '../utils/data-helper'
 
 test.describe('Navigation and Layout', () => {
+  // Reset database once per test file for True E2E testing
+  test.beforeAll(async () => {
+    await resetTestData()
+  })
+
   test('should navigate from home to novels page', async ({ page }) => {
     await page.goto('/')
+    await page.screenshot({ path: 'e2e-screenshots/navigation-home.png' })
 
     // Look for navigation link to novels
     const novelsLink = page.getByRole('link', { name: /작품|novels/i }).first()
     await novelsLink.click()
 
     await expect(page).toHaveURL('/novels')
+    await page.screenshot({ path: 'e2e-screenshots/navigation-novels.png' })
   })
 
   test('should navigate from home to ranking page', async ({ page }) => {

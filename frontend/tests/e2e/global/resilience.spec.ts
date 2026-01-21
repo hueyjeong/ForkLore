@@ -1,35 +1,40 @@
-import { test, expect } from '@playwright/test';
-import { MockHelper } from '../utils/mock-helper';
+import { test, expect } from '@playwright/test'
+import { MockHelper } from '../utils/mock-helper'
+import { resetTestData } from '../utils/data-helper'
 
 test.describe('Resilience & Robustness', () => {
-  let mockHelper: MockHelper;
+  let mockHelper: MockHelper
+
+  test.beforeAll(async () => {
+    await resetTestData()
+  })
 
   test.beforeEach(async ({ page }) => {
-    mockHelper = new MockHelper(page);
-  });
+    mockHelper = new MockHelper(page)
+  })
 
   test('should handle API 500 errors gracefully', async ({ page }) => {
     await mockHelper.mockRoute(/\/novels(\?.*)?$/, {
       success: false,
       message: 'Internal Server Error'
-    }, 500);
+    }, 500)
 
-    await page.goto('/novels');
+    await page.goto('/novels')
 
-    const errorText = page.getByText(/error|failed|wrong/i).first();
-    await expect(errorText).toBeVisible({ timeout: 10000 });
-  });
+    const errorText = page.getByText(/error|failed|wrong/i).first()
+    await expect(errorText).toBeVisible({ timeout: 10000 })
+  })
 
   test('should handle network offline state', async ({ page }) => {
-    await page.goto('/novels');
-    
-    await page.context().setOffline(true);
-    
+    await page.goto('/novels')
+
+    await page.context().setOffline(true)
+
     try {
-        await page.reload();
+      await page.reload()
     } catch {}
 
-    const body = page.locator('body');
-    await expect(body).toBeVisible();
-  });
-});
+    const body = page.locator('body')
+    await expect(body).toBeVisible()
+  })
+})

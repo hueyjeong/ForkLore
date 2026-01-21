@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { resetTestData } from '../utils/data-helper'
 
 test.describe('Community Page', () => {
+  test.beforeAll(async () => {
+    await resetTestData()
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/community')
   })

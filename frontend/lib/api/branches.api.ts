@@ -112,3 +112,16 @@ export async function createLinkRequest(
   );
   return response.data.data;
 }
+
+/**
+ * Get list of link requests
+ */
+export async function getLinkRequests(
+  params?: any
+): Promise<any> {
+  const response = await apiClient.get<ApiResponse<any>>(
+    '/link-requests',
+    { params }
+  );
+  return response.data.data;
+}

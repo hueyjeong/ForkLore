@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 /**
  * 보호된 라우트 목록
  */
-const PROTECTED_ROUTES = ['/profile', '/library', '/publish', '/settings'];
+const PROTECTED_ROUTES = ['/profile', '/library', '/publish', '/settings', '/author'];
 
 /**
  * 인증된 사용자는 접근 불가한 라우트 (역 보호)

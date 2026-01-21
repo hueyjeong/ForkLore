@@ -1,34 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { getPurchases } from '@/lib/api/interactions.api';
-import { Purchase } from '@/types/interactions.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, BookOpen, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 
 export function MyLibrary() {
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isPending, isError } = useQuery({
+    queryKey: ['purchases', { page: 1, limit: 50 }],
+    queryFn: () => getPurchases({ page: 1, limit: 50 }),
+  });
+
+  const purchases = data?.results ?? [];
 
   useEffect(() => {
-    async function fetchPurchases() {
-      try {
-        const response = await getPurchases({ page: 1, limit: 50 }); // Fetch first 50
-        setPurchases(response.results);
-      } catch (error) {
-        toast.error('Failed to load library');
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+    if (isError) {
+      toast.error('Failed to load library');
     }
-    fetchPurchases();
-  }, []);
+  }, [isError]);
 
-  if (loading) {
+  if (isPending) {
     return (
       <div className="flex h-60 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

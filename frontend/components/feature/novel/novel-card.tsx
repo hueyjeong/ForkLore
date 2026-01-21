@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,7 @@ interface NovelCardProps {
   className?: string;
 }
 
-export function NovelCard({ id, title, author, coverUrl, genre, rating, className }: NovelCardProps) {
+export const NovelCard = React.memo(function NovelCard({ id, title, author, coverUrl, genre, rating, className }: NovelCardProps) {
   return (
     <motion.div
       whileHover={{ y: -8 }}
@@ -51,4 +52,4 @@ export function NovelCard({ id, title, author, coverUrl, genre, rating, classNam
       </div>
     </motion.div>
   );
-}
+});

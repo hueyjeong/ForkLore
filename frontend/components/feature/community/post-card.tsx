@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pin, MessageCircle, Heart } from 'lucide-react';
 import type { CommunityPost } from '@/lib/mock-data';
 
@@ -5,7 +6,7 @@ interface PostCardProps {
   post: CommunityPost;
 }
 
-export function PostCard({ post }: PostCardProps) {
+function PostCardComponent({ post }: PostCardProps) {
   return (
     <div className="flex items-start gap-4 p-4 border rounded-lg bg-card text-card-foreground shadow-sm hover:border-primary/50 transition-colors">
       {post.isPinned && (
@@ -14,7 +15,7 @@ export function PostCard({ post }: PostCardProps) {
           data-testid="pin-icon"
         />
       )}
-      
+
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
@@ -24,7 +25,7 @@ export function PostCard({ post }: PostCardProps) {
             {post.title}
           </h3>
         </div>
-        
+
         <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
           <span>{post.author}</span>
           <span>{post.createdAt}</span>
@@ -41,3 +42,15 @@ export function PostCard({ post }: PostCardProps) {
     </div>
   );
 }
+
+export const PostCard = memo(PostCardComponent, (prev, next) => {
+  // Memoize to prevent re-renders when only counts change
+  return (
+    prev.post.id === next.post.id &&
+    prev.post.title === next.post.title &&
+    prev.post.author === next.post.author &&
+    prev.post.category === next.post.category &&
+    prev.post.createdAt === next.post.createdAt &&
+    prev.post.isPinned === next.post.isPinned
+  );
+});

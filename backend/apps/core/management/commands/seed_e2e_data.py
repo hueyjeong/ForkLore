@@ -56,10 +56,15 @@ class Command(BaseCommand):
         # Create novels
         novels = []
         for i in range(1, 6):
+            # Make novel 1 premium and novel 2 exclusive for badge tests
+            is_premium = i == 1
+            is_exclusive = i == 2
             novel = self._create_novel(
                 author=authors[i % len(authors)],
                 title=f"Test Novel {i}",
                 genre="FANTASY" if i % 2 == 0 else "ROMANCE",
+                is_premium=is_premium,
+                is_exclusive=is_exclusive,
             )
             novels.append(novel)
 
@@ -113,7 +118,14 @@ class Command(BaseCommand):
             self.stdout.write(f"  User exists: {email}")
         return user
 
-    def _create_novel(self, author: User, title: str, genre: str):
+    def _create_novel(
+        self,
+        author: User,
+        title: str,
+        genre: str,
+        is_premium: bool = False,
+        is_exclusive: bool = False,
+    ):
         """Create a novel if not exists."""
         from apps.novels.models import Novel
 
@@ -126,6 +138,8 @@ class Command(BaseCommand):
                 "age_rating": "ALL",
                 "status": "ONGOING",
                 "allow_branching": True,
+                "is_premium": is_premium,
+                "is_exclusive": is_exclusive,
             },
         )
         if created:

@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client';
-import { ApiResponse, PaginatedResponse } from '@/types/common';
+import { ApiResponse } from '@/types/common';
 import {
   Novel,
   NovelCreateRequest,
@@ -7,19 +7,38 @@ import {
   NovelListParams,
 } from '@/types/novels.types';
 
-const BASE_URL = '/novels';
+const BASE_URL = '/novels/novels';
 
-/**
- * Get list of novels
- */
+interface DjangoPaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+interface TransformedPaginatedResponse<T> {
+  results: T[];
+  total: number;
+  page: number;
+  hasNext: boolean;
+}
+
 export async function getNovels(
   params?: NovelListParams
-): Promise<PaginatedResponse<Novel>> {
-  const response = await apiClient.get<ApiResponse<PaginatedResponse<Novel>>>(
+): Promise<TransformedPaginatedResponse<Novel>> {
+  const response = await apiClient.get<ApiResponse<DjangoPaginatedResponse<Novel>>>(
     BASE_URL,
     { params }
   );
-  return response.data.data;
+  const data = response.data.data;
+  const page = params?.page || 1;
+  const limit = params?.limit || 12;
+  return {
+    results: data.results,
+    total: data.count,
+    page,
+    hasNext: data.next !== null,
+  };
 }
 
 /**

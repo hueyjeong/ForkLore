@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Menu, Search, User } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -18,9 +19,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { clearTokens } from "@/lib/token"
 
 export function Header() {
   const [isScrolled, setIsScrolled] = React.useState(false)
+  const router = useRouter()
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +32,11 @@ export function Header() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  const handleLogout = () => {
+    clearTokens()
+    router.push("/login")
+  }
 
   return (
     <header
@@ -122,7 +130,7 @@ export function Header() {
               <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">서재</DropdownMenuItem>
               <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">설정</DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/20" />
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">로그아웃</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">로그아웃</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

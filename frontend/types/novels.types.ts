@@ -57,25 +57,25 @@ export interface Author {
 export interface Novel {
   id: number;
   title: string;
-  description: string;
-  cover_image_url: string;
+  description?: string;
+  cover_image_url?: string;
   genre: Genre;
   age_rating: AgeRating;
   status: NovelStatus;
   is_exclusive: boolean;
   is_premium: boolean;
-  allow_branching: boolean;
+  allow_branching?: boolean;
   total_view_count: number;
   total_like_count: number;
   // TODO: Backend must always return average_rating (never omit).
   // Keep as required field; frontend uses ?? 0 as fallback for null.
-  average_rating: number | null;
-  total_chapter_count: number;
+  average_rating?: number | null;
+  total_chapter_count?: number;
   branch_count: number;
-  linked_branch_count: number;
+  linked_branch_count?: number;
   author: Author;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface NovelSummary {

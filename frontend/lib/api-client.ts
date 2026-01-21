@@ -1,5 +1,6 @@
 import axios, { type InternalAxiosRequestConfig, type AxiosResponse } from 'axios';
 import { getCookie, setCookie, deleteCookie } from 'cookies-next';
+import { transformKeysToSnakeCase } from './utils/case-transform';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -25,7 +26,12 @@ apiClient.interceptors.request.use(
 
 // Response Interceptor: 401 에러 시 Refresh Token으로 재시도
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    if (response.data) {
+      response.data = transformKeysToSnakeCase(response.data);
+    }
+    return response;
+  },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async (error: any) => {
     const originalRequest = error.config;

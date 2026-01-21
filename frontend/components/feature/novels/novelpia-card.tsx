@@ -30,7 +30,7 @@ function getRelativeTime(dateString: string): string {
 }
 
 export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
-  const relativeTime = getRelativeTime(novel.updated_at);
+  const relativeTime = getRelativeTime(novel.updated_at || novel.created_at || new Date().toISOString());
   const tags = [getGenreLabel(novel.genre), getAgeRatingLabel(novel.age_rating)];
 
   return (
@@ -67,7 +67,7 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
 
         <StatsRow
           views={novel.total_view_count}
-          episodeCount={novel.total_chapter_count}
+          episodeCount={novel.total_chapter_count ?? 0}
           recommendCount={novel.total_like_count}
           className="mb-3"
         />

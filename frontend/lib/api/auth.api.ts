@@ -14,17 +14,20 @@ import { setAccessToken, setRefreshToken, clearTokens } from '@/lib/token';
  */
 export async function login(data: LoginRequest): Promise<TokenResponse> {
   const response = await apiClient.post<ApiResponse<TokenResponse>>(
-    '/auth/login',
+    '/auth/login/',
     data
   );
 
-  const { accessToken, refreshToken } = response.data.data;
+  // Backend returns 'access' and 'refresh', frontend expects 'access_token' and 'refresh_token' after transformation
+  const responseData = response.data.data as unknown as { access: string; refresh: string };
+  const accessToken = responseData.access;
+  const refreshToken = responseData.refresh;
 
   // 토큰 저장
   setAccessToken(accessToken);
   setRefreshToken(refreshToken);
 
-  return response.data.data;
+  return { accessToken, refreshToken, expiresIn: 3600 };
 }
 
 /**

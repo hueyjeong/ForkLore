@@ -45,17 +45,11 @@ test.describe('Authentication Lifecycle', () => {
 
     await page.goto('/')
 
-    const logoutBtn = page.getByRole('button', { name: /logout|로그아웃/i })
-    const profileMenu = page.getByRole('button', { name: /profile|user|account|내 정보|mypage|TestReader/i })
+    const userMenuButton = page.locator('button').filter({ has: page.locator('.rounded-full img, .rounded-full svg') }).first()
+    await userMenuButton.click()
 
-    if (await logoutBtn.isVisible()) {
-      await logoutBtn.click()
-    } else if (await profileMenu.isVisible()) {
-      await profileMenu.click()
-      await page.getByRole('menuitem', { name: /logout|로그아웃/i }).click()
-    } else {
-      await page.getByText(/logout|로그아웃/i).click()
-    }
+    const logoutMenuItem = page.getByRole('menuitem', { name: '로그아웃' })
+    await logoutMenuItem.click()
 
     await expect(page).toHaveURL(/\/login/)
   })

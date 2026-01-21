@@ -962,13 +962,13 @@ class WikiSnapshotViewSet(viewsets.ViewSet):
         주어진 위키의 스냅샷 목록을 반환한다.
         
         Parameters:
-        	wiki_pk (int | None): 조회하려는 위키의 식별자. None이면 조회할 수 없음.
+            wiki_pk (int | None): 조회하려는 위키의 식별자. None이면 조회할 수 없음.
         
         Returns:
-        	list: 직렬화된 위키 스냅샷 객체들의 리스트.
+            list: 직렬화된 위키 스냅샷 객체들의 리스트.
         
         Raises:
-        	NotFound: wiki_pk가 None이거나 해당 위키를 찾을 수 없을 때 발생한다.
+            NotFound: wiki_pk가 None이거나 해당 위키를 찾을 수 없을 때 발생한다.
         """
         if wiki_pk is None:
             raise NotFound("위키를 찾을 수 없습니다.")

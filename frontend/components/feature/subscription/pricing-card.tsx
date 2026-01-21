@@ -20,6 +20,16 @@ interface PricingCardProps {
   isLoading?: boolean;
 }
 
+/**
+ * 요금제 정보를 표시하는 카드 UI를 렌더링합니다.
+ *
+ * @param planType - 표시할 요금제 타입 (PlanType.BASIC | PlanType.PREMIUM). Premium일 경우 강조 스타일과 배지가 적용됩니다.
+ * @param price - 카드에 표시할 가격 문자열(예: "$5").
+ * @param features - 카드에 나열할 기능/특징 문자열 배열.
+ * @param isCurrentPlan - true면 "Current Plan" 비활성 버튼을 표시합니다.
+ * @param isLoading - true면 구독 버튼을 비활성화합니다.
+ * @returns 렌더링된 요금제 카드의 React 요소 (JSX.Element)
+ */
 export function PricingCard({
   planType,
   price,

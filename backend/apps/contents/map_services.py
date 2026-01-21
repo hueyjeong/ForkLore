@@ -123,16 +123,16 @@ class MapService:
     @staticmethod
     def retrieve(map_id: int) -> Map:
         """
-        Retrieve a map by ID.
-
-        Args:
-            map_id: Map ID
-
+        ID로 Map을 조회하여 관련 Branch와 snapshots, layers, map_objects를 미리 로드해 반환합니다.
+        
+        Parameters:
+            map_id (int): 조회할 Map의 ID
+        
         Returns:
-            Map instance
-
+            Map: 조회된 Map 인스턴스 (관련 Branch와 snapshots->layers->map_objects가 프리페치됨)
+        
         Raises:
-            ValueError: If map not found
+            ValueError: 지정한 ID의 Map이 존재하지 않을 때
         """
         try:
             return (
@@ -187,20 +187,20 @@ class MapService:
         base_image_url: str = "",
     ) -> MapSnapshot:
         """
-        Create a new map snapshot.
-
-        Args:
-            map_id: Map ID
-            user: User creating the snapshot
-            valid_from_chapter: Chapter number from which this snapshot is valid
-            base_image_url: Base image URL (optional)
-
+        지도의 특정 회차부터 유효한 새 MapSnapshot을 생성한다.
+        
+        Parameters:
+            map_id (int): 스냅샷을 생성할 지도의 ID.
+            user (User): 요청자 사용자(지도의 브랜치 작성자여야 함).
+            valid_from_chapter (int): 이 스냅샷이 유효하기 시작하는 회차 번호.
+            base_image_url (str): 기본 베이스 이미지의 URL(선택).
+        
         Returns:
-            Created MapSnapshot instance
-
+            MapSnapshot: 생성된 MapSnapshot 인스턴스.
+        
         Raises:
-            PermissionDenied: If user is not branch author
-            ValueError: If snapshot for this chapter already exists
+            PermissionDenied: 사용자가 해당 브랜치의 작성자가 아닐 경우.
+            ValueError: 지도 ID가 존재하지 않거나 동일 회차에 이미 스냅샷이 존재할 경우.
         """
         try:
             map_obj = Map.objects.select_related("branch").get(id=map_id)
@@ -227,16 +227,14 @@ class MapService:
     @staticmethod
     def get_snapshot_for_chapter(map_id: int, chapter_number: int) -> MapSnapshot | None:
         """
-        Get the appropriate snapshot for a given chapter (spoiler prevention).
-
-        Returns the snapshot with the highest valid_from_chapter that is <= chapter_number.
-
-        Args:
-            map_id: Map ID
-            chapter_number: Current chapter being read
-
-        Returns:
-            MapSnapshot instance or None if no valid snapshot exists
+        주어진 장(chapter)에 적용되는 MapSnapshot을 결정합니다.
+        
+        매개변수:
+            map_id (int): 대상 Map의 ID.
+            chapter_number (int): 조회하려는 장 번호.
+        
+        반환값:
+            MapSnapshot 또는 None: valid_from_chapter가 chapter_number 이하인 snapshot 중 가장 큰 valid_from_chapter를 가진 MapSnapshot, 없으면 None.
         """
         return (
             MapSnapshot.objects.filter(
@@ -286,23 +284,23 @@ class MapService:
         style_json: dict | None = None,
     ) -> MapLayer:
         """
-        Add a layer to a map snapshot.
-
-        Args:
-            snapshot_id: MapSnapshot ID
-            user: User creating the layer
-            name: Layer name
-            layer_type: Layer type (BASE, OVERLAY, MARKER, PATH, REGION)
-            z_index: Z-order for rendering
-            is_visible: Whether layer is visible by default
-            style_json: Layer style JSON (optional)
-
+        맵 스냅샷에 새 레이어를 생성한다.
+        
+        Parameters:
+            snapshot_id (int): 대상 MapSnapshot의 ID.
+            user (User): 레이어를 생성하는 사용자(브랜치 작성자여야 함).
+            name (str): 레이어 이름.
+            layer_type (str): 레이어 종류 (예: BASE, OVERLAY, MARKER, PATH, REGION).
+            z_index (int): 렌더링을 위한 z-순서 값.
+            is_visible (bool): 기본 가시성 여부.
+            style_json (dict | None): 레이어 스타일을 나타내는 JSON(선택).
+        
         Returns:
-            Created MapLayer instance
-
+            MapLayer: 생성된 MapLayer 인스턴스.
+        
         Raises:
-            PermissionDenied: If user is not branch author
-            ValueError: If snapshot not found
+            PermissionDenied: 사용자가 해당 스냅샷의 브랜치 작성자가 아닌 경우.
+            ValueError: 지정한 스냅샷이 존재하지 않는 경우.
         """
         try:
             snapshot = MapSnapshot.objects.select_related("map__branch").get(id=snapshot_id)
@@ -336,19 +334,23 @@ class MapService:
         style_json: dict | None = None,
     ) -> MapLayer:
         """
-        Update a map layer.
-
-        Args:
-            layer_id: MapLayer ID
-            user: User performing the update
-            name: New name (optional)
-            layer_type: New layer type (optional)
-            z_index: New z-index (optional)
-            is_visible: New visibility (optional)
-            style_json: New style JSON (optional)
-
+        맵 레이어의 제공된 필드를 갱신하고 저장한 후 갱신된 MapLayer를 반환합니다.
+        
+        Parameters:
+            layer_id (int): 갱신할 MapLayer의 ID.
+            user (User): 작업을 수행하는 사용자(브랜치 작성자 권한을 검증함).
+            name (str | None): 새 이름(지정되지 않으면 변경하지 않음).
+            layer_type (str | None): 새 레이어 유형(지정되지 않으면 변경하지 않음).
+            z_index (int | None): 새 z-index(지정되지 않으면 변경하지 않음).
+            is_visible (bool | None): 새 가시성 상태(지정되지 않으면 변경하지 않음).
+            style_json (dict | None): 새 스타일 JSON(지정되지 않으면 변경하지 않음).
+        
         Returns:
-            Updated MapLayer instance
+            MapLayer: 갱신되어 저장된 MapLayer 인스턴스.
+        
+        Raises:
+            ValueError: 지정한 ID의 레이어가 존재하지 않을 때.
+            PermissionDenied: 사용자가 해당 브랜치의 작성자가 아닐 때 권한 검사에 실패하면 발생함.
         """
         try:
             layer = MapLayer.objects.select_related("snapshot__map__branch").get(id=layer_id)

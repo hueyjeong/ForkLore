@@ -68,7 +68,14 @@ class SubscriptionViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     def create(self, request: Request) -> Response:
-        """Create or extend subscription."""
+        """
+        사용자의 구독을 생성하거나 연장한다.
+        
+        요청 본문을 검증한 후 구독 생성/연장 작업을 수행하고, 생성된 구독의 상세 정보를 반환한다.
+        
+        Returns:
+            생성되거나 연장된 구독의 직렬화된 상세 데이터를 담은 HTTP 201 응답.
+        """
         serializer = SubscriptionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

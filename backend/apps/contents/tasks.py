@@ -19,13 +19,12 @@ from apps.contents.models import Chapter, ChapterStatus
 @shared_task
 def publish_scheduled_chapters() -> int:
     """
-    Publish all chapters whose scheduled_at time has passed.
-
-    This task should be run periodically (e.g., every minute) via celery-beat.
-    It finds all SCHEDULED chapters with scheduled_at <= now and publishes them.
-
+    예약된 시간(scheduled_at)이 지나 공개해야 하는 모든 SCHEDULED 상태의 챕터를 공개합니다.
+    
+    성공적으로 공개된 챕터 수를 반환합니다.
+    
     Returns:
-        int: Number of chapters published
+        int: 공개된 챕터의 수
     """
     from apps.contents.services import ChapterService
 
@@ -54,9 +53,17 @@ def publish_scheduled_chapters() -> int:
 @shared_task
 def sync_drafts_to_db() -> str:
     """
-    Sync Redis drafts to the database.
-    Finds all keys matching 'draft:*:*' and updates corresponding Chapter objects.
-    Skips keys ending in ':new'.
+    Redis에 저장된 임시 초안(draft)들을 데이터베이스의 Chapter 레코드로 동기화한다.
+    
+    Redis에서 패턴 "draft:*:*"에 매칭되는 키를 스캔하여 각 키에서 branch_id와 chapter_id를 파싱하고,
+    키가 ":new"로 끝나는 항목은 건너뛴다. Redis 값에서 title과 content를 읽어와 해당 Chapter가 존재하고
+    상태가 DRAFT인 경우에만 제목·내용 및 파생 필드(content_html, word_count)를 업데이트한다.
+    각 챕터 업데이트는 개별 트랜잭션으로 처리되며, 연속된 오류가 10회 발생하면 조기 종료한다.
+    Redis 연결 오류가 발생하면 오류 메시지를 포함한 문자열을 반환한다.
+    
+    Returns:
+        str: 동기화 결과 요약 문자열. 성공적으로 업데이트된 초안 수와 발생한 오류 수를 포함한다.
+             형식 예시: "Synced {updated_count} drafts. Errors: {errors_count}"
     """
     from apps.contents.services import ChapterService
 

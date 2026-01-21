@@ -7,7 +7,11 @@ class ContentsConfig(AppConfig):
     verbose_name = "콘텐츠 관리"
 
     def ready(self):
-        """Sync Celery Beat schedules to database."""
+        """
+        Celery Beat 일정과 관련된 주기 작업을 데이터베이스에 동기화한다.
+        
+        django-celery-beat가 설치된 경우 5분(IntervalSchedule) 주기를 보장하고 이름이 "sync_drafts_to_db"인 PeriodicTask를 생성하거나 재사용하여 해당 작업이 데이터베이스에 존재하도록 한다. django-celery-beat가 설치되어 있지 않거나 마이그레이션(migrate/makemigrations) 중이면 아무 작업도 수행하지 않으며, 초기 마이그레이션 등으로 데이터베이스가 준비되지 않은 경우에도 예외를 발생시키지 않고 조용히 종료한다.
+        """
         # Import here to avoid AppRegistryNotReady
         try:
             from django_celery_beat.models import IntervalSchedule, PeriodicTask

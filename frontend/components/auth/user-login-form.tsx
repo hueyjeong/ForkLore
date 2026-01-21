@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
@@ -38,6 +39,7 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
     resolver: zodResolver(loginSchema),
   })
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  const [socialLoading, setSocialLoading] = React.useState<'google' | 'kakao' | null>(null)
 
   async function onSubmit(data: FormData) {
     setIsLoading(true)
@@ -54,12 +56,15 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
     }
   }
 
-  const handleSocialLogin = (provider: 'google' | 'github') => {
-    // TODO: Issue #59 - NextAuth.js v5 소셜 로그인 연동
-    // import { signIn } from "next-auth/react"
-    // await signIn(provider, { callbackUrl: "/" })
-    toast.info(`${provider} 로그인 준비 중...`);
-  };
+  const handleSocialLogin = async (provider: 'google' | 'kakao') => {
+    try {
+      setSocialLoading(provider)
+      await signIn(provider, { callbackUrl: "/" })
+    } catch (error) {
+      toast.error(`${provider === 'google' ? 'Google' : 'Kakao'} 로그인에 실패했습니다.`)
+      setSocialLoading(null)
+    }
+  }
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
@@ -126,13 +131,33 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" type="button" disabled={isLoading} className="h-11 border-border/50 hover:bg-muted/50 transition-all">
-          <Icons.google className="mr-2 h-4 w-4" />
+        <Button 
+          variant="outline" 
+          type="button" 
+          disabled={isLoading || socialLoading !== null} 
+          onClick={() => handleSocialLogin('google')}
+          className="h-11 border-border/50 hover:bg-muted/50 transition-all"
+        >
+          {socialLoading === 'google' ? (
+            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Icons.google className="mr-2 h-4 w-4" />
+          )}
           Google
         </Button>
-        <Button variant="outline" type="button" disabled={isLoading} className="h-11 border-border/50 hover:bg-muted/50 transition-all">
-          <Icons.gitHub className="mr-2 h-4 w-4" />
-          GitHub
+        <Button 
+          variant="outline" 
+          type="button" 
+          disabled={isLoading || socialLoading !== null} 
+          onClick={() => handleSocialLogin('kakao')}
+          className="h-11 border-border/50 hover:bg-muted/50 transition-all"
+        >
+          {socialLoading === 'kakao' ? (
+            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Icons.kakao className="mr-2 h-4 w-4" />
+          )}
+          Kakao
         </Button>
       </div>
     </div>

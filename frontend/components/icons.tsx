@@ -50,4 +50,14 @@ export const Icons = {
   eyeOff: EyeOff,
   chevronRight: ChevronRight,
   chevronLeft: ChevronLeft,
+  kakao: ({ ...props }: React.ComponentProps<"svg">) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      {...props}
+    >
+      <path d="M12 3C6.48 3 2 6.48 2 10.76c0 2.89 1.96 5.43 4.96 6.81-.22.8-1.42 5.09-1.47 5.27-.05.21.14.36.31.24.23-.16 3.6-2.38 4.22-2.8.63.09 1.28.14 1.95.14 5.52 0 10-3.48 10-7.76S17.52 3 12 3z" />
+    </svg>
+  ),
 }

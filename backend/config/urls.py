@@ -11,6 +11,7 @@ urlpatterns = [
     path("api/v1/", include("apps.contents.urls")),
     path("api/v1/", include("apps.interactions.urls")),
     path("api/v1/", include("apps.ai.urls")),
+    path("api/", include("apps.core.urls")),  # E2E testing endpoints
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),

@@ -6,7 +6,7 @@ import { Header } from '@/components/common/header'
 
 import { Footer } from '@/components/common/footer'
 import { QueryProvider } from '@/components/providers/query-provider'
-import { AuthProvider } from '@/components/providers/auth-provider'
+import { AuthInitializer } from '@/components/providers/auth-initializer'
 import { Toaster } from '@/components/ui/sonner'
 
 const geistSans = Geist({
@@ -44,14 +44,14 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <AuthProvider>
+            <AuthInitializer>
               <Header />
               <main className="flex-1">
                 {children}
               </main>
               <Footer />
               <Toaster />
-            </AuthProvider>
+            </AuthInitializer>
           </QueryProvider>
         </ThemeProvider>
       </body>

@@ -46,3 +46,7 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 
+# E2E screenshots (generated, not committed)
+/e2e-screenshots/
+!e2e-screenshots/.gitkeep
+

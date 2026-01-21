@@ -1,10 +1,96 @@
 /**
- * 테스트 데이터를 재설정하도록 예약된 함수지만 현재 구현되어 있지 않습니다.
+ * E2E Test Data Helper
  *
- * 현재 호출하면 테스트 격리가 보장되지 않음을 알리는 오류를 던집니다.
- *
- * @throws `Error` - 'resetTestData not implemented - test isolation not guaranteed' 메시지를 가진 오류
+ * Provides utilities for E2E test data management.
+ * Calls real Django backend endpoints for True E2E testing.
  */
-export async function resetTestData() {
-  throw new Error('resetTestData not implemented - test isolation not guaranteed');
+
+const E2E_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+interface ResetResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
 }
+
+/**
+ * Resets the E2E test database and reseeds with fresh test data.
+ *
+ * This function calls the Django E2E reset endpoint which:
+ * 1. Truncates all tables
+ * 2. Reseeds with predictable test data
+ *
+ * Should be called in `beforeAll` or `beforeEach` hooks to ensure test isolation.
+ *
+ * @throws {Error} If the reset endpoint fails or is not available
+ *
+ * @example
+ * ```typescript
+ * import { resetTestData } from '../utils/data-helper';
+ *
+ * test.describe('My Feature', () => {
+ *   test.beforeAll(async () => {
+ *     await resetTestData();
+ *   });
+ *
+ *   test('should work with fresh data', async ({ page }) => {
+ *     // Test with clean database
+ *   });
+ * });
+ * ```
+ */
+export async function resetTestData(): Promise<void> {
+  const response = await fetch(`${E2E_API_URL}/e2e/reset`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to reset E2E test data: ${response.status} ${response.statusText}\n${errorText}`
+    );
+  }
+
+  const data: ResetResponse = await response.json();
+
+  if (!data.success) {
+    throw new Error(`E2E reset failed: ${data.error || 'Unknown error'}`);
+  }
+}
+
+/**
+ * Test user credentials for E2E testing.
+ * These match the seed data created by Django's seed_e2e_data command.
+ */
+export const TEST_USERS = {
+  reader: {
+    email: 'testreader@example.com',
+    password: 'testpassword123',
+    nickname: 'TestReader',
+  },
+  author: {
+    email: 'testauthor@example.com',
+    password: 'testpassword123',
+    nickname: 'TestAuthor',
+  },
+} as const;
+
+/**
+ * Test data identifiers for E2E testing.
+ * These match the seed data created by Django's seed_e2e_data command.
+ */
+export const TEST_DATA = {
+  novels: {
+    first: 'Test Novel 1',
+    count: 5,
+  },
+  chapters: {
+    perBranch: 5,
+  },
+  branches: {
+    perNovel: 3, // 1 main + 2 forks
+  },
+} as const;

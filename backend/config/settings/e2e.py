@@ -25,7 +25,7 @@ E2E_ENABLED = True
 
 # CORS Configuration for E2E testing
 # Only allow Next.js dev server to make cross-origin requests
-INSTALLED_APPS += ["corsheaders"]  # noqa: F405
+INSTALLED_APPS += ["corsheaders", "apps.core"]  # noqa: F405
 
 # Insert CorsMiddleware before CommonMiddleware
 # This is required for CORS preflight requests to work

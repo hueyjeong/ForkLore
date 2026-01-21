@@ -563,7 +563,7 @@ class WikiEntryViewSet(viewsets.ViewSet):
         """
         브랜치에 속한 위키 항목을 조회하여 페이지별 직렬화된 목록을 반환합니다.
         
-        쿼리 파라미터:
+        Query Parameters:
         - tag: 태그 ID로 필터링(정수).
         - currentChapter: 컨텍스트가 될 챕터 번호(정수).
         

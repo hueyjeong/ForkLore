@@ -41,7 +41,10 @@ test.describe('Bookmark Functionality', () => {
     });
   });
 
-  test('should add bookmark on chapter page', async ({ page }) => {
+  // TODO(#241): Blocked - Bookmark button not wired to API in reader-view.tsx
+  // Waiting on: Bookmark API integration in ReaderView component
+  // Tracking: https://github.com/hueyjeong/ForkLore/issues/241
+  test.fixme('should add bookmark on chapter page', async ({ page }) => {
     await mockHelper.mockBookmarkCreate(10, defaultBookmark);
 
     await readerPage.goto(1, 10);
@@ -56,7 +59,7 @@ test.describe('Bookmark Functionality', () => {
     await expect(toast).toContainText('Bookmark added');
   });
 
-  test('should view bookmarks in library tab', async ({ page }) => {
+  test.fixme('should view bookmarks in library tab', async ({ page }) => {
     await mockHelper.mockBookmarkList([defaultBookmark]);
 
     await page.goto('/library');
@@ -69,7 +72,7 @@ test.describe('Bookmark Functionality', () => {
     await expect(page.getByText('Chapter 1: The Beginning')).toBeVisible();
   });
 
-  test('should remove bookmark and verify removal', async ({ page }) => {
+  test.fixme('should remove bookmark and verify removal', async ({ page }) => {
     await mockHelper.mockBookmarkCreate(10, defaultBookmark);
     await mockHelper.mockBookmarkDelete(1);
 

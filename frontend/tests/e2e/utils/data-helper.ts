@@ -102,12 +102,12 @@ export const TEST_USERS = {
 export const TEST_DATA = {
   novels: {
     first: 'Test Novel 1',
-    count: 5,
+    count: 50,
   },
   chapters: {
-    perBranch: 5,
+    perBranch: 20,
   },
   branches: {
-    perNovel: 3, // 1 main + 2 forks
+    perNovel: 1, // main branch guaranteed; forks exist globally (seed contract: 50 main + 20 fork)
   },
 } as const;

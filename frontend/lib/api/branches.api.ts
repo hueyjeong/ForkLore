@@ -20,7 +20,7 @@ export async function getBranches(
   params?: Omit<BranchListParams, 'novel_id'>
 ): Promise<PaginatedResponse<Branch>> {
   const response = await apiClient.get<ApiResponse<PaginatedResponse<Branch>>>(
-    `/novels/${novelId}/branches`,
+    `/novels/novels/${novelId}/branches`,
     { params }
   );
   return response.data.data;
@@ -42,7 +42,7 @@ export async function createBranch(
   data: BranchCreateRequest
 ): Promise<Branch> {
   const response = await apiClient.post<ApiResponse<Branch>>(
-    `/novels/${novelId}/branches`,
+    `/novels/novels/${novelId}/branches`,
     data
   );
   return response.data.data;

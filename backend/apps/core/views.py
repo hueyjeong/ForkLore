@@ -7,6 +7,9 @@ Only enabled when E2E_ENABLED=True in settings (e2e.py).
 
 from django.conf import settings
 from django.core.management import call_command
+from pathlib import Path
+
+from django.db import connection
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -55,6 +58,28 @@ class E2EResetView(APIView):
             )
 
     def _truncate_tables(self) -> None:
-        """Truncate all app tables using Django's flush."""
-        # Use Django's flush command which handles FK constraints properly
-        call_command("flush", "--no-input", verbosity=0)
+        """Truncate all data tables for a clean E2E slate.
+
+        Notes:
+            The E2E environment uses a persisted SQLite DB file. Django's `flush`
+            can intermittently fail under SQLite FK constraints and/or during
+            permission/content-type recreation. For E2E we prefer a deterministic
+            wipe that disables FK checks temporarily.
+        """
+
+        if connection.vendor == "sqlite":
+            # E2E uses a file-based SQLite DB which can get into a state where
+            # bulk deletes/flush intermittently fail with FK constraint errors.
+            # The most reliable reset is: close connection → delete DB file → migrate.
+            db_name = settings.DATABASES.get("default", {}).get("NAME")
+            if db_name:
+                db_path = Path(str(db_name))
+                connection.close()
+                if db_path.exists():
+                    db_path.unlink()
+
+            call_command("migrate", "--no-input", verbosity=0)
+            return
+
+        # Fallback for non-sqlite DBs.
+        call_command("flush", "--no-input", "--inhibit-post-migrate", verbosity=0)

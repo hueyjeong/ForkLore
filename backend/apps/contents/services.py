@@ -123,13 +123,13 @@ class ChapterService:
         """
         초안 또는 예약된 회차를 발행 상태로 전환합니다.
         
-        매개변수:
+        Parameters:
             chapter (Chapter): 발행할 Chapter 인스턴스
         
-        반환:
+        Returns:
             Chapter: 발행된 Chapter 인스턴스
         
-        예외:
+        Raises:
             ValueError: chapter가 이미 발행된 상태일 경우
         """
         if chapter.status == ChapterStatus.PUBLISHED:

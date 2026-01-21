@@ -229,11 +229,11 @@ class MapService:
         """
         주어진 장(chapter)에 적용되는 MapSnapshot을 결정합니다.
         
-        매개변수:
+        Args:
             map_id (int): 대상 Map의 ID.
             chapter_number (int): 조회하려는 장 번호.
         
-        반환값:
+        Returns:
             MapSnapshot 또는 None: valid_from_chapter가 chapter_number 이하인 snapshot 중 가장 큰 valid_from_chapter를 가진 MapSnapshot, 없으면 None.
         """
         return (

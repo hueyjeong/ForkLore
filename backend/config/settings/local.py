@@ -12,11 +12,16 @@ MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 INTERNAL_IPS = ["127.0.0.1"]
 
-# N+1 Query Detection for development
-INSTALLED_APPS += ["nplusone.ext.django"]
-MIDDLEWARE.insert(1, "nplusone.ext.django.NPlusOneMiddleware")
-NPLUSONE_LOG_LEVEL = "WARNING"  # Log N+1 warnings in development
-NPLUSONE_RAISE = False  # Don't raise errors, just log
+# N+1 Query Detection for development (optional - dev dependency)
+try:
+    import nplusone  # noqa: F401
+
+    INSTALLED_APPS += ["nplusone.ext.django"]
+    MIDDLEWARE.insert(1, "nplusone.ext.django.NPlusOneMiddleware")
+    NPLUSONE_LOG_LEVEL = "WARNING"  # Log N+1 warnings in development
+    NPLUSONE_RAISE = False  # Don't raise errors, just log
+except ImportError:
+    pass  # nplusone not installed (e.g., Docker without dev deps)
 
 LOGGING = {
     "version": 1,

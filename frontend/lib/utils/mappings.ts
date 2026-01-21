@@ -3,21 +3,14 @@ import { Genre, AgeRating, NovelStatus } from '@/types/novels.types';
 export const GENRE_LABELS: Record<Genre, string> = {
   [Genre.FANTASY]: '판타지',
   [Genre.ROMANCE]: '로맨스',
-  [Genre.ROMANCE_FANTASY]: '로판',
-  [Genre.MODERN_FANTASY]: '현판',
-  [Genre.WUXIA]: '무협',
+  [Genre.ACTION]: '액션',
+  [Genre.THRILLER]: '스릴러',
   [Genre.MYSTERY]: '미스터리',
-  [Genre.LIGHT_NOVEL]: '라이트노벨',
-  [Genre.BL]: 'BL',
-  [Genre.GL]: 'GL',
-  [Genre.TS]: 'TS',
-  [Genre.SPORTS]: '스포츠',
-  [Genre.ALTERNATIVE_HISTORY]: '대체역사',
+  [Genre.SF]: 'SF',
+  [Genre.HISTORY]: '역사',
+  [Genre.MODERN]: '현대',
+  [Genre.MARTIAL]: '무협',
   [Genre.GAME]: '게임',
-  [Genre.MILITARY]: '밀리터리',
-  [Genre.SCIENCE_FICTION]: 'SF',
-  [Genre.HORROR]: '공포',
-  [Genre.ETC]: '기타',
 };
 
 export const AGE_RATING_LABELS: Record<AgeRating, string> = {
@@ -31,7 +24,6 @@ export const STATUS_LABELS: Record<NovelStatus, string> = {
   [NovelStatus.ONGOING]: '연재중',
   [NovelStatus.COMPLETED]: '완결',
   [NovelStatus.HIATUS]: '휴재',
-  [NovelStatus.DELETED]: '삭제',
 };
 
 export function getGenreLabel(genre: Genre | string): string {

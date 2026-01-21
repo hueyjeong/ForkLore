@@ -67,6 +67,8 @@ export interface Novel {
   allow_branching: boolean;
   total_view_count: number;
   total_like_count: number;
+  // TODO: Backend must always return average_rating (never omit).
+  // Keep as required field; frontend uses ?? 0 as fallback for null.
   average_rating: number | null;
   total_chapter_count: number;
   branch_count: number;

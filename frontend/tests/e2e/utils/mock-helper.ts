@@ -2,7 +2,8 @@ import { Page } from '@playwright/test';
 import {
   MockUser, MockNovel, MockChapter,
   MockWikiEntry,
-  MockBranch
+  MockBranch,
+  MockBookmark
 } from '../fixtures/mock-schemas';
 
 interface ApiResponse<T> {
@@ -255,6 +256,214 @@ export class MockHelper {
       }
 
       const apiResponse: ApiResponse<PaginatedResponse<MockBranch>> = {
+        success: true,
+        data: response,
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse),
+      });
+    });
+  }
+
+  /**
+   * Mocks comments list for a chapter
+   */
+  async mockCommentList(chapterId: number | string, comments: any[]) {
+    const numericId = Number(chapterId);
+    const pattern = new RegExp(`/chapters/${numericId}/comments(\\?.*)?$`);
+
+    const response: PaginatedResponse<any> = {
+      results: comments,
+      total: comments.length,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
+    };
+
+    await this.page.route(pattern, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+
+      const apiResponse: ApiResponse<PaginatedResponse<any>> = {
+        success: true,
+        data: response,
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse),
+      });
+    });
+  }
+
+  /**
+   * Mocks comment creation endpoint
+   */
+  async mockCreateComment(chapterId: number | string, newComment: any) {
+    const numericId = Number(chapterId);
+    const pattern = new RegExp(`/chapters/${numericId}/comments$`);
+
+    await this.page.route(pattern, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+
+      const response: ApiResponse<any> = {
+        success: true,
+        data: newComment,
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify(response),
+      });
+    });
+  }
+
+  /**
+   * Mocks comment like toggle endpoint
+   */
+  async mockLikeComment(commentId: number | string, response: { liked: boolean; like_count: number }) {
+    const numericId = Number(commentId);
+    const pattern = new RegExp(`/comments/${numericId}/like$`);
+
+    await this.page.route(pattern, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+
+      const apiResponse: ApiResponse<{ liked: boolean; like_count: number }> = {
+        success: true,
+        data: response,
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse),
+      });
+    });
+  }
+
+  /**
+   * Mocks comment deletion endpoint
+   */
+  async mockDeleteComment(commentId: number | string) {
+    const numericId = Number(commentId);
+    const pattern = new RegExp(`/comments/${numericId}$`);
+
+    await this.page.route(pattern, async (route) => {
+      if (route.request().method() !== 'DELETE') {
+        await route.fallback();
+        return;
+      }
+
+      const response: ApiResponse<null> = {
+        success: true,
+        data: null,
+        message: 'Comment deleted successfully',
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 204,
+        contentType: 'application/json',
+        body: JSON.stringify(response),
+      });
+    });
+  }
+
+  /**
+   * Mocks bookmark creation endpoint
+   */
+  async mockBookmarkCreate(chapterId: number | string, bookmark: MockBookmark) {
+    const numericId = Number(chapterId);
+    const pattern = new RegExp(`/chapters/${numericId}/bookmark$`);
+
+    await this.page.route(pattern, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+
+      const response: ApiResponse<MockBookmark> = {
+        success: true,
+        data: bookmark,
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify(response),
+      });
+    });
+  }
+
+  /**
+   * Mocks bookmark deletion endpoint
+   */
+  async mockBookmarkDelete(bookmarkId: number | string) {
+    const numericId = Number(bookmarkId);
+    const pattern = new RegExp(`/bookmarks/${numericId}$`);
+
+    await this.page.route(pattern, async (route) => {
+      if (route.request().method() !== 'DELETE') {
+        await route.fallback();
+        return;
+      }
+
+      const response: ApiResponse<null> = {
+        success: true,
+        data: null,
+        message: 'Bookmark deleted',
+        serverTime: new Date().toISOString(),
+      };
+
+      await route.fulfill({
+        status: 204,
+        contentType: 'application/json',
+        body: JSON.stringify(response),
+      });
+    });
+  }
+
+  /**
+   * Mocks bookmarks list endpoint
+   */
+  async mockBookmarkList(bookmarks: MockBookmark[]) {
+    const response: PaginatedResponse<MockBookmark> = {
+      results: bookmarks,
+      total: bookmarks.length,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+      hasNext: false,
+      hasPrev: false,
+    };
+
+    await this.page.route('/users/me/bookmarks', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.fallback();
+        return;
+      }
+
+      const apiResponse: ApiResponse<PaginatedResponse<MockBookmark>> = {
         success: true,
         data: response,
         serverTime: new Date().toISOString(),

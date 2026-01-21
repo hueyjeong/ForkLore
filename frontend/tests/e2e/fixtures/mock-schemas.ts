@@ -166,3 +166,26 @@ export const WikiEntrySchema = z.object({
 });
 
 export type MockWikiEntry = z.infer<typeof WikiEntrySchema>;
+
+// Bookmark Schemas (from interactions.types.ts)
+export const BookmarkSchema = z.object({
+  id: z.number(),
+  chapter_id: z.number(),
+  user: z.object({
+    id: z.number(),
+    nickname: z.string(),
+  }),
+  novel: z.object({
+    id: z.number(),
+    title: z.string(),
+    cover_image_url: z.string(),
+  }),
+  chapter: z.object({
+    id: z.number(),
+    chapter_number: z.number(),
+    title: z.string(),
+  }),
+  created_at: z.string(),
+});
+
+export type MockBookmark = z.infer<typeof BookmarkSchema>;

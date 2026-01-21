@@ -1292,13 +1292,13 @@ class MapSnapshotViewSet(viewsets.ViewSet):
         """
         맵에 새 스냅샷을 생성합니다.
         
-        파라미터:
+        Parameters:
             map_pk (int | None): 생성 대상 맵의 ID. None이면 NotFound를 발생시킵니다.
         
-        반환값:
+        Returns:
             dict: 생성된 스냅샷을 직렬화한 응답 데이터.
         
-        발생 예외:
+        Raises:
             NotFound: map_pk가 제공되지 않았을 때.
             PermissionDenied: 현재 사용자에게 생성 권한이 없을 때.
             ValidationError: 입력 데이터가 유효하지 않거나 내부 서비스에서 유효성 오류가 발생했을 때.

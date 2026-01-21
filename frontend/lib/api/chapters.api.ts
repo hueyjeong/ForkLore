@@ -6,6 +6,7 @@ import {
   ChapterUpdateRequest,
   ChapterScheduleRequest,
   ChapterListParams,
+  ReadingProgress,
 } from '@/types/chapters.types';
 
 const BASE_URL = '/chapters';
@@ -97,6 +98,20 @@ export async function scheduleChapter(
 export async function unscheduleChapter(id: number): Promise<Chapter> {
   const response = await apiClient.post<ApiResponse<Chapter>>(
     `${BASE_URL}/${id}/unschedule`
+  );
+  return response.data.data;
+}
+
+/**
+ * Record reading progress for a chapter
+ */
+export async function recordReadingProgress(
+  chapterId: number,
+  progress: number
+): Promise<ReadingProgress> {
+  const response = await apiClient.post<ApiResponse<ReadingProgress>>(
+    `/chapters/${chapterId}/reading-progress`,
+    { progress }
   );
   return response.data.data;
 }

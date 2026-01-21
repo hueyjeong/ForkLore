@@ -93,3 +93,15 @@ export interface ChapterListParams extends PageParams {
   access_type?: AccessType;
   chapter_number?: number;
 }
+
+// =============================================================================
+// Reading Progress
+// =============================================================================
+
+export interface ReadingProgress {
+  id: number;
+  user: number;
+  chapter: number;
+  progress: number;
+  last_read_at: string;
+}

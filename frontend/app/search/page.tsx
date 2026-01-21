@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { NovelFilters } from '@/components/feature/novels/novel-filters';
 import { InfiniteNovelList } from '@/components/feature/novels/infinite-novel-list';
+import { BranchSearchResults } from '@/components/feature/search/branch-search-results';
+import { AuthorSearchResults } from '@/components/feature/search/author-search-results';
 
 function SearchPageContent() {
   const router = useRouter();
@@ -87,31 +89,11 @@ function SearchPageContent() {
             </TabsContent>
             
             <TabsContent value="branch" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-xl bg-muted/30">
-                <div className="p-4 rounded-full bg-muted">
-                  <Search className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">브랜치 검색 준비 중</h3>
-                  <p className="text-muted-foreground">
-                    브랜치 검색 기능은 곧 제공될 예정입니다.
-                  </p>
-                </div>
-              </div>
+              <BranchSearchResults searchQuery={currentSearch} />
             </TabsContent>
-            
+
             <TabsContent value="author" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-               <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-xl bg-muted/30">
-                <div className="p-4 rounded-full bg-muted">
-                  <Search className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">작가 검색 준비 중</h3>
-                  <p className="text-muted-foreground">
-                    작가 검색 기능은 곧 제공될 예정입니다.
-                  </p>
-                </div>
-              </div>
+              <AuthorSearchResults searchQuery={currentSearch} />
             </TabsContent>
           </Tabs>
         </div>

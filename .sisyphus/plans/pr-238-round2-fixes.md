@@ -222,7 +222,7 @@ PR #238의 2차 리뷰에서 발견된 15개 테스트 실패(N+1 쿼리)와 3�
   **Acceptance Criteria**:
   - [ ] `branch_id` 파싱 및 int 변환 추가
   - [ ] `Chapter.objects.get(id=chapter_id, branch_id=branch_id)` 검증
-  - [ ] DoesNotExist 시 경고 로그 후 continue (다른 브랜치 챕터 업데이트 방지)
+  - [ ] DoesExist 시 경고 로그 후 continue (다른 브랜치 챕터 업데이트 방지)
 
   **Parallelizable**: YES (with 4, 6)
 

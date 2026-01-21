@@ -26,8 +26,12 @@ poetry run ruff format apps/            # Format
 cd frontend
 pnpm install                            # Install dependencies
 pnpm dev                                # Start dev server (port 3000)
+pnpm start                              # Start production server
 pnpm build                              # Production build
 pnpm test                               # Run Vitest tests
+pnpm e2e                                # Run Playwright E2E tests
+pnpm e2e:install                        # Install Playwright browsers
+pnpm e2e:report                         # Show E2E test reports
 pnpm lint                               # Run ESLint
 ```
 
@@ -46,7 +50,8 @@ docker compose exec backend poetry run python manage.py migrate
 │   │   ├── novels/           # Novel metadata, branching
 │   │   ├── contents/         # Chapters, Wiki, Maps
 │   │   ├── interactions/     # Comments, likes, subscriptions
-│   │   └── ai/               # Gemini API, RAG
+│   │   ├── ai/               # Gemini API, RAG
+│   │   └── core/             # E2E testing endpoints
 │   ├── config/               # Django settings (base, local, test, production)
 │   └── common/               # Shared utilities (renderers, exceptions, pagination)
 ├── frontend/                 # Next.js 16 + React 19 (TypeScript)

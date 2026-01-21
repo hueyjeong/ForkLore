@@ -1,6 +1,7 @@
 'use client';
 
-import { useQueries } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { getMyProfile } from '@/lib/api/auth.api';
 import { getWalletBalance } from '@/lib/api/wallet.api';
@@ -12,7 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, User, Wallet as WalletIcon, Mail, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+
+type ProfileQuery = UseQueryResult<UserResponse, Error>;
+type WalletQuery = UseQueryResult<Wallet, Error>;
 
 export function UserProfile() {
   const results = useQueries({
@@ -28,12 +31,11 @@ export function UserProfile() {
     ],
   });
 
-  const [profileQuery, walletQuery] = results as [
-    { data: UserResponse | undefined },
-    { data: Wallet | undefined }
-  ];
-  const isLoading = results.some((r) => r.isPending);
-  const isError = results.some((r) => r.isError);
+  const profileQuery = results[0] as ProfileQuery;
+  const walletQuery = results[1] as WalletQuery;
+
+  const isLoading = profileQuery.isPending || walletQuery.isPending;
+  const isError = profileQuery.isError || walletQuery.isError;
 
   useEffect(() => {
     if (isError) {

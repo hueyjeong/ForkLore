@@ -15,6 +15,12 @@ export enum Genre {
   MODERN = 'MODERN',
   MARTIAL = 'MARTIAL',
   GAME = 'GAME',
+  LIGHT_NOVEL = 'LIGHT_NOVEL',
+  BL = 'BL',
+  GL = 'GL',
+  TS = 'TS',
+  SPORTS = 'SPORTS',
+  ALTERNATIVE_HISTORY = 'ALTERNATIVE_HISTORY',
 }
 
 export enum AgeRating {
@@ -56,6 +62,7 @@ export interface Novel {
   allow_branching: boolean;
   total_view_count: number;
   total_like_count: number;
+  average_rating: number | null;
   total_chapter_count: number;
   branch_count: number;
   linked_branch_count: number;

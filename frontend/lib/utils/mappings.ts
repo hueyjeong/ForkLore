@@ -11,6 +11,12 @@ export const GENRE_LABELS: Record<Genre, string> = {
   [Genre.MODERN]: '현대',
   [Genre.MARTIAL]: '무협',
   [Genre.GAME]: '게임',
+  [Genre.LIGHT_NOVEL]: '라이트노벨',
+  [Genre.BL]: 'BL',
+  [Genre.GL]: 'GL',
+  [Genre.TS]: 'TS',
+  [Genre.SPORTS]: '스포츠',
+  [Genre.ALTERNATIVE_HISTORY]: '대체역사',
 };
 
 export const AGE_RATING_LABELS: Record<AgeRating, string> = {

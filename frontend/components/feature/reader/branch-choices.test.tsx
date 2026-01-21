@@ -157,7 +157,7 @@ describe('BranchChoices', () => {
   });
 
   it('should filter branches by fork_point_chapter using select option', async () => {
-    const { container } = render(
+    render(
       <TestWrapper>
         <BranchChoices novelId={1} currentChapterNumber={3} />
       </TestWrapper>
@@ -178,7 +178,7 @@ describe('BranchChoices', () => {
   });
 
   it('should render branch cards with correct information', async () => {
-    const { container } = render(
+    render(
       <TestWrapper>
         <BranchChoices novelId={1} currentChapterNumber={3} />
       </TestWrapper>
@@ -201,7 +201,7 @@ describe('BranchChoices', () => {
   });
 
   it('should display toast info when branch is clicked', async () => {
-    const { container } = render(
+    render(
       <TestWrapper>
         <BranchChoices novelId={1} currentChapterNumber={3} />
       </TestWrapper>
@@ -222,7 +222,7 @@ describe('BranchChoices', () => {
   });
 
   it('should show AVAILABLE BRANCHES section separator', async () => {
-    const { container } = render(
+    render(
       <TestWrapper>
         <BranchChoices novelId={1} currentChapterNumber={3} />
       </TestWrapper>

@@ -11,14 +11,22 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getNovel } from '@/lib/api/novels.api';
 
-export default async function NovelDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function NovelDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
 
   let novel;
   try {
     novel = await getNovel(Number(id));
-  } catch (error) {
-    notFound();
+  } catch (error: unknown) {
+    const maybeError = error as { response?: { status?: number }; status?: number };
+    const status = maybeError?.response?.status ?? maybeError?.status;
+
+    if (status === 404) {
+      notFound();
+    }
+
+    console.error('Failed to fetch novel details:', error);
+    throw error;
   }
 
   const formatViews = (views: number) => {
@@ -35,18 +43,22 @@ export default async function NovelDetailPage({ params }: { params: Promise<{ id
   const stats = {
     views: formatViews(novel.total_view_count),
     likes: formatLikes(novel.total_like_count),
-    rating: 4.5,
+    rating: novel.average_rating ?? 0,
   };
 
   const tags = [novel.genre];
 
-  const CHAPTERS = Array.from({ length: novel.total_chapter_count || 0 }).map((_, i) => ({
-    id: i + 1,
-    title: `Chapter ${i + 1}`,
-    date: new Date(novel.created_at).toISOString().split('T')[0],
-    coins: 0,
-    isRead: false,
-  }));
+  const createdAt = new Date(novel.created_at);
+  const CHAPTERS = Array.from({ length: novel.total_chapter_count || 0 }).map((_, i) => {
+    const chapterDate = new Date(createdAt.getTime() + i * 24 * 60 * 60 * 1000);
+    return {
+      id: i + 1,
+      title: `Chapter ${i + 1}`,
+      date: chapterDate.toISOString().split('T')[0],
+      coins: i < 3 ? 0 : 10,
+      isRead: false,
+    };
+  });
   const REVIEWS: Array<{ id: number; user: string; content: string; rating: number; date: string }> = [];
 
   return (

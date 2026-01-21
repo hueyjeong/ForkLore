@@ -44,13 +44,14 @@ function PostCardComponent({ post }: PostCardProps) {
 }
 
 export const PostCard = memo(PostCardComponent, (prev, next) => {
-  // Memoize to prevent re-renders when only counts change
   return (
     prev.post.id === next.post.id &&
     prev.post.title === next.post.title &&
     prev.post.author === next.post.author &&
     prev.post.category === next.post.category &&
     prev.post.createdAt === next.post.createdAt &&
-    prev.post.isPinned === next.post.isPinned
+    prev.post.isPinned === next.post.isPinned &&
+    prev.post.commentCount === next.post.commentCount &&
+    prev.post.likeCount === next.post.likeCount
   );
 });

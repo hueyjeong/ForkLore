@@ -41,12 +41,6 @@ const mockWallet: Wallet = {
   recent_transactions: [],
 };
 
-const createMockResponse = (data: any) => ({
-  data: {
-    data,
-  },
-});
-
 function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: {

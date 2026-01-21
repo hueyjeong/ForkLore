@@ -39,11 +39,12 @@ export const BranchCard = memo(function BranchCard({ branch }: BranchCardProps) 
       setIsVoted((prev) => !prev)
       setVoteCount((prev) => (isVoted ? prev - 1 : prev + 1))
     },
-    onError: (_error) => {
+    onError: (error) => {
+      console.error('Failed to update vote for branch', branch.id, error)
+      toast.error('Failed to update vote')
       // Revert on error
       setIsVoted((prev) => !prev)
       setVoteCount((prev) => (isVoted ? prev + 1 : prev - 1))
-      toast.error("Failed to update vote")
     },
   })
 

@@ -30,24 +30,17 @@ export default defineConfig({
   // Dual webServer configuration for True E2E testing
   webServer: [
     {
-      // Django Backend with E2E settings
-      command: 'cd ../backend && DJANGO_SETTINGS_MODULE=config.settings.e2e poetry run python manage.py runserver 8000',
-      url: 'http://localhost:8000/api/docs/',
+      command: 'DJANGO_SETTINGS_MODULE=config.settings.e2e poetry run python manage.py runserver 8001',
+      url: 'http://localhost:8001/api/docs/',
+      cwd: '../backend',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
-      env: {
-        DJANGO_SETTINGS_MODULE: 'config.settings.e2e',
-      },
     },
     {
-      // Next.js Frontend
       command: 'pnpm dev',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
-      env: {
-        NEXT_PUBLIC_API_URL: 'http://localhost:8000/api/v1',
-      },
     },
   ],
 

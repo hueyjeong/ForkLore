@@ -7,7 +7,6 @@ Only enabled when E2E_ENABLED=True in settings (e2e.py).
 
 from django.conf import settings
 from django.core.management import call_command
-from django.db import connection
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -56,50 +55,6 @@ class E2EResetView(APIView):
             )
 
     def _truncate_tables(self) -> None:
-        """Truncate all app tables in correct order."""
-        # Tables in dependency order (children first)
-        tables = [
-            # AI
-            "ai_usage_logs",
-            "chapter_chunks",
-            # Interactions
-            "coin_transactions",
-            "wallets",
-            "reports",
-            "likes",
-            "comments",
-            "bookmarks",
-            "reading_logs",
-            "purchases",
-            "subscriptions",
-            # Contents
-            "map_objects",
-            "map_layers",
-            "map_snapshots",
-            "maps",
-            "wiki_snapshots",
-            "wiki_entries",
-            "wiki_tag_definitions",
-            "chapters",
-            # Novels
-            "branch_link_requests",
-            "branch_votes",
-            "branches",
-            "novels",
-            # Users
-            "users",
-        ]
-
-        with connection.cursor() as cursor:
-            # Disable FK checks for SQLite
-            cursor.execute("PRAGMA foreign_keys = OFF;")
-
-            for table in tables:
-                try:
-                    cursor.execute(f"DELETE FROM {table};")  # noqa: S608
-                except Exception:
-                    # Table might not exist in all configurations
-                    pass
-
-            # Re-enable FK checks
-            cursor.execute("PRAGMA foreign_keys = ON;")
+        """Truncate all app tables using Django's flush."""
+        # Use Django's flush command which handles FK constraints properly
+        call_command("flush", "--no-input", verbosity=0)

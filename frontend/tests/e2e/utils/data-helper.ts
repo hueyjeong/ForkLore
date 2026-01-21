@@ -5,7 +5,8 @@
  * Calls real Django backend endpoints for True E2E testing.
  */
 
-const E2E_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const E2E_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
+const E2E_RESET_URL = 'http://localhost:8001/api'
 
 interface ResetResponse {
   success: boolean;
@@ -40,25 +41,41 @@ interface ResetResponse {
  * ```
  */
 export async function resetTestData(): Promise<void> {
-  const response = await fetch(`${E2E_API_URL}/e2e/reset`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  const maxRetries = 3
+  let lastError: Error | null = null
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `Failed to reset E2E test data: ${response.status} ${response.statusText}\n${errorText}`
-    );
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(`${E2E_RESET_URL}/e2e/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(
+          `Failed to reset E2E test data: ${response.status} ${response.statusText}\n${errorText}`
+        )
+      }
+
+      const data: ResetResponse = await response.json()
+
+      if (!data.success) {
+        throw new Error(`E2E reset failed: ${data.error || 'Unknown error'}`)
+      }
+
+      return
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+      }
+    }
   }
 
-  const data: ResetResponse = await response.json();
-
-  if (!data.success) {
-    throw new Error(`E2E reset failed: ${data.error || 'Unknown error'}`);
-  }
+  throw lastError
 }
 
 /**

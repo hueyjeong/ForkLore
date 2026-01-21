@@ -95,23 +95,24 @@ class SubscriptionService:
         order_id: str = "",
     ) -> Subscription:
         """
-        Create or extend a subscription.
-
-        If user has an active subscription, extends from current expiry.
-        Otherwise, creates a new subscription starting now.
-
-        Args:
-            user instance
-            plan_type: BASIC or PREMIUM
-            days: Number of days to subscribe
-            payment_id: Payment reference ID
-            order_id: Order ID for payment
-
+        사용자의 구독을 생성하거나 기존 활성 구독을 연장합니다.
+        
+        설명:
+          활성 구독이 있으면 해당 구독의 만료일을 연장하고, 없으면 현재 시점부터 지정한 기간만큼의 새 활성 구독을 생성합니다. 유료 플랜에는 결제 정보(payment_id 및 order_id)가 필요하며, 결제 확인이 성공한 경우에만 구독이 최종 적용됩니다.
+        
+        Parameters:
+          user (User): 구독을 생성하거나 연장할 사용자.
+          plan_type (str): 구독 플랜 타입(예: PlanType.BASIC, PlanType.PREMIUM).
+          days (int): 연장 또는 생성할 일수.
+          payment_id (str): 결제 승인 식별자(유료 플랜에 필요).
+          order_id (str): 주문 식별자(유료 플랜에 필요).
+        
         Returns:
-            Subscription instance
-
+          Subscription: 생성되거나 연장된 Subscription 인스턴스.
+        
         Raises:
-            PaymentFailedException: If payment fails
+          ValueError: 유료 플랜에 결제 정보가 누락된 경우.
+          PaymentFailedException: 결제 확인이 실패한 경우(결제 서비스에서 발생).
         """
         now = timezone.now()
 
@@ -175,16 +176,12 @@ class SubscriptionService:
 
     def cancel(self, user: User) -> bool:
         """
-        Cancel user's active subscription.
-
-        Sets status to CANCELLED and records cancellation time.
-        Subscription remains valid until expires_at.
-
-        Args:
-            user instance
-
+        사용자의 활성 구독을 취소합니다.
+        
+        구독 상태를 CANCELLED로 변경하고 취소 시각을 기록하며 자동 갱신을 비활성화합니다. 만료 시각(expires_at)까지는 구독이 계속 유효합니다.
+        
         Returns:
-            True if cancelled, False if no active subscription
+            `True`이면 활성 구독을 찾아 취소를 수행했음을 의미하며, `False`이면 활성 구독이 없어 아무 작업도 수행되지 않았음을 의미합니다.
         """
         subscription = Subscription.objects.filter(
             user=user,
@@ -317,14 +314,14 @@ class ReadingService:
     @staticmethod
     def get_recent_reads(user: User, limit: int = 20) -> QuerySet:
         """
-        Get recently read chapters for a user.
-
-        Args:
-            user instance
-            limit: Maximum number of results
-
+        사용자가 최근에 읽은 챕터의 읽기 기록을 가져온다.
+        
+        Parameters:
+            user (User): 조회 대상 사용자.
+            limit (int): 가져올 최대 결과 수(기본값 20).
+        
         Returns:
-            QuerySet of ReadingLog instances ordered by read_at desc
+            QuerySet: 읽은 시간(read_at) 기준 내림차순으로 정렬된 ReadingLog 인스턴스의 쿼리셋(최대 `limit` 개).
         """
         from apps.interactions.models import ReadingLog
 
@@ -406,16 +403,16 @@ class BookmarkService:
         user: User, chapter_id: int, scroll_position: float = 0, note: str = ""
     ) -> Any:
         """
-        Add or update a bookmark for a chapter.
-
-        Args:
-            user instance
-            chapter_id: ID of chapter to bookmark
-            scroll_position: Scroll position (0.0 to 1.0)
-            note: Optional note
-
+        지정된 챕터에 대해 북마크를 생성하거나 기존 북마크를 갱신한다.
+        
+        Parameters:
+            user (User): 북마크를 생성/갱신하는 사용자
+            chapter_id (int): 대상 챕터의 ID
+            scroll_position (float): 챕터 내 위치를 0.0에서 1.0 범위로 표시하는 값
+            note (str): 북마크에 대한 선택적 메모
+        
         Returns:
-            Bookmark instance
+            Bookmark: 관련 `chapter`가 select_related로 로드된 북마크 인스턴스
         """
         from apps.contents.models import Chapter
         from apps.interactions.models import Bookmark
@@ -436,11 +433,10 @@ class BookmarkService:
     @staticmethod
     def remove_bookmark(user: User, chapter_id: int) -> None:
         """
-        Remove a bookmark.
-
-        Args:
-            user instance
-            chapter_id: ID of chapter to remove bookmark from
+        북마크를 삭제한다.
+        
+        Parameters:
+            chapter_id (int): 삭제할 북마크가 연결된 챕터의 ID.
         """
         from apps.interactions.models import Bookmark
 
@@ -449,13 +445,13 @@ class BookmarkService:
     @staticmethod
     def get_bookmarks(user: User) -> QuerySet:
         """
-        Get all bookmarks for a user.
-
-        Args:
-            user instance
-
+        사용자의 모든 북마크를 생성일 내림차순으로 조회합니다.
+        
+        Parameters:
+            user (User): 북마크를 조회할 사용자
+        
         Returns:
-            QuerySet of Bookmark instances
+            QuerySet: 관련 챕터를 select_related로 미리 로드한 Bookmark 쿼리셋, 생성일(created_at) 기준 내림차순 정렬
         """
         from apps.interactions.models import Bookmark
 
@@ -580,14 +576,16 @@ class CommentService:
     @staticmethod
     def list(chapter_id: int, paragraph_index: int = None) -> list:
         """
-        List comments for a chapter.
-
-        Args:
-            chapter_id: ID of chapter
-            paragraph_index: Filter by paragraph index
-
+        특정 챕터의 삭제되지 않은 댓글 목록을 가져온다.
+        
+        챕터에 속한 댓글을 생성일 기준 내림차순으로 반환하며, 각 댓글에는 삭제되지 않은 답글 수를 담은 `reply_count` 어노테이션이 포함되고 작성자(`user`)가 미리 로드되어 있다.
+        
+        Parameters:
+            chapter_id (int): 댓글을 조회할 챕터의 ID.
+            paragraph_index (int, optional): 단락 인덱스로 필터링할 경우 해당 인덱스. 제공하지 않으면 전체 단락의 댓글을 반환한다.
+        
         Returns:
-            QuerySet of Comment instances
+            list: 조회된 댓글 객체의 리스트. 각 객체는 `reply_count` 속성과 `user` 관련 객체를 포함한다.
         """
         from apps.interactions.models import Comment
 
@@ -897,24 +895,21 @@ class WalletService:
         description: str = "",
     ) -> dict:
         """
-        Charge coins to user's wallet.
-
-        Creates wallet if it doesn't exist.
-        Verifies payment if payment_key and order_id are provided.
-
-        Args:
-            user instance
-            amount: Amount to charge (must be positive)
-            payment_key: Payment reference key (optional)
-            order_id: Order ID (optional)
-            description: Optional description
-
+        사용자의 지갑에 코인을 충전하고 충전 트랜잭션을 기록합니다.
+        
+        Parameters:
+            user (User): 충전할 대상 사용자.
+            amount (int): 충전할 금액(0보다 커야 함).
+            payment_key (str, optional): 결제 확인에 사용할 결제 키. 제공되면 결제 확인을 시도합니다.
+            order_id (str, optional): 결제 확인에 사용할 주문 ID. payment_key와 함께 제공되어야 합니다.
+            description (str, optional): 트랜잭션 설명.
+        
         Returns:
-            Dict with 'wallet' and 'transaction' keys
-
+            dict: 'wallet' 키에 업데이트된 Wallet 인스턴스, 'transaction' 키에 생성된 CoinTransaction 인스턴스가 들어있는 사전.
+        
         Raises:
-            ValueError: If amount is not positive or payment details missing
-            PaymentFailedException: If payment confirmation fails
+            ValueError: amount가 0 이하일 때 발생합니다.
+            PaymentFailedException: 결제 확인이 실패할 경우 PaymentService.confirm_payment에서 전파됩니다.
         """
         from django.db import transaction
 

@@ -14,13 +14,23 @@ from apps.interactions.services import WalletService
 
 @pytest.fixture
 def user(db):
-    """Create a user."""
+    """
+    테스트용 User 인스턴스를 생성한다.
+    
+    Returns:
+        user (users.User): 생성된 `users.User` 모델 인스턴스.
+    """
     return baker.make("users.User")
 
 
 @pytest.fixture
 def wallet_service():
-    """Create WalletService instance."""
+    """
+    테스트에서 사용할 WalletService 인스턴스를 생성하여 반환합니다.
+    
+    Returns:
+        WalletService: 테스트용 WalletService 인스턴스
+    """
     return WalletService()
 
 
@@ -106,7 +116,9 @@ class TestTossPaymentAdapterMockMode:
     """Tests for TossPaymentAdapter mock mode behavior."""
 
     def test_empty_string_secret_key_uses_mock_mode(self):
-        """Empty string secret key should trigger mock mode."""
+        """
+        비어 있는 문자열인 secret_key가 TossPaymentAdapter를 모의(Mock) 모드로 전환하는지 검증한다.
+        """
         from apps.interactions.services.payment_service import TossPaymentAdapter
 
         adapter = TossPaymentAdapter()

@@ -20,17 +20,17 @@ class NovelService:
     @transaction.atomic
     def create(self, author: User, data: dict) -> Novel:
         """
-        Create a new novel with automatic main branch creation.
-
-        Args:
-            author: The user creating the novel
-            data: Dict containing novel fields (title, description, genre, etc.)
-
+        새 소설을 생성하고 해당 소설의 메인 분기(Branch)를 자동으로 생성합니다.
+        
+        Parameters:
+            author (User): 소설을 생성하는 작성자.
+            data (dict): 소설 속성들을 담은 사전(예: "title", "description", "genre", "age_rating", "status", "cover_image_url", "allow_branching").
+        
         Returns:
-            Created Novel instance
-
+            Novel: 생성된 Novel 인스턴스.
+        
         Raises:
-            ValueError/KeyError: If required fields are missing
+            ValueError: "title"이 없거나 빈 문자열인 경우.
         """
         # Validate required fields - strip and check for empty
         raw_title = data.get("title")
@@ -67,14 +67,14 @@ class NovelService:
         sort: str | None = None,
     ) -> QuerySet[Novel]:
         """
-        List novels with optional filtering and sorting.
-
-        Args:
-            filters: Dict of filter conditions (genre, status, author, etc.)
-            sort: Sort order ("popular", "latest", "likes")
-
+        지운(novel.deleted_at이 설정된) 소설을 제외하고 필터와 정렬을 적용하여 소설 목록을 반환합니다.
+        
+        Parameters:
+            filters (dict | None): 적용 가능한 키: `genre`, `status`, `author`, `age_rating`. 각 키가 존재하면 해당 값으로 필터합니다.
+            sort (str | None): 정렬 기준. `"popular"`(조회수 내림), `"likes"`(좋아요 수 내림), 그 외 또는 `None`은 생성일 내림(최신).
+        
         Returns:
-            QuerySet of novels
+            QuerySet[Novel]: 필터와 정렬이 적용된 소설 쿼리셋(soft-deleted된 항목 제외).
         """
         queryset = Novel.objects.filter(deleted_at__isnull=True).select_related("author")
 
@@ -100,35 +100,43 @@ class NovelService:
 
     def retrieve(self, novel_id: int) -> Novel:
         """
-        Retrieve a single novel by ID.
-
-        Args:
-            novel_id: The novel's primary key
-
+        주어진 ID에 해당하는 삭제되지 않은 소설을 조회합니다.
+        
+        Parameters:
+            novel_id (int): 조회할 소설의 기본 키
+        
         Returns:
-            Novel instance
-
+            Novel: 조회된 Novel 인스턴스
+        
         Raises:
-            Novel.DoesNotExist: If novel not found or is deleted
+            Novel.DoesNotExist: 해당 ID의 소설이 존재하지 않거나 이미 삭제된 경우
         """
         return Novel.objects.get(id=novel_id, deleted_at__isnull=True)
 
     @transaction.atomic
     def update(self, novel_id: int, author: User, data: dict) -> Novel:
         """
-        Update an existing novel.
-
-        Args:
-            novel_id: The novel's primary key
-            author: The user attempting the update
-            data: Dict of fields to update
-
+        지정된 소설의 허용된 필드를 갱신하고 저장합니다.
+        
+        Parameters:
+            novel_id (int): 갱신할 소설의 기본 키.
+            author (User): 요청한 사용자(권한 확인에 사용).
+            data (dict): 갱신할 필드를 포함한 딕셔너리. 허용되는 키:
+                - "title": 소설 제목(빈 문자열이 될 수 없음).
+                - "description": 설명 문자열.
+                - "cover_image_url": 표지 이미지 URL.
+                - "genre": Genre 열거형 값.
+                - "age_rating": AgeRating 열거형 값.
+                - "status": NovelStatus 열거형 값.
+                - "allow_branching": 분기 허용 여부(boolean).
+        
         Returns:
-            Updated Novel instance
-
+            Novel: 갱신되어 저장된 Novel 인스턴스.
+        
         Raises:
-            Novel.DoesNotExist: If novel not found
-            PermissionError: If user is not the author
+            Novel.DoesNotExist: 지정한 ID의 소설을 찾을 수 없거나 삭제된 경우.
+            PermissionError: 요청한 사용자가 소설의 작성자가 아닌 경우.
+            ValueError: 제공된 제목이 빈 문자열인 경우.
         """
         novel = Novel.objects.get(id=novel_id, deleted_at__isnull=True)
 
@@ -163,15 +171,15 @@ class NovelService:
     @transaction.atomic
     def delete(self, novel_id: int, author: User) -> None:
         """
-        Soft-delete a novel.
-
-        Args:
-            novel_id: The novel's primary key
-            author: The user attempting the deletion
-
+        지정된 소설을 소프트 삭제한다.
+        
+        Parameters:
+            novel_id (int): 삭제할 소설의 기본키.
+            author (User): 삭제를 시도하는 사용자(소설의 저자여야 함).
+        
         Raises:
-            Novel.DoesNotExist: If novel not found or already deleted
-            PermissionError: If user is not the author
+            Novel.DoesNotExist: 해당 ID의 소설이 없거나 이미 삭제된 경우.
+            PermissionError: 요청 사용자가 소설의 저자가 아닌 경우.
         """
         novel = Novel.objects.get(id=novel_id, deleted_at__isnull=True)
 

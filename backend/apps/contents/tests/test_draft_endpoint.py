@@ -17,7 +17,15 @@ from apps.contents.models import Chapter
 
 
 def get_tokens_for_user(user):
-    """Generate JWT tokens for a user."""
+    """
+    주어진 사용자에 대해 JWT 액세스 토큰과 리프레시 토큰을 생성합니다.
+    
+    Parameters:
+        user (django.contrib.auth.models.User): 토큰을 발급할 대상 사용자 객체.
+    
+    Returns:
+        dict: "access" 키에 액세스 토큰 문자열을, "refresh" 키에 리프레시 토큰 문자열을 담은 딕셔너리.
+    """
     refresh = RefreshToken.for_user(user)
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
@@ -27,7 +35,12 @@ class TestChapterDraft:
     """Tests for POST /api/v1/branches/{branch_id}/chapters/draft/"""
 
     def test_save_draft_success(self):
-        """Should save draft successfully."""
+        """
+        초안 자동저장 엔드포인트에 대해 정상적으로 초안을 저장하는 동작을 검증한다.
+        
+        인증된 사용자로 브랜치에 제목과 내용을 POST하면 HTTP 200 응답과 성공 플래그를 반환하고,
+        DraftService.save_draft가 branch_id에 브랜치 id와 chapter_id=None, 전달한 title과 content로 한 번 호출되는지 확인한다.
+        """
         user = baker.make(User)
         client = APIClient()
         tokens = get_tokens_for_user(user)
@@ -56,7 +69,11 @@ class TestChapterDraft:
             )
 
     def test_save_draft_with_chapter_id(self):
-        """Should save draft for existing chapter."""
+        """
+        기존 챕터의 드래프트를 저장(업데이트)하는 동작을 검증한다.
+        
+        요청에 `chapter_id`가 포함되었을 때 `DraftService.save_draft`가 해당 `chapter_id`, 제목 및 내용을 사용해 호출되는지 확인한다.
+        """
         user = baker.make(User)
         client = APIClient()
         tokens = get_tokens_for_user(user)

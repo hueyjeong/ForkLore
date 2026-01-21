@@ -8,6 +8,11 @@ from apps.novels.services import DraftService
 class TestDraftService:
     @pytest.fixture(autouse=True)
     def setup(self):
+        """
+        각 테스트 실행 전에 테스트용 상태를 초기화한다.
+        
+        DraftService 인스턴스를 생성하여 self.service에 할당하고 Django 캐시를 비운다.
+        """
         self.service = DraftService()
         cache.clear()
 
@@ -42,7 +47,11 @@ class TestDraftService:
         assert draft["content"] == content
 
     def test_delete_draft(self):
-        """Test deleting a draft."""
+        """
+        초안 삭제 기능을 검증한다.
+        
+        브랜치에 초안을 저장한 뒤 조회로 존재를 확인하고, 삭제 호출 후 다시 조회했을 때 None을 반환하는지 확인한다.
+        """
         branch_id = 1
         title = "To Delete"
         content = "..."

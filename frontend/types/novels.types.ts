@@ -4,6 +4,11 @@ import { PageParams } from './common';
 // Enums
 // =============================================================================
 
+// TODO: Backend sync required - The following 6 genres are frontend-only and missing on the backend:
+// LIGHT_NOVEL, BL, GL, TS, SPORTS, ALTERNATIVE_HISTORY
+// Update backend Genre enum (apps/novels/models.py) to include these keys,
+// or map ALTERNATIVE_HISTORY to existing HISTORY key if intended.
+// Ensure serializers and validation accept these values for consistent novel creation/filtering.
 export enum Genre {
   FANTASY = 'FANTASY',
   ROMANCE = 'ROMANCE',

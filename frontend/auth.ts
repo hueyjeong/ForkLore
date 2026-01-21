@@ -1,15 +1,69 @@
-/**
- * 인증 관련 모듈
- * 
- * 백엔드 JWT API를 직접 호출하는 방식으로 구현했습니다.
- * 
- * 구현 완료 사항:
- * 1. 로그인/회원가입 API 연동 (lib/api/auth.api.ts)
- * 2. 토큰 관리 (lib/token.ts)
- * 3. 인증 상태 관리 (stores/auth-store.ts)
- * 4. 보호된 라우트 미들웨어 (middleware.ts)
- * 
- * 향후 구현 예정:
- * - NextAuth.js v5를 사용한 소셜 로그인 (Google, GitHub)
- * - OAuth2 Provider 설정
- */
+import NextAuth from 'next-auth'
+import Credentials from 'next-auth/providers/credentials'
+import Google from 'next-auth/providers/google'
+import Kakao from 'next-auth/providers/kakao'
+import { login as backendLogin } from '@/lib/api/auth.api'
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [
+    Credentials({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null
+          }
+
+          // Call backend login API
+          const result = await backendLogin({
+            email: credentials.email as string,
+            password: credentials.password as string,
+          })
+
+          // Return user object (will be stored in JWT)
+          return {
+            id: credentials.email as string,
+            email: credentials.email as string,
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+          }
+        } catch (error) {
+          console.error('Credentials authorize error:', error)
+          return null
+        }
+      },
+    }),
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    }),
+    Kakao({
+      clientId: process.env.AUTH_KAKAO_ID,
+      clientSecret: process.env.AUTH_KAKAO_SECRET,
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      // Initial sign in
+      if (user) {
+        token.accessToken = user.accessToken
+        token.refreshToken = user.refreshToken
+      }
+      return token
+    },
+    async session({ session, token }) {
+      return {
+        ...session,
+        accessToken: token.accessToken,
+      }
+    },
+  },
+  pages: {
+    signIn: '/auth/login',
+    error: '/auth/login',
+  },
+})

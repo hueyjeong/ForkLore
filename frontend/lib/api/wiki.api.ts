@@ -3,6 +3,7 @@ import { ApiResponse, PaginatedResponse } from '@/types/common';
 import {
   WikiEntry,
   WikiSnapshot,
+  WikiTagDefinition,
   WikiEntryCreateRequest,
   WikiEntryUpdateRequest,
   WikiListParams,
@@ -20,6 +21,16 @@ export async function getWikis(
   const response = await apiClient.get<ApiResponse<PaginatedResponse<WikiEntry>>>(
     `/branches/${branchId}/wikis`,
     { params }
+  );
+  return response.data.data;
+}
+
+/**
+ * Get list of wiki tags for a branch
+ */
+export async function getWikiTags(branchId: number): Promise<WikiTagDefinition[]> {
+  const response = await apiClient.get<ApiResponse<WikiTagDefinition[]>>(
+    `/branches/${branchId}/wiki-tags`
   );
   return response.data.data;
 }

@@ -12,12 +12,17 @@ import { cn } from '@/lib/utils';
 
 interface WikiListProps {
   branchId: number;
+  tagId?: number | null;
+  search?: string;
 }
 
-export function WikiList({ branchId }: WikiListProps) {
+export function WikiList({ branchId, tagId, search }: WikiListProps) {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['wikis', branchId],
-    queryFn: () => getWikis(branchId),
+    queryKey: ['wikis', branchId, { tagId, search }],
+    queryFn: () => getWikis(branchId, { 
+      tag_id: tagId || undefined,
+      search: search || undefined
+    }),
   });
 
   if (isLoading) {
@@ -42,7 +47,7 @@ export function WikiList({ branchId }: WikiListProps) {
     return (
       <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
         <BookOpen className="mb-4 h-12 w-12 opacity-20" />
-        <p>No wiki entries found for this branch.</p>
+        <p>No wiki entries found.</p>
       </div>
     );
   }
@@ -56,7 +61,7 @@ export function WikiList({ branchId }: WikiListProps) {
   );
 }
 
-function WikiCard({ wiki, index }: { wiki: WikiEntry; index: number }) {
+export function WikiCard({ wiki, index }: { wiki: WikiEntry; index: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

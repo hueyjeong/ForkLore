@@ -5,6 +5,7 @@ import { Page } from '@playwright/test';
  *
  * 테스트에서 로그인 플로우를 검증하지 않고 인증된 상태가 필요할 때 사용합니다.
  *
+ * @param page - 인증 쿠키를 설정할 Playwright `Page` 객체
  * @param accessToken - 설정할 액세스 토큰 값 (기본값: `'mock-access-token'`)
  * @param refreshToken - 설정할 리프레시 토큰 값 (기본값: `'mock-refresh-token'`)
  */

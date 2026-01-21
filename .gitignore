@@ -27,6 +27,16 @@ target/
 # Sisyphus
 .sisyphus/notepads/
 .sisyphus/boulder.json
+.sisyphus/drafts/
+
+# Agent tools
+.agent/
+.opencode/
+.claude/skills/
+
+# E2E Test artifacts
+test-results/
+backend/e2e_test.sqlite3
 
 
 # Authentication & Secret (IMPORTANT)

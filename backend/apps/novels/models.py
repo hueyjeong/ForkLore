@@ -119,6 +119,7 @@ class Branch(SoftDeleteModel):
     vote_threshold = models.IntegerField("투표 임계값", default=1000)
     view_count = models.BigIntegerField("조회수", default=0)
     chapter_count = models.IntegerField("회차 수", default=0)
+    version = models.IntegerField("버전", default=0)
 
     class Meta:
         db_table = "branches"

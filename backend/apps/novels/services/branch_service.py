@@ -1,188 +1,20 @@
-"""
-Services for novels app.
-
-Contains:
-- NovelService: Business logic for novel operations
-- BranchService: Business logic for branch operations
-"""
-
 from django.db import transaction
 from django.db.models import F, QuerySet
 from django.utils import timezone
 
 from apps.users.models import User
+from common.exceptions import ConflictError
 
-from .models import (
-    AgeRating,
+from ..models import (
     Branch,
     BranchLinkRequest,
     BranchType,
     BranchVisibility,
     BranchVote,
     CanonStatus,
-    Genre,
     LinkRequestStatus,
     Novel,
-    NovelStatus,
 )
-
-
-class NovelService:
-    """Service class for Novel-related business logic."""
-
-    @transaction.atomic
-    def create(self, author: User, data: dict) -> Novel:
-        """
-        Create a new novel with automatic main branch creation.
-
-        Args:
-            author: The user creating the novel
-            data: Dict containing novel fields (title, description, genre, etc.)
-
-        Returns:
-            Created Novel instance
-
-        Raises:
-            ValueError/KeyError: If required fields are missing
-        """
-        # Validate required fields
-        if "title" not in data or not data["title"]:
-            raise ValueError("제목은 필수입니다.")
-
-        novel = Novel.objects.create(
-            author=author,
-            title=data["title"],
-            description=data.get("description", ""),
-            cover_image_url=data.get("cover_image_url", ""),
-            genre=data.get("genre", Genre.FANTASY),
-            age_rating=data.get("age_rating", AgeRating.ALL),
-            status=data.get("status", NovelStatus.ONGOING),
-            allow_branching=data.get("allow_branching", True),
-        )
-
-        # Auto-create main branch
-        Branch.objects.create(
-            novel=novel,
-            author=author,
-            name=novel.title,
-            is_main=True,
-            branch_type=BranchType.MAIN,
-            visibility=BranchVisibility.PUBLIC,
-        )
-
-        return novel
-
-    def list(
-        self,
-        filters: dict | None = None,
-        sort: str | None = None,
-    ) -> QuerySet[Novel]:
-        """
-        List novels with optional filtering and sorting.
-
-        Args:
-            filters: Dict of filter conditions (genre, status, author, etc.)
-            sort: Sort order ("popular", "latest", "likes")
-
-        Returns:
-            QuerySet of novels
-        """
-        queryset = Novel.objects.filter(deleted_at__isnull=True)
-
-        if filters:
-            if "genre" in filters:
-                queryset = queryset.filter(genre=filters["genre"])
-            if "status" in filters:
-                queryset = queryset.filter(status=filters["status"])
-            if "author" in filters:
-                queryset = queryset.filter(author=filters["author"])
-            if "age_rating" in filters:
-                queryset = queryset.filter(age_rating=filters["age_rating"])
-
-        # Apply sorting
-        if sort == "popular":
-            queryset = queryset.order_by("-total_view_count")
-        elif sort == "likes":
-            queryset = queryset.order_by("-total_like_count")
-        else:  # default: latest
-            queryset = queryset.order_by("-created_at")
-
-        return queryset
-
-    def retrieve(self, novel_id: int) -> Novel:
-        """
-        Retrieve a single novel by ID.
-
-        Args:
-            novel_id: The novel's primary key
-
-        Returns:
-            Novel instance
-
-        Raises:
-            Novel.DoesNotExist: If novel not found or is deleted
-        """
-        return Novel.objects.get(id=novel_id, deleted_at__isnull=True)
-
-    @transaction.atomic
-    def update(self, novel_id: int, author: User, data: dict) -> Novel:
-        """
-        Update an existing novel.
-
-        Args:
-            novel_id: The novel's primary key
-            author: The user attempting the update
-            data: Dict of fields to update
-
-        Returns:
-            Updated Novel instance
-
-        Raises:
-            Novel.DoesNotExist: If novel not found
-            PermissionError: If user is not the author
-        """
-        novel = Novel.objects.get(id=novel_id, deleted_at__isnull=True)
-
-        if novel.author != author:
-            raise PermissionError("소설 수정 권한이 없습니다.")
-
-        # Update allowed fields
-        allowed_fields = [
-            "title",
-            "description",
-            "cover_image_url",
-            "genre",
-            "age_rating",
-            "status",
-            "allow_branching",
-        ]
-
-        for field in allowed_fields:
-            if field in data:
-                setattr(novel, field, data[field])
-
-        novel.save()
-        return novel
-
-    @transaction.atomic
-    def delete(self, novel_id: int, author: User) -> None:
-        """
-        Soft-delete a novel.
-
-        Args:
-            novel_id: The novel's primary key
-            author: The user attempting the deletion
-
-        Raises:
-            Novel.DoesNotExist: If novel not found or already deleted
-            PermissionError: If user is not the author
-        """
-        novel = Novel.objects.get(id=novel_id, deleted_at__isnull=True)
-
-        if novel.author != author:
-            raise PermissionError("소설 삭제 권한이 없습니다.")
-
-        novel.soft_delete()
 
 
 class BranchService:
@@ -205,7 +37,9 @@ class BranchService:
         Returns:
             QuerySet of branches
         """
-        queryset = Branch.objects.filter(novel_id=novel_id, deleted_at__isnull=True)
+        queryset = Branch.objects.filter(novel_id=novel_id, deleted_at__isnull=True).select_related(
+            "author"
+        )
 
         if visibility:
             queryset = queryset.filter(visibility=visibility)
@@ -257,6 +91,7 @@ class BranchService:
         parent_branch_id: int,
         author: User,
         data: dict,
+        parent_version: int | None = None,
     ) -> Branch:
         """
         Create a forked branch from a parent branch.
@@ -266,6 +101,7 @@ class BranchService:
             parent_branch_id: The parent branch's primary key
             author: The user creating the fork
             data: Dict containing branch fields (name, description, etc.)
+            parent_version: Optimistic locking version of parent branch
 
         Returns:
             Created Branch instance
@@ -273,6 +109,7 @@ class BranchService:
         Raises:
             PermissionError: If novel doesn't allow branching
             ValueError: If required fields are missing
+            ConflictError: If parent branch version mismatch
         """
         novel = Novel.objects.get(id=novel_id, deleted_at__isnull=True)
 
@@ -283,6 +120,9 @@ class BranchService:
             raise ValueError("브랜치 이름은 필수입니다.")
 
         parent_branch = Branch.objects.get(id=parent_branch_id, deleted_at__isnull=True)
+
+        if parent_version is not None and parent_branch.version != parent_version:
+            raise ConflictError("브랜치 버전이 변경되었습니다. 최신 상태를 확인해주세요.")
 
         branch = Branch.objects.create(
             novel=novel,
@@ -301,6 +141,50 @@ class BranchService:
         # Increment novel's branch_count
         Novel.objects.filter(id=novel_id).update(branch_count=F("branch_count") + 1)
 
+        return branch
+
+    @transaction.atomic
+    def update(
+        self,
+        branch_id: int,
+        author: User,
+        data: dict,
+    ) -> Branch:
+        """
+        Update branch details.
+
+        Args:
+            branch_id: The branch's primary key
+            author: The user attempting the update
+            data: Dict containing fields to update
+
+        Returns:
+            Updated Branch instance
+
+        Raises:
+            PermissionError: If user is not the owner
+        """
+        branch = Branch.objects.get(id=branch_id, deleted_at__isnull=True)
+
+        if branch.author != author:
+            raise PermissionError("브랜치 수정 권한이 없습니다.")
+
+        allowed_fields = ["name", "description", "cover_image_url"]
+        has_changes = False
+
+        for field in allowed_fields:
+            if field in data and getattr(branch, field) != data[field]:
+                # Validate name is not empty/whitespace
+                if field == "name" and not str(data[field]).strip():
+                    raise ValueError("브랜치 이름은 필수입니다.")
+                setattr(branch, field, data[field])
+                has_changes = True
+
+        if has_changes:
+            branch.version = F("version") + 1
+
+        branch.save()
+        branch.refresh_from_db()
         return branch
 
     @transaction.atomic
@@ -335,7 +219,9 @@ class BranchService:
 
         old_visibility = branch.visibility
         branch.visibility = visibility
+        branch.version = F("version") + 1
         branch.save()
+        branch.refresh_from_db()
 
         # Update novel's linked_branch_count if visibility changed to/from LINKED
         if old_visibility != visibility:

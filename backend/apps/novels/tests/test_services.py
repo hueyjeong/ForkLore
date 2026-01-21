@@ -227,6 +227,20 @@ class TestNovelServiceUpdate:
         assert updated.title == "수정된 제목만"
         assert updated.description == "원본 설명"  # 변경되지 않음
 
+    def test_update_rejects_empty_title(self, novel_service: NovelService, author: User) -> None:
+        """Update should reject empty string title."""
+        novel = novel_service.create(author=author, data={"title": "Original Title"})
+        with pytest.raises(ValueError, match="제목은 필수입니다"):
+            novel_service.update(novel_id=novel.id, author=author, data={"title": ""})
+
+    def test_update_rejects_whitespace_title(
+        self, novel_service: NovelService, author: User
+    ) -> None:
+        """Update should reject whitespace-only title."""
+        novel = novel_service.create(author=author, data={"title": "Original Title"})
+        with pytest.raises(ValueError, match="제목은 필수입니다"):
+            novel_service.update(novel_id=novel.id, author=author, data={"title": "   "})
+
 
 class TestNovelServiceDelete:
     """소설 삭제 서비스 테스트"""

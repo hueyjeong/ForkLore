@@ -10,10 +10,12 @@ Contains:
 from datetime import timedelta
 from typing import Any
 
-from django.db.models import QuerySet
+from django.db import DatabaseError, IntegrityError, transaction
+from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 
 from apps.contents.models import AccessType, Chapter
+from apps.interactions.constants import PLAN_PRICES
 from apps.interactions.models import (
     AIUsageLog,
     PlanType,
@@ -22,6 +24,7 @@ from apps.interactions.models import (
     Subscription,
     SubscriptionStatus,
 )
+from apps.interactions.services.payment_service import PaymentService
 from apps.users.models import User
 
 
@@ -89,6 +92,7 @@ class SubscriptionService:
         plan_type: str = PlanType.BASIC,
         days: int = 30,
         payment_id: str = "",
+        order_id: str = "",
     ) -> Subscription:
         """
         Create or extend a subscription.
@@ -101,36 +105,73 @@ class SubscriptionService:
             plan_type: BASIC or PREMIUM
             days: Number of days to subscribe
             payment_id: Payment reference ID
+            order_id: Order ID for payment
 
         Returns:
             Subscription instance
+
+        Raises:
+            PaymentFailedException: If payment fails
         """
         now = timezone.now()
 
-        # Check for existing active subscription
-        existing = Subscription.objects.filter(
-            user=user,
-            status=SubscriptionStatus.ACTIVE,
-            expires_at__gt=now,
-        ).first()
+        # Determine price and process payment
+        price = PLAN_PRICES.get(plan_type, 0)
 
-        if existing:
-            # Extend existing subscription
-            existing.expires_at = existing.expires_at + timedelta(days=days)
-            existing.plan_type = plan_type
-            if payment_id:
-                existing.payment_id = payment_id
-            existing.save()
-            return existing
-        else:
-            # Create new subscription
-            return Subscription.objects.create(
-                user=user,
-                plan_type=plan_type,
-                expires_at=now + timedelta(days=days),
-                payment_id=payment_id,
-                status=SubscriptionStatus.ACTIVE,
+        # Enforce payment details for paid plans
+        if price > 0 and (not payment_id or not order_id):
+            raise ValueError("결제 정보가 필요합니다.")
+
+        # Track whether payment was successfully confirmed
+        # Only set to True AFTER confirm_payment succeeds
+        payment_confirmed = False
+
+        # Confirm payment OUTSIDE try block
+        # PaymentFailedException will propagate up without triggering cancel
+        if price > 0 and payment_id and order_id:
+            PaymentService().confirm_payment(
+                payment_key=payment_id,
+                order_id=order_id,
+                amount=price,
             )
+            payment_confirmed = True
+
+        try:
+            with transaction.atomic():
+                # Check for existing active subscription
+                existing = (
+                    Subscription.objects.filter(
+                        user=user,
+                        status=SubscriptionStatus.ACTIVE,
+                        expires_at__gt=now,
+                    )
+                    .select_for_update()
+                    .first()
+                )
+
+                if existing:
+                    # Extend existing subscription
+                    existing.expires_at = existing.expires_at + timedelta(days=days)
+                    existing.plan_type = plan_type
+                    if payment_id:
+                        existing.payment_id = payment_id
+                    existing.save()
+                    return existing
+                else:
+                    # Create new subscription
+                    return Subscription.objects.create(
+                        user=user,
+                        plan_type=plan_type,
+                        expires_at=now + timedelta(days=days),
+                        payment_id=payment_id,
+                        status=SubscriptionStatus.ACTIVE,
+                    )
+        except (IntegrityError, DatabaseError, ValueError) as e:
+            # Only cancel payment if it was successfully confirmed
+            # This prevents trying to cancel a payment that was never approved
+            if payment_confirmed:
+                PaymentService().cancel_payment(payment_id, "System Error: Transaction failed")
+            raise e
 
     def cancel(self, user: User) -> bool:
         """
@@ -289,7 +330,7 @@ class ReadingService:
 
         return (
             ReadingLog.objects.filter(user=user)
-            .select_related("chapter", "chapter__branch", "chapter__branch__novel")
+            .select_related("chapter")
             .order_by("-read_at")[:limit]
         )
 
@@ -389,7 +430,8 @@ class BookmarkService:
                 "note": note,
             },
         )
-        return bookmark
+        # Reload with select_related to avoid N+1 in serializer
+        return Bookmark.objects.select_related("chapter").get(id=bookmark.id)
 
     @staticmethod
     def remove_bookmark(user: User, chapter_id: int) -> None:
@@ -417,11 +459,7 @@ class BookmarkService:
         """
         from apps.interactions.models import Bookmark
 
-        return (
-            Bookmark.objects.filter(user=user)
-            .select_related("chapter", "chapter__branch", "chapter__branch__novel")
-            .order_by("-created_at")
-        )
+        return Bookmark.objects.filter(user=user).select_related("chapter").order_by("-created_at")
 
 
 class CommentService:
@@ -558,7 +596,8 @@ class CommentService:
                 chapter_id=chapter_id,
                 deleted_at__isnull=True,
             )
-            .select_related("user", "parent")
+            .select_related("user")
+            .annotate(reply_count=Count("replies", filter=Q(replies__deleted_at__isnull=True)))
             .order_by("-created_at")
         )
 
@@ -853,23 +892,29 @@ class WalletService:
     def charge(
         user: User,
         amount: int,
+        payment_key: str = "",
+        order_id: str = "",
         description: str = "",
     ) -> dict:
         """
         Charge coins to user's wallet.
 
         Creates wallet if it doesn't exist.
+        Verifies payment if payment_key and order_id are provided.
 
         Args:
             user instance
             amount: Amount to charge (must be positive)
+            payment_key: Payment reference key (optional)
+            order_id: Order ID (optional)
             description: Optional description
 
         Returns:
             Dict with 'wallet' and 'transaction' keys
 
         Raises:
-            ValueError: If amount is not positive
+            ValueError: If amount is not positive or payment details missing
+            PaymentFailedException: If payment confirmation fails
         """
         from django.db import transaction
 
@@ -878,25 +923,58 @@ class WalletService:
         if amount <= 0:
             raise ValueError("충전 금액은 0보다 커야 합니다")
 
-        with transaction.atomic():
-            # Get or create wallet with lock
-            wallet, created = Wallet.objects.select_for_update().get_or_create(
-                user=user,
-                defaults={"balance": 0},
-            )
+        # Track whether payment was successfully confirmed
+        # Only set to True AFTER confirm_payment succeeds
+        payment_confirmed = False
 
-            # Update balance
-            wallet.balance += amount
-            wallet.save()
-
-            # Create transaction record
-            tx = CoinTransaction.objects.create(
-                wallet=wallet,
-                transaction_type=TransactionType.CHARGE,
+        # Confirm payment if details provided (OUTSIDE try block)
+        # PaymentFailedException will propagate up without triggering cancel
+        if payment_key and order_id:
+            PaymentService().confirm_payment(
+                payment_key=payment_key,
+                order_id=order_id,
                 amount=amount,
-                balance_after=wallet.balance,
-                description=description,
             )
+            payment_confirmed = True
+
+        try:
+            with transaction.atomic():
+                # Get or create wallet with lock
+                wallet, created = Wallet.objects.select_for_update().get_or_create(
+                    user=user,
+                    defaults={"balance": 0},
+                )
+
+                # Update balance
+                wallet.balance += amount
+                wallet.save()
+
+                # Create transaction record
+                tx = CoinTransaction.objects.create(
+                    wallet=wallet,
+                    transaction_type=TransactionType.CHARGE,
+                    amount=amount,
+                    balance_after=wallet.balance,
+                    description=description,
+                    reference_type="payment" if payment_key else "",
+                    reference_id=None,  # storing key in description or separate field might be better but strictly following schema
+                )
+
+                # If we want to store payment info, we might need fields in CoinTransaction
+                # For now, let's append to description if provided
+                if payment_key:
+                    tx.description = (
+                        f"{description} (Payment: {payment_key})"
+                        if description
+                        else f"Payment: {payment_key}"
+                    )
+                    tx.save()
+        except (IntegrityError, DatabaseError, ValueError) as e:
+            # Only cancel payment if it was successfully confirmed
+            # This prevents trying to cancel a payment that was never approved
+            if payment_confirmed:
+                PaymentService().cancel_payment(payment_key, "System Error: Transaction failed")
+            raise e
 
         return {"wallet": wallet, "transaction": tx}
 

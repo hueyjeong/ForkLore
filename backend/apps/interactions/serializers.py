@@ -32,6 +32,7 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     plan_type = serializers.ChoiceField(choices=PlanType.choices, default=PlanType.BASIC)
     days = serializers.IntegerField(min_value=1, default=30)
     payment_id = serializers.CharField(required=False, allow_blank=True, default="")
+    order_id = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 class SubscriptionDetailSerializer(serializers.ModelSerializer):
@@ -221,7 +222,7 @@ class CommentSerializer(serializers.ModelSerializer):
     """Serializer for comment."""
 
     user = UserBriefSerializer(read_only=True)
-    reply_count = serializers.SerializerMethodField()
+    reply_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Comment
@@ -242,9 +243,6 @@ class CommentSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = fields
-
-    def get_reply_count(self, obj: Comment) -> int:
-        return obj.replies.filter(deleted_at__isnull=True).count()
 
 
 # =============================================================================

@@ -8,6 +8,7 @@ Tests:
 """
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
@@ -156,11 +157,19 @@ class TestSubscriptionServiceSubscribe:
     """Tests for SubscriptionService.subscribe()"""
 
     def test_create_new_subscription(self):
-        """Should create a new subscription for user."""
+        """Should create a new subscription for user with payment."""
         service = SubscriptionService()
         user = baker.make(User)
 
-        subscription = service.subscribe(user=user, plan_type=PlanType.BASIC, days=30)
+        with patch("apps.interactions.services.PaymentService") as MockPaymentService:
+            MockPaymentService.return_value.confirm_payment.return_value = True
+            subscription = service.subscribe(
+                user=user,
+                plan_type=PlanType.BASIC,
+                days=30,
+                payment_id="test_payment_key",
+                order_id="test_order_123",
+            )
 
         assert subscription.id is not None
         assert subscription.user == user
@@ -180,7 +189,15 @@ class TestSubscriptionServiceSubscribe:
             expires_at=existing_expires,
         )
 
-        subscription = service.subscribe(user=user, plan_type=PlanType.BASIC, days=30)
+        with patch("apps.interactions.services.PaymentService") as MockPaymentService:
+            MockPaymentService.return_value.confirm_payment.return_value = True
+            subscription = service.subscribe(
+                user=user,
+                plan_type=PlanType.BASIC,
+                days=30,
+                payment_id="test_payment_key",
+                order_id="test_order_123",
+            )
 
         # Should extend from existing expiry
         assert subscription.expires_at > existing_expires + timedelta(days=29)

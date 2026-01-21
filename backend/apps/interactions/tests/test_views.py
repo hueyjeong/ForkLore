@@ -10,6 +10,7 @@ Tests:
 """
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
@@ -34,15 +35,22 @@ class TestSubscriptionCreate:
     """Tests for POST /subscriptions/"""
 
     def test_create_subscription(self):
-        """Should create a new subscription."""
+        """Should create a new subscription with payment details."""
         user = baker.make(User)
         client = APIClient()
         tokens = get_tokens_for_user(user)
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
 
         url = "/api/v1/subscriptions/"
-        data = {"planType": "BASIC", "days": 30}
-        response = client.post(url, data, format="json")
+        data = {
+            "planType": "BASIC",
+            "days": 30,
+            "paymentId": "test_payment_key",
+            "orderId": "test_order_123",
+        }
+        with patch("apps.interactions.services.PaymentService") as MockPaymentService:
+            MockPaymentService.return_value.confirm_payment.return_value = True
+            response = client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
         resp_data = response.json()

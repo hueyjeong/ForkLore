@@ -135,7 +135,11 @@ class MapService:
             ValueError: If map not found
         """
         try:
-            return Map.objects.select_related("branch").prefetch_related("snapshots").get(id=map_id)
+            return (
+                Map.objects.select_related("branch")
+                .prefetch_related("snapshots__layers__map_objects")
+                .get(id=map_id)
+            )
         except Map.DoesNotExist as e:
             raise ValueError("존재하지 않는 지도입니다.") from e
 
@@ -209,11 +213,16 @@ class MapService:
         if MapSnapshot.objects.filter(map=map_obj, valid_from_chapter=valid_from_chapter).exists():
             raise ValueError(f"이미 회차 {valid_from_chapter}에 스냅샷이 존재합니다.")
 
-        return MapSnapshot.objects.create(
+        snapshot = MapSnapshot.objects.create(
             map=map_obj,
             valid_from_chapter=valid_from_chapter,
             base_image_url=base_image_url,
         )
+        # Note: _prefetched_objects_cache is Django internal API.
+        # Used here to prevent N+1 queries when serializing newly created objects.
+        # If this breaks in future Django versions, replace with re-fetch + prefetch_related.
+        snapshot._prefetched_objects_cache = {"layers": MapLayer.objects.none()}
+        return snapshot
 
     @staticmethod
     def get_snapshot_for_chapter(map_id: int, chapter_number: int) -> MapSnapshot | None:
@@ -302,7 +311,7 @@ class MapService:
 
         MapService._check_branch_author(snapshot.map.branch, user)
 
-        return MapLayer.objects.create(
+        layer = MapLayer.objects.create(
             snapshot=snapshot,
             name=name,
             layer_type=layer_type,
@@ -310,6 +319,11 @@ class MapService:
             is_visible=is_visible,
             style_json=style_json,
         )
+        # Note: _prefetched_objects_cache is Django internal API.
+        # Used here to prevent N+1 queries when serializing newly created objects.
+        # If this breaks in future Django versions, replace with re-fetch + prefetch_related.
+        layer._prefetched_objects_cache = {"map_objects": MapObject.objects.none()}
+        return layer
 
     @staticmethod
     def update_layer(

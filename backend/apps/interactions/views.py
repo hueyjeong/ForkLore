@@ -78,6 +78,7 @@ class SubscriptionViewSet(viewsets.ViewSet):
             plan_type=serializer.validated_data.get("plan_type", "BASIC"),
             days=serializer.validated_data.get("days", 30),
             payment_id=serializer.validated_data.get("payment_id", ""),
+            order_id=serializer.validated_data.get("order_id", ""),
         )
 
         response_serializer = SubscriptionDetailSerializer(subscription)

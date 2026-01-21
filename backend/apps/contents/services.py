@@ -9,7 +9,7 @@ from datetime import datetime
 
 import markdown
 from django.core.exceptions import PermissionDenied
-from django.db.models import QuerySet
+from django.db.models import F, Prefetch, Q, QuerySet
 from django.utils import timezone
 
 from apps.contents.models import (
@@ -54,10 +54,10 @@ class ChapterService:
         next_number = (last_chapter.chapter_number + 1) if last_chapter else 1
 
         # Convert markdown to HTML
-        content_html = self._convert_markdown(content)
+        content_html = self.convert_markdown(content)
 
         # Calculate word count
-        word_count = self._calculate_word_count(content)
+        word_count = self.calculate_word_count(content)
 
         chapter = Chapter.objects.create(
             branch=branch,
@@ -105,8 +105,8 @@ class ChapterService:
 
         if content is not None:
             chapter.content = content
-            chapter.content_html = self._convert_markdown(content)
-            chapter.word_count = self._calculate_word_count(content)
+            chapter.content_html = self.convert_markdown(content)
+            chapter.word_count = self.calculate_word_count(content)
 
         if access_type is not None:
             chapter.access_type = access_type
@@ -137,10 +137,11 @@ class ChapterService:
         chapter.published_at = timezone.now()
         chapter.save()
 
-        # Update branch chapter_count
+        # Update branch chapter_count and version
         branch = chapter.branch
-        branch.chapter_count += 1
-        branch.save(update_fields=["chapter_count"])
+        branch.chapter_count = F("chapter_count") + 1
+        branch.version = F("version") + 1
+        branch.save(update_fields=["chapter_count", "version"])
 
         return chapter
 
@@ -204,12 +205,12 @@ class ChapterService:
 
         return qs
 
-    def _convert_markdown(self, content: str) -> str:
+    def convert_markdown(self, content: str) -> str:
         """Convert markdown content to HTML."""
         md = markdown.Markdown(extensions=["extra", "codehilite", "toc"])
         return md.convert(content)
 
-    def _calculate_word_count(self, content: str) -> int:
+    def calculate_word_count(self, content: str) -> int:
         """
         Calculate word count from content.
         For Korean, counts characters. For English, counts words.
@@ -364,11 +365,30 @@ class WikiService:
             ValueError: If wiki not found
         """
         try:
-            return (
-                WikiEntry.objects.select_related("branch")
-                .prefetch_related("tags", "snapshots")
-                .get(id=wiki_id)
-            )
+            return WikiEntry.objects.prefetch_related(
+                "tags", Prefetch("snapshots", WikiSnapshot.objects.order_by("valid_from_chapter"))
+            ).get(id=wiki_id)
+        except WikiEntry.DoesNotExist as e:
+            raise ValueError("존재하지 않는 위키입니다.") from e
+
+    @staticmethod
+    def retrieve_for_snapshots(wiki_id: int) -> WikiEntry:
+        """
+        Retrieve a wiki entry for snapshot listing (lightweight, no tags prefetch).
+
+        Args:
+            wiki_id: WikiEntry ID
+
+        Returns:
+            WikiEntry instance
+
+        Raises:
+            ValueError: If wiki not found
+        """
+        try:
+            return WikiEntry.objects.prefetch_related(
+                Prefetch("snapshots", WikiSnapshot.objects.order_by("valid_from_chapter"))
+            ).get(id=wiki_id)
         except WikiEntry.DoesNotExist as e:
             raise ValueError("존재하지 않는 위키입니다.") from e
 
@@ -376,6 +396,7 @@ class WikiService:
     def list(
         branch_id: int,
         tag_id: int | None = None,
+        current_chapter: int | None = None,
     ) -> QuerySet[WikiEntry]:
         """
         List wiki entries for a branch.
@@ -383,6 +404,7 @@ class WikiService:
         Args:
             branch_id: Branch ID
             tag_id: Filter by tag ID (optional)
+            current_chapter: Filter by current reading chapter (optional)
 
         Returns:
             QuerySet of WikiEntry
@@ -391,6 +413,11 @@ class WikiService:
 
         if tag_id is not None:
             qs = qs.filter(tags__id=tag_id)
+
+        if current_chapter is not None:
+            qs = qs.filter(
+                Q(first_appearance__lte=current_chapter) | Q(first_appearance__isnull=True)
+            )
 
         return qs.order_by("name")
 

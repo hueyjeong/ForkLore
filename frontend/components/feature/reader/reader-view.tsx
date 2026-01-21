@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Settings, 
-  Menu, 
-  MessageSquare, 
+import { useQuery } from '@tanstack/react-query';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Settings,
+  Menu,
+  MessageSquare,
   Bookmark,
   Loader2
 } from 'lucide-react';
@@ -16,7 +17,6 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { getChapter } from '@/lib/api/chapters.api';
-import { Chapter } from '@/types/chapters.types';
 import { BranchChoices } from './branch-choices';
 
 interface ReaderViewProps {
@@ -26,33 +26,17 @@ interface ReaderViewProps {
 
 export function ReaderView({ chapterId, novelId }: ReaderViewProps) {
   const router = useRouter();
-  const [chapter, setChapter] = useState<Chapter | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
+  const { data: chapter, isPending, isError } = useQuery({
+    queryKey: ['chapter', chapterId],
+    queryFn: () => getChapter(Number(chapterId)),
+    enabled: !!chapterId,
+  });
+
   // Settings state
   const [fontSize, setFontSize] = useState(100);
   const [theme, setTheme] = useState<'light' | 'sepia' | 'dark'>('light');
 
-  useEffect(() => {
-    let mounted = true;
-    async function loadChapter() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getChapter(chapterId);
-        if (mounted) setChapter(data);
-      } catch {
-        if (mounted) setError('Failed to load chapter');
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-    loadChapter();
-    return () => { mounted = false; };
-  }, [chapterId]);
-
-  if (loading) {
+  if (isPending) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -60,10 +44,10 @@ export function ReaderView({ chapterId, novelId }: ReaderViewProps) {
     );
   }
 
-  if (error || !chapter) {
+  if (isError || !chapter) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center gap-4">
-        <p className="text-destructive">{error || 'Chapter not found'}</p>
+        <p className="text-destructive">Failed to load chapter</p>
         <Link href={`/novels/${novelId}`}>
             <Button variant="outline">Return to Novel</Button>
         </Link>

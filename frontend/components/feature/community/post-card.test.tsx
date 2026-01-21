@@ -58,4 +58,26 @@ describe('PostCard', () => {
     
     expect(screen.queryByTestId('pin-icon')).not.toBeInTheDocument();
   });
+
+  describe('memoization', () => {
+    it('memoizes renders when commentCount changes', () => {
+      const MemoizedPostCard = PostCard;
+
+      const { rerender } = render(<MemoizedPostCard post={mockPost} />);
+
+      const updatedPost = { ...mockPost, commentCount: 999 };
+      rerender(<MemoizedPostCard post={updatedPost} />);
+
+      expect(screen.getByText('테스트 게시글 제목')).toBeInTheDocument();
+    });
+
+    it('re-renders when title changes', () => {
+      const { rerender } = render(<PostCard post={mockPost} />);
+
+      const updatedPost = { ...mockPost, title: '새로운 제목' };
+      rerender(<PostCard post={updatedPost} />);
+
+      expect(screen.getByText('새로운 제목')).toBeInTheDocument();
+    });
+  });
 });

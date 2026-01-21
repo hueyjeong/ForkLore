@@ -4,6 +4,11 @@ import { PageParams } from './common';
 // Enums
 // =============================================================================
 
+// TODO: Backend sync required - The following 6 genres are frontend-only and missing on the backend:
+// LIGHT_NOVEL, BL, GL, TS, SPORTS, ALTERNATIVE_HISTORY
+// Update backend Genre enum (apps/novels/models.py) to include these keys,
+// or map ALTERNATIVE_HISTORY to existing HISTORY key if intended.
+// Ensure serializers and validation accept these values for consistent novel creation/filtering.
 export enum Genre {
   FANTASY = 'FANTASY',
   ROMANCE = 'ROMANCE',
@@ -15,6 +20,12 @@ export enum Genre {
   MODERN = 'MODERN',
   MARTIAL = 'MARTIAL',
   GAME = 'GAME',
+  LIGHT_NOVEL = 'LIGHT_NOVEL',
+  BL = 'BL',
+  GL = 'GL',
+  TS = 'TS',
+  SPORTS = 'SPORTS',
+  ALTERNATIVE_HISTORY = 'ALTERNATIVE_HISTORY',
 }
 
 export enum AgeRating {
@@ -56,6 +67,9 @@ export interface Novel {
   allow_branching: boolean;
   total_view_count: number;
   total_like_count: number;
+  // TODO: Backend must always return average_rating (never omit).
+  // Keep as required field; frontend uses ?? 0 as fallback for null.
+  average_rating: number | null;
   total_chapter_count: number;
   branch_count: number;
   linked_branch_count: number;

@@ -1,7 +1,14 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { render } from '@/tests/utils/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InfiniteNovelList } from './infinite-novel-list';
-import { NOVELS_LIST } from '@/lib/mock-data';
+import { apiClient } from '@/lib/api-client';
+
+vi.mock('@/lib/api-client', () => ({
+  apiClient: {
+    get: vi.fn(),
+  },
+}));
 
 vi.mock('framer-motion', () => ({
   motion: {
@@ -18,8 +25,8 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('react-virtuoso', () => ({
-  Virtuoso: ({ data, itemContent, endReached }: { 
-    data: unknown[]; 
+  Virtuoso: ({ data, itemContent, endReached }: {
+    data: unknown[];
     itemContent: (index: number, item: unknown) => React.ReactNode;
     endReached?: () => void;
   }) => (
@@ -32,64 +39,119 @@ vi.mock('react-virtuoso', () => ({
   ),
 }));
 
+const mockNovels = [
+  {
+    id: 1,
+    title: 'Test Novel 1',
+    author: { id: 1, username: 'author1', nickname: 'Author One' },
+    description: 'Description 1',
+    cover_image_url: 'https://example.com/1.jpg',
+    genre: 'FANTASY',
+    status: 'ONGOING',
+    total_view_count: 1000,
+    total_chapter_count: 10,
+    total_like_count: 50,
+    is_premium: false,
+    is_exclusive: false,
+    age_rating: 'ALL',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 2,
+    title: 'Test Novel 2',
+    author: { id: 2, username: 'author2', nickname: 'Author Two' },
+    description: 'Description 2',
+    cover_image_url: 'https://example.com/2.jpg',
+    genre: 'ROMANCE',
+    status: 'COMPLETED',
+    total_view_count: 2000,
+    total_chapter_count: 20,
+    total_like_count: 100,
+    is_premium: true,
+    is_exclusive: false,
+    age_rating: 'TEEN',
+    created_at: '2024-01-02T00:00:00Z',
+    updated_at: '2024-01-02T00:00:00Z',
+  },
+];
+
+const createMockResponse = (page = 1, hasNext = true) => ({
+  data: {
+    data: {
+      results: mockNovels,
+      total: 100,
+      page,
+      limit: 12,
+      hasNext,
+    },
+  },
+});
+
 describe('InfiniteNovelList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (apiClient.get as any).mockResolvedValue(createMockResponse(1, true));
   });
 
-  it('renders initial set of novels', () => {
+  it('renders initial set of novels', async () => {
     render(<InfiniteNovelList />);
-    
-    const novelTitles = screen.getAllByRole('heading', { level: 3 });
-    expect(novelTitles.length).toBeGreaterThanOrEqual(1);
+
+    await waitFor(() => {
+      const novelTitles = screen.getAllByRole('heading', { level: 3 });
+      expect(novelTitles.length).toBeGreaterThanOrEqual(1);
+    });
   });
 
   it('loads more novels on scroll', async () => {
     render(<InfiniteNovelList />);
-    
-    const initialCount = screen.getAllByRole('link').length;
-    
+
+    await screen.findByTestId('virtuoso-list');
+
+    const initialLinks = screen.getAllByRole('link');
+
     const loadMoreButton = screen.getByTestId('load-more');
+    (apiClient.get as any).mockResolvedValue(createMockResponse(2, false));
     fireEvent.click(loadMoreButton);
-    
+
     await waitFor(() => {
-      const newCount = screen.getAllByRole('link').length;
-      expect(newCount).toBeGreaterThanOrEqual(initialCount);
+      const newLinks = screen.getAllByRole('link');
+      expect(newLinks.length).toBeGreaterThan(initialLinks.length);
     });
   });
 
-  it('filters novels by genre', () => {
+  it('filters novels by genre', async () => {
     render(<InfiniteNovelList genre="판타지" />);
-    
-    const container = screen.getByTestId('virtuoso-list');
+
+    const container = await screen.findByTestId('virtuoso-list');
     expect(container).toBeInTheDocument();
   });
 
-  it('filters novels by status', () => {
+  it('filters novels by status', async () => {
     render(<InfiniteNovelList status="완결" />);
-    
-    const container = screen.getByTestId('virtuoso-list');
+
+    const container = await screen.findByTestId('virtuoso-list');
     expect(container).toBeInTheDocument();
   });
 
-  it('sorts novels by popularity', () => {
+  it('sorts novels by popularity', async () => {
     render(<InfiniteNovelList sort="popular" />);
-    
-    const container = screen.getByTestId('virtuoso-list');
+
+    const container = await screen.findByTestId('virtuoso-list');
     expect(container).toBeInTheDocument();
   });
 
-  it('sorts novels by date', () => {
+  it('sorts novels by date', async () => {
     render(<InfiniteNovelList sort="latest" />);
-    
-    const container = screen.getByTestId('virtuoso-list');
+
+    const container = await screen.findByTestId('virtuoso-list');
     expect(container).toBeInTheDocument();
   });
 
-  it('filters novels by search query', () => {
+  it('filters novels by search query', async () => {
     render(<InfiniteNovelList searchQuery="그림자" />);
-    
-    const container = screen.getByTestId('virtuoso-list');
+
+    const container = await screen.findByTestId('virtuoso-list');
     expect(container).toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { getMyProfile } from '@/lib/api/auth.api';
 import { getWalletBalance } from '@/lib/api/wallet.api';
@@ -13,31 +14,39 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2, User, Wallet as WalletIcon, Mail, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
+type ProfileQuery = UseQueryResult<UserResponse, Error>;
+type WalletQuery = UseQueryResult<Wallet, Error>;
+
 export function UserProfile() {
-  const [profile, setProfile] = useState<UserResponse | null>(null);
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [loading, setLoading] = useState(true);
+  const results = useQueries({
+    queries: [
+      {
+        queryKey: ['profile'],
+        queryFn: getMyProfile,
+      },
+      {
+        queryKey: ['wallet', 'balance'],
+        queryFn: getWalletBalance,
+      },
+    ],
+  });
+
+  const profileQuery = results[0] as ProfileQuery;
+  const walletQuery = results[1] as WalletQuery;
+
+  const isLoading = profileQuery.isPending || walletQuery.isPending;
+  const isError = profileQuery.isError || walletQuery.isError;
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const [profileData, walletData] = await Promise.all([
-          getMyProfile(),
-          getWalletBalance()
-        ]);
-        setProfile(profileData);
-        setWallet(walletData);
-      } catch (error) {
-        toast.error('Failed to load profile data');
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
+    if (isError) {
+      toast.error('Failed to load profile data');
     }
-    fetchData();
-  }, []);
+  }, [isError]);
 
-  if (loading) {
+  const profile = profileQuery.data;
+  const wallet = walletQuery.data;
+
+  if (isLoading) {
     return (
       <div className="flex h-60 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -66,7 +75,7 @@ export function UserProfile() {
             <AvatarFallback className="text-4xl">{profile.nickname[0]}</AvatarFallback>
             </Avatar>
         </motion.div>
-        
+
         <div className="text-center md:text-left space-y-2">
             <h1 className="text-4xl font-bold tracking-tight">{profile.nickname}</h1>
             <div className="flex items-center justify-center md:justify-start gap-2 text-muted-foreground">
@@ -94,7 +103,7 @@ export function UserProfile() {
                 <p className="text-xs text-muted-foreground">Available coins</p>
             </CardContent>
         </Card>
-        
+
         {/* Placeholder for other stats */}
         <Card className="opacity-50">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

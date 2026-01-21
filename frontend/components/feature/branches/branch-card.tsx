@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { memo, useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { Heart, BookOpen, GitFork } from "lucide-react"
 import { toast } from "sonner"
@@ -26,7 +26,7 @@ interface BranchCardProps {
   branch: Branch
 }
 
-export function BranchCard({ branch }: BranchCardProps) {
+export const BranchCard = memo(function BranchCard({ branch }: BranchCardProps) {
   // TODO: The API response should ideally include has_voted field.
   // For now, we'll maintain local state, defaulting to false.
   const [voteCount, setVoteCount] = useState(branch.vote_count)
@@ -40,10 +40,11 @@ export function BranchCard({ branch }: BranchCardProps) {
       setVoteCount((prev) => (isVoted ? prev - 1 : prev + 1))
     },
     onError: (error) => {
+      console.error('Failed to update vote for branch', branch.id, error)
+      toast.error('Failed to update vote')
       // Revert on error
       setIsVoted((prev) => !prev)
       setVoteCount((prev) => (isVoted ? prev + 1 : prev - 1))
-      toast.error("Failed to update vote")
     },
   })
 
@@ -120,4 +121,4 @@ export function BranchCard({ branch }: BranchCardProps) {
       </CardFooter>
     </Card>
   )
-}
+})

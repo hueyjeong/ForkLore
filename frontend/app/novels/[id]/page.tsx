@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import { BookOpen, Star, Share2, Heart, List, MessageCircle, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,40 +9,58 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getNovel } from '@/lib/api/novels.api';
 
-// Mock Data
-const NOVEL = {
-  id: '1',
-  title: 'The Shadow of the Highborn',
-  author: 'Elena Vance',
-  cover: 'https://images.unsplash.com/photo-1629196914168-3a26476d90e6?q=80&w=2787&auto=format&fit=crop',
-  synopsis: `In a world where magic is a currency, a young street thief discovers she possesses the ancient bloodline of the Highborn. Hunted by the empire and courted by the rebellion, she must navigate a web of intrigue, betrayal, and forbidden romance.
+export default async function NovelDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
 
-  As the Shadow War looms, every choice matters. Who will you trust? The charming prince with a dark secret, or the rogue assassin who saved your life?`,
-  stats: {
-    views: '1.2M',
-    likes: '45.6K',
-    rating: 4.8,
-  },
-  tags: ['Fantasy', 'Romance', 'Interactive', 'Royalty'],
-  status: 'Ongoing',
-};
+  let novel;
+  try {
+    novel = await getNovel(Number(id));
+  } catch (error: unknown) {
+    const maybeError = error as { response?: { status?: number }; status?: number };
+    const status = maybeError?.response?.status ?? maybeError?.status;
 
-const CHAPTERS = Array.from({ length: 15 }).map((_, i) => ({
-  id: i + 1,
-  title: `Chapter ${i + 1}: ${['The Awakening', 'Midnight Run', 'Royal Decree', 'First Encounter', 'Hidden Blade'][i % 5]}`,
-  date: '2024-03-15',
-  coins: i < 3 ? 0 : 15,
-  isRead: i < 5,
-}));
+    if (status === 404) {
+      notFound();
+    }
 
-const REVIEWS = [
-  { id: 1, user: 'ReaderOne', content: 'The branching path in Ch. 10 was mind-blowing!', rating: 5, date: '2h ago' },
-  { id: 2, user: 'FantasyFan', content: 'Love the character development.', rating: 4, date: '5h ago' },
-  { id: 3, user: 'Critic101', content: 'Pacing is a bit slow in the middle.', rating: 3, date: '1d ago' },
-];
+    console.error('Failed to fetch novel details:', error);
+    throw error;
+  }
 
-export default function NovelDetailPage({ params }: { params: { id: string } }) {
+  const formatViews = (views: number) => {
+    if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
+    if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
+    return views.toString();
+  };
+
+  const formatLikes = (likes: number) => {
+    if (likes >= 1000) return `${(likes / 1000).toFixed(1)}K`;
+    return likes.toString();
+  };
+
+  const stats = {
+    views: formatViews(novel.total_view_count),
+    likes: formatLikes(novel.total_like_count),
+    rating: novel.average_rating ?? 0,
+  };
+
+  const tags = [novel.genre];
+
+  const createdAt = new Date(novel.created_at);
+  const CHAPTERS = Array.from({ length: novel.total_chapter_count || 0 }).map((_, i) => {
+    const chapterDate = new Date(createdAt.getTime() + i * 24 * 60 * 60 * 1000);
+    return {
+      id: i + 1,
+      title: `Chapter ${i + 1}`,
+      date: chapterDate.toISOString().split('T')[0],
+      coins: i < 3 ? 0 : 10,
+      isRead: false,
+    };
+  });
+  const REVIEWS: Array<{ id: number; user: string; content: string; rating: number; date: string }> = [];
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       {/* Hero Section */}
@@ -49,8 +68,8 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
         {/* Background Image with Blur */}
         <div className="absolute inset-0">
           <Image
-            src={NOVEL.cover}
-            alt={NOVEL.title}
+            src={novel.cover_image_url}
+            alt={novel.title}
             fill
             className="object-cover opacity-60 blur-sm"
             priority
@@ -63,8 +82,8 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
           {/* Cover Image */}
           <div className="relative mb-4 h-48 w-32 shrink-0 overflow-hidden rounded-lg shadow-2xl md:mb-0 md:mr-8 md:h-72 md:w-48">
             <Image
-              src={NOVEL.cover}
-              alt={NOVEL.title}
+              src={novel.cover_image_url}
+              alt={novel.title}
               fill
               className="object-cover"
             />
@@ -73,27 +92,27 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
           {/* Info */}
           <div className="flex flex-col items-center md:items-start">
             <Badge variant="secondary" className="mb-2 w-fit">
-              {NOVEL.status}
+              {novel.status}
             </Badge>
             <h1 className="mb-2 text-3xl font-bold font-serif tracking-tight md:text-5xl lg:text-6xl text-foreground drop-shadow-md">
-              {NOVEL.title}
+              {novel.title}
             </h1>
             <p className="mb-4 text-lg text-muted-foreground font-medium">
-              by <span className="text-primary hover:underline cursor-pointer">{NOVEL.author}</span>
+              by <span className="text-primary hover:underline cursor-pointer">{novel.author.nickname}</span>
             </p>
 
             {/* Stats */}
             <div className="mb-6 flex space-x-6 text-sm md:text-base">
               <div className="flex flex-col items-center md:items-start">
-                <span className="font-bold text-foreground">{NOVEL.stats.views}</span>
+                <span className="font-bold text-foreground">{stats.views}</span>
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Reads</span>
               </div>
               <div className="flex flex-col items-center md:items-start">
-                <span className="font-bold text-foreground">{NOVEL.stats.likes}</span>
+                <span className="font-bold text-foreground">{stats.likes}</span>
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Likes</span>
               </div>
               <div className="flex flex-col items-center md:items-start">
-                <span className="font-bold text-foreground">★ {NOVEL.stats.rating}</span>
+                <span className="font-bold text-foreground">★ {stats.rating}</span>
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Rating</span>
               </div>
             </div>
@@ -129,12 +148,12 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
           <TabsContent value="about" className="mt-6 space-y-6">
             <div className="prose prose-lg dark:prose-invert">
               <p className="whitespace-pre-line leading-relaxed text-muted-foreground">
-                {NOVEL.synopsis}
+                {novel.description}
               </p>
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
-              {NOVEL.tags.map((tag) => (
+              {tags.map((tag) => (
                 <Badge key={tag} variant="outline" className="px-3 py-1 text-sm">
                   #{tag}
                 </Badge>
@@ -176,29 +195,43 @@ export default function NovelDetailPage({ params }: { params: { id: string } }) 
 
           {/* Reviews Tab */}
           <TabsContent value="reviews" className="mt-6">
-             <div className="grid gap-4">
-                {REVIEWS.map((review) => (
-                  <Card key={review.id} className="overflow-hidden">
-                    <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4 pb-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{review.user[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold">{review.user}</span>
-                        <div className="flex text-xs text-yellow-500">
-                          {Array.from({ length: review.rating }).map((_, i) => (
-                            <span key={i}>★</span>
-                          ))}
+             {REVIEWS.length > 0 ? (
+               <div className="grid gap-4">
+                  {REVIEWS.map((review) => (
+                    <Card key={review.id} className="overflow-hidden">
+                      <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4 pb-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{review.user[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold">{review.user}</span>
+                          <div className="flex text-xs text-yellow-500">
+                            {Array.from({ length: review.rating }).map((_, i) => (
+                              <span key={i}>★</span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <span className="ml-auto text-xs text-muted-foreground">{review.date}</span>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground">{review.content}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-             </div>
+                        <span className="ml-auto text-xs text-muted-foreground">{review.date}</span>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <p className="text-sm text-muted-foreground">{review.content}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+               </div>
+             ) : (
+               <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-xl bg-muted/30">
+                 <div className="p-4 rounded-full bg-muted">
+                   <MessageCircle className="h-8 w-8 text-muted-foreground" />
+                 </div>
+                 <div className="space-y-2">
+                   <h3 className="text-xl font-semibold">No Reviews Yet</h3>
+                   <p className="text-muted-foreground">
+                     Be the first to review this novel!
+                   </p>
+                 </div>
+               </div>
+             )}
           </TabsContent>
         </Tabs>
       </div>

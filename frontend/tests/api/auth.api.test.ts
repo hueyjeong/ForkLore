@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { login, logout } from '@/lib/api/auth.api';
 import { apiClient } from '@/lib/api-client';
+import * as tokenModule from '@/lib/token';
 
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
@@ -9,10 +10,16 @@ vi.mock('@/lib/api-client', () => ({
   },
 }));
 
+vi.mock('@/lib/token', () => ({
+  setAccessToken: vi.fn(),
+  setRefreshToken: vi.fn(),
+  clearTokens: vi.fn(),
+}));
+
 describe('Auth API', () => {
   it('login should call apiClient.post', async () => {
-    const mockResponse = { data: { data: { token: 'fake-token' } } };
-    (apiClient.post as any).mockResolvedValue(mockResponse);
+    const mockResponse = { data: { data: { accessToken: 'fake-access', refreshToken: 'fake-refresh' } } };
+    (apiClient.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 
     await login({ email: 'test@example.com', password: 'password' });
 
@@ -22,11 +29,9 @@ describe('Auth API', () => {
     });
   });
 
-  it('logout should call apiClient.post', async () => {
-    (apiClient.post as any).mockResolvedValue({});
+  it('logout should clear tokens', () => {
+    logout();
 
-    await logout();
-
-    expect(apiClient.post).toHaveBeenCalledWith('/auth/logout');
+    expect(tokenModule.clearTokens).toHaveBeenCalled();
   });
 });

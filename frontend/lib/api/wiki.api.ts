@@ -16,7 +16,7 @@ const BASE_URL = '/wikis';
  */
 export async function getWikis(
   branchId: number,
-  params?: Omit<WikiListParams, 'branchId'>
+  params?: Omit<WikiListParams, 'branch_id'>
 ): Promise<PaginatedResponse<WikiEntry>> {
   const response = await apiClient.get<ApiResponse<PaginatedResponse<WikiEntry>>>(
     `/branches/${branchId}/wikis`,

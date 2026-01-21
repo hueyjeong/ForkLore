@@ -71,7 +71,7 @@ export default function ChapterEditor({
         // First find main branch
         // Note: In a real app we might want to let user select branch or handle this better
         const branches = await getBranches(novelId, { is_main: true })
-        const mainBranch = branches.data[0]
+        const mainBranch = branches.results[0]
         
         if (mainBranch) {
           const newChapter = await createChapter(mainBranch.id, {

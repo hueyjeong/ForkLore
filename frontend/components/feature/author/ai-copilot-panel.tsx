@@ -111,7 +111,7 @@ export function AICopilotPanel({
     }
 
     return (
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="wiki">위키 제안</TabsTrigger>
           <TabsTrigger value="consistency">일관성 검사</TabsTrigger>

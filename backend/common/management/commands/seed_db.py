@@ -2,10 +2,10 @@
 Django management command for seeding test data.
 
 This command creates realistic test data for all models across all apps
-(users, novels, contents, interactions) in the ForkLore backend.
+(users, novels, contents, interactions) in ForkLore backend.
 
 Usage:
-    poetry run python manage.py seed_db [--force] [--scale=N]
+    poetry run python manage.py seed_db [--force] [--scale=N] [--seed=INTEGER]
 """
 
 import random
@@ -14,7 +14,7 @@ from typing import Any
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.contenttypes.models import ContentType
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
@@ -306,6 +306,11 @@ class KoreanDataGenerator:
         """Return a random boolean."""
         return random.choice([True, False])
 
+    @classmethod
+    def weighted_choice(cls, choices: list[Any], weights: list[int] | list[float]) -> Any:
+        """Return a random choice with weighted probability."""
+        return random.choices(choices, weights=weights, k=1)[0]
+
 
 # =============================================================================
 # Seed Command
@@ -328,15 +333,25 @@ class Command(BaseCommand):
             default=1,
             help="Scale factor for data amount (default: 1)",
         )
+        parser.add_argument(
+            "--seed",
+            type=int,
+            default=None,
+            help="Random seed for reproducible data generation",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
-        """Handle the command execution."""
+        """Handle command execution."""
         force = options["force"]
         scale = options["scale"]
+        seed = options["seed"]
 
         if scale < 1:
-            self.stdout.write(self.style.ERROR("Scale factor must be >= 1"))
-            return
+            raise CommandError("Scale factor must be >= 1")
+
+        if seed is not None:
+            random.seed(seed)
+            self.stdout.write(f"Using random seed: {seed}")
 
         if force:
             self.stdout.write(self.style.WARNING("Clearing existing data..."))
@@ -499,7 +514,8 @@ class Command(BaseCommand):
                 "email_verified": True,
             },
         )
-        users.append(admin)
+        if created:
+            users.append(admin)
 
         return users
 
@@ -527,7 +543,10 @@ class Command(BaseCommand):
                 cover_image_url=f"https://example.com/covers/novel{i + 1}.jpg",
                 genre=KoreanDataGenerator.random_choice(list(Genre.choices))[0],
                 age_rating=KoreanDataGenerator.random_choice(list(AgeRating.choices))[0],
-                status=KoreanDataGenerator.random_choice(list(NovelStatus.choices))[0],
+                status=KoreanDataGenerator.weighted_choice(
+                    list(NovelStatus.choices),
+                    [0.6, 0.3, 0.1],  # ONGOING 60%, COMPLETED 30%, HIATUS 10%
+                )[0],
                 allow_branching=KoreanDataGenerator.random_bool(),
                 is_exclusive=KoreanDataGenerator.random_bool(),
                 is_premium=KoreanDataGenerator.random_bool(),
@@ -592,7 +611,10 @@ class Command(BaseCommand):
                 branch_type=KoreanDataGenerator.random_choice(
                     [BranchType.SIDE_STORY, BranchType.FAN_FIC, BranchType.IF_STORY]
                 ),
-                visibility=KoreanDataGenerator.random_choice(list(BranchVisibility.choices))[0],
+                visibility=KoreanDataGenerator.weighted_choice(
+                    list(BranchVisibility.choices),
+                    [0.6, 0.3, 0.1],  # PUBLIC 60%, PRIVATE 30%, LINKED 10%
+                )[0],
                 canon_status=KoreanDataGenerator.random_choice(list(CanonStatus.choices))[0],
                 merged_at_chapter=None,
                 vote_count=KoreanDataGenerator.random_int(0, 500),
@@ -604,8 +626,8 @@ class Command(BaseCommand):
             branch.save()
             side_branches.append(branch)
 
-            # Update novel branch count
-            novel = branch.novel
+        # Bulk update novel branch counts after all branches are created
+        for novel in {b.novel for b in side_branches}:
             novel.branch_count = Branch.objects.filter(novel=novel).count()
             novel.save(update_fields=["branch_count"])
 
@@ -649,7 +671,9 @@ class Command(BaseCommand):
 
         for novel in novels:
             novel_branches = novel_to_branches[novel]
-            main_branch = novel_branches[0]  # First branch is always main
+            main_branch = next(
+                b for b in novel_branches if b.is_main
+            )  # Explicitly find main branch
 
             if novel in large_novels:
                 # Create 100+ chapters for large novels (split across branches)
@@ -722,8 +746,14 @@ class Command(BaseCommand):
         Returns:
             Created chapter
         """
-        status = KoreanDataGenerator.random_choice(list(ChapterStatus.choices))[0]
-        access_type = KoreanDataGenerator.random_choice(list(AccessType.choices))[0]
+        status = KoreanDataGenerator.weighted_choice(
+            list(ChapterStatus.choices),
+            [0.3, 0.1, 0.6],  # DRAFT 30%, SCHEDULED 10%, PUBLISHED 60%
+        )[0]
+        access_type = KoreanDataGenerator.weighted_choice(
+            list(AccessType.choices),
+            [0.7, 0.3],  # FREE 70%, SUBSCRIPTION 30%
+        )[0]
 
         title = KoreanDataGenerator.random_choice(KoreanDataGenerator.CHAPTER_TITLES)
         content_template = KoreanDataGenerator.random_choice(KoreanDataGenerator.CHAPTER_CONTENTS)
@@ -790,7 +820,12 @@ class Command(BaseCommand):
 
         for i in range(count):
             branch = KoreanDataGenerator.random_choice(branches)
-            chapter = KoreanDataGenerator.random_choice(chapters)
+            branch_chapters = [c for c in chapters if c.branch_id == branch.id]
+            chapter = (
+                KoreanDataGenerator.random_choice(branch_chapters)
+                if branch_chapters
+                else KoreanDataGenerator.random_choice(chapters)
+            )
 
             wiki_entry_name = (
                 KoreanDataGenerator.random_choice(KoreanDataGenerator.WIKI_ENTRY_NAMES)
@@ -860,13 +895,18 @@ class Command(BaseCommand):
                 },
             )
 
-            # Create snapshot
-            snapshot = MapSnapshot(
-                map=map_obj,
-                valid_from_chapter=chapter.chapter_number,
-                base_image_url=f"https://example.com/maps/{i + 1}.jpg",
-            )
-            snapshot.save()
+            # Create or get snapshot
+            if map_created:
+                # Create new snapshot for newly created map
+                snapshot = MapSnapshot(
+                    map=map_obj,
+                    valid_from_chapter=chapter.chapter_number,
+                    base_image_url=f"https://example.com/maps/{i + 1}.jpg",
+                )
+                snapshot.save()
+            else:
+                # Get existing snapshot for existing map
+                snapshot = MapSnapshot.objects.filter(map=map_obj).first()
 
             # Create layers and objects only if map was newly created
             if map_created:
@@ -928,19 +968,21 @@ class Command(BaseCommand):
             plan_type = KoreanDataGenerator.random_choice(list(PlanType.choices))[0]
             status = KoreanDataGenerator.random_choice(list(SubscriptionStatus.choices))[0]
 
-            subscription = Subscription(
+            subscription, created = Subscription.objects.get_or_create(
                 user=user,
                 plan_type=plan_type,
-                expires_at=timezone.now() + timedelta(days=random.randint(30, 365)),
-                payment_id=f"PAY_{random.randint(100000, 999999)}",
-                auto_renew=KoreanDataGenerator.random_bool(),
-                status=status,
-                cancelled_at=timezone.now() - timedelta(days=random.randint(1, 30))
-                if status != SubscriptionStatus.ACTIVE
-                else None,
+                defaults={
+                    "expires_at": timezone.now() + timedelta(days=random.randint(30, 365)),
+                    "payment_id": f"PAY_{random.randint(100000, 999999)}",
+                    "auto_renew": KoreanDataGenerator.random_bool(),
+                    "status": status,
+                    "cancelled_at": timezone.now() - timedelta(days=random.randint(1, 30))
+                    if status != SubscriptionStatus.ACTIVE
+                    else None,
+                },
             )
-            subscription.save()
-            subscriptions.append(subscription)
+            if created:
+                subscriptions.append(subscription)
         stats["subscriptions"] = len(subscriptions)
 
         # Purchases

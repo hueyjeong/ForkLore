@@ -108,7 +108,7 @@ class KoreanDataGenerator:
         "메인 스토리",
         "히로인의 시점",
         "빌런의 과거",
-        "액손딩 스토리",
+        "엔딩 스토리",
         "IF 루트: 다른 선택",
         "마법사의 비망록",
         "제2의 영웅",
@@ -713,13 +713,24 @@ class Command(BaseCommand):
                     min_chapters_per_novel, min_chapters_per_novel + 10
                 )
 
-                # Most chapters on main branch, few on side branches
+                # Most chapters on main branch (80%), rest on side branches (20%)
                 main_branch_chapters = int(num_chapters * 0.8)
+                side_chapters_total = num_chapters - main_branch_chapters
 
                 # Create chapters for main branch
                 for chapter_num in range(1, main_branch_chapters + 1):
                     chapter = self._create_single_chapter(main_branch, chapter_num)
                     chapters.append(chapter)
+
+                # Create chapters for side branches (if any)
+                if len(novel_branches) > 1 and side_chapters_total > 0:
+                    side_branches_for_novel = novel_branches[1:]
+                    chapters_per_side = max(1, side_chapters_total // len(side_branches_for_novel))
+
+                    for branch in side_branches_for_novel:
+                        for chapter_num in range(1, chapters_per_side + 1):
+                            chapter = self._create_single_chapter(branch, chapter_num)
+                            chapters.append(chapter)
 
                 total_chapters_for_novel = len([c for c in chapters if c.branch.novel == novel])
 
@@ -770,9 +781,7 @@ class Command(BaseCommand):
             word_count=len(content),
             status=status,
             access_type=access_type,
-            price=KoreanDataGenerator.random_int(0, 300)
-            if access_type == AccessType.FREE
-            else KoreanDataGenerator.random_int(100, 500),
+            price=0 if access_type == AccessType.FREE else KoreanDataGenerator.random_int(100, 500),
             scheduled_at=timezone.now() + timedelta(days=random.randint(1, 30))
             if status == ChapterStatus.SCHEDULED
             else None,
@@ -962,6 +971,11 @@ class Command(BaseCommand):
     ) -> dict[str, int]:
         """Create various interactions."""
         stats = {}
+
+        # Early return if no chapters to interact with
+        if not chapters:
+            self.stdout.write(self.style.WARNING("No chapters available for interactions"))
+            return stats
 
         # Subscriptions
         subscriptions = []
@@ -1185,7 +1199,7 @@ class Command(BaseCommand):
 
                 # Create transactions only for newly created wallets
                 num_transactions = KoreanDataGenerator.random_int(5, 20)
-                current_balance = 0
+                current_balance = balance  # Start from user's initial coin balance
 
                 for _ in range(num_transactions):
                     transaction_type = KoreanDataGenerator.random_choice(

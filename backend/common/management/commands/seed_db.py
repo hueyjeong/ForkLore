@@ -615,7 +615,7 @@ class Command(BaseCommand):
                 ),
                 visibility=KoreanDataGenerator.weighted_choice(
                     list(BranchVisibility.choices),
-                    [0.6, 0.3, 0.1],  # PUBLIC 60%, PRIVATE 30%, LINKED 10%
+                    [0.3, 0.6, 0.1],  # PRIVATE 30%, PUBLIC 60%, LINKED 10%
                 )[0],
                 canon_status=KoreanDataGenerator.random_choice(list(CanonStatus.choices))[0],
                 merged_at_chapter=None,

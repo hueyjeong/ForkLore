@@ -527,8 +527,8 @@ class Command(BaseCommand):
         self, authors: list[User], count: int
     ) -> tuple[list[Novel], list[Branch]]:
         """Create novels with their main branches."""
-        novels = []
-        main_branches = []
+        novels_to_create = []
+        main_branches_to_create = []
 
         for i in range(count):
             author = KoreanDataGenerator.random_choice(authors)
@@ -556,8 +556,7 @@ class Command(BaseCommand):
                 branch_count=1,
                 linked_branch_count=0,
             )
-            novel.save()
-            novels.append(novel)
+            novels_to_create.append(novel)
 
             # Create main branch
             main_branch = Branch(
@@ -581,8 +580,11 @@ class Command(BaseCommand):
                 chapter_count=0,
                 version=1,
             )
-            main_branch.save()
-            main_branches.append(main_branch)
+            main_branches_to_create.append(main_branch)
+
+        # Bulk create novels and main branches
+        novels = Novel.objects.bulk_create(novels_to_create)
+        main_branches = Branch.objects.bulk_create(main_branches_to_create)
 
         return novels, main_branches
 
@@ -590,7 +592,7 @@ class Command(BaseCommand):
         self, users: list[User], main_branches: list[Branch], count: int
     ) -> list[Branch]:
         """Create side branches (forks)."""
-        side_branches = []
+        side_branches_to_create = []
 
         for i in range(count):
             parent_branch = KoreanDataGenerator.random_choice(main_branches)
@@ -619,15 +621,17 @@ class Command(BaseCommand):
                 merged_at_chapter=None,
                 vote_count=KoreanDataGenerator.random_int(0, 500),
                 vote_threshold=1000,
-                view_count=KoreanDataGenerator.random_int(0, 5000),
+                view_count=KoreanDataGenerator.random_int(0, 50000),
                 chapter_count=0,
                 version=1,
             )
-            branch.save()
-            side_branches.append(branch)
+            side_branches_to_create.append(branch)
+
+        # Bulk create side branches
+        side_branches = Branch.objects.bulk_create(side_branches_to_create)
 
         # Bulk update novel branch counts after all branches are created
-        for novel in {b.novel for b in side_branches}:
+        for novel in {b.novel for b in side_branches_to_create}:
             novel.branch_count = Branch.objects.filter(novel=novel).count()
             novel.save(update_fields=["branch_count"])
 
@@ -821,11 +825,12 @@ class Command(BaseCommand):
         for i in range(count):
             branch = KoreanDataGenerator.random_choice(branches)
             branch_chapters = [c for c in chapters if c.branch_id == branch.id]
-            chapter = (
-                KoreanDataGenerator.random_choice(branch_chapters)
-                if branch_chapters
-                else KoreanDataGenerator.random_choice(chapters)
-            )
+
+            # Check for empty chapters list
+            if not branch_chapters:
+                continue
+
+            chapter = KoreanDataGenerator.random_choice(branch_chapters)
 
             wiki_entry_name = (
                 KoreanDataGenerator.random_choice(KoreanDataGenerator.WIKI_ENTRY_NAMES)
@@ -839,7 +844,7 @@ class Command(BaseCommand):
                 defaults={
                     "image_url": f"https://example.com/wiki/{i + 1}.jpg",
                     "first_appearance": chapter.chapter_number,
-                    "hidden_note": f"작가 노트: 비공개 정보 {i + 1}",
+                    "hidden_note": f"작성자 노트: 비공개 정보 {i + 1}",
                     "ai_metadata": {"confidence": random.random(), "tags": ["auto"]},
                 },
             )
@@ -1103,6 +1108,10 @@ class Command(BaseCommand):
                 content_type = comment_ct
                 obj = KoreanDataGenerator.random_choice(comments)
 
+            # User cannot like own content
+            if obj.author.id == user.id:
+                continue
+
             # Use get_or_create to handle unique constraint
             like, created = Like.objects.get_or_create(
                 user=user, content_type=content_type, object_id=obj.id
@@ -1190,6 +1199,9 @@ class Command(BaseCommand):
                     if current_balance < 0:
                         current_balance = 0
                         continue
+
+                    # Update wallet balance after each transaction
+                    current_balance = max(current_balance, 0)
 
                     transaction = CoinTransaction(
                         wallet=wallet,

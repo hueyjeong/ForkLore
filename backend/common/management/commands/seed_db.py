@@ -702,6 +702,8 @@ class Command(BaseCommand):
                             chapter = self._create_single_chapter(branch, chapter_num)
                             chapters.append(chapter)
 
+                total_chapters_for_novel = len([c for c in chapters if c.branch.novel == novel])
+
                 self.stdout.write(
                     f"  - Created {total_chapters_for_novel} chapters for large novel: {novel.title}"
                 )
@@ -719,28 +721,26 @@ class Command(BaseCommand):
                     chapter = self._create_single_chapter(main_branch, chapter_num)
                     chapters.append(chapter)
 
-                # Update branch chapter_count using bulk_update
-                from django.db.models import Q
+                total_chapters_for_novel = len([c for c in chapters if c.branch.novel == novel])
 
-                # Collect all branches with their chapter counts
-                branches_to_update = []
-                for novel in novels:
-                    novel_branches = novel_to_branches[novel]
-                    # Count chapters per branch
-                    for branch in novel_branches:
-                        branch.chapter_count = len([c for c in chapters if c.branch_id == branch.id])
-                        branches_to_update.append(branch)
+        # Update branch chapter_count using bulk_update
+        # Collect all branches with their chapter counts
+        branches_to_update = []
+        for novel in novels:
+            novel_branches = novel_to_branches[novel]
+            # Count chapters per branch
+            for branch in novel_branches:
+                branch.chapter_count = len([c for c in chapters if c.branch_id == branch.id])
+                branches_to_update.append(branch)
 
-                # Bulk update all branch chapter_count
-                Branch.objects.bulk_update(
-                    branches_to_update,
-                    ["chapter_count"],
-                    batch_size=500
-                )
+        # Bulk update all branch chapter_count
+        Branch.objects.bulk_update(
+            branches_to_update,
+            ["chapter_count"],
+            batch_size=500
+        )
 
-            self.stdout.write(
-                f"  - Created {total_chapters_for_novel} chapters for large novel: {novel.title}"
-            )
+        return chapters
             else:
                 # Create minimum chapters for regular novels
                 num_chapters = KoreanDataGenerator.random_int(

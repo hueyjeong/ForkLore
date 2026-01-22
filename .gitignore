@@ -40,3 +40,8 @@ target/
 **/src/main/resources/application-test.yml
 **/src/main/resources/application-*.yml
 !**/src/main/resources/application-common.yml
+
+.opencode
+.kilocode
+.claude
+.agent

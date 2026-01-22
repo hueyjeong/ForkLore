@@ -713,6 +713,42 @@ class Command(BaseCommand):
 
                 # Most chapters on main branch, few on side branches
                 main_branch_chapters = int(num_chapters * 0.8)
+
+                # Create chapters for main branch
+                for chapter_num in range(1, main_branch_chapters + 1):
+                    chapter = self._create_single_chapter(main_branch, chapter_num)
+                    chapters.append(chapter)
+
+                # Update branch chapter_count using bulk_update
+                from django.db.models import Q
+
+                # Collect all branches with their chapter counts
+                branches_to_update = []
+                for novel in novels:
+                    novel_branches = novel_to_branches[novel]
+                    # Count chapters per branch
+                    for branch in novel_branches:
+                        branch.chapter_count = len([c for c in chapters if c.branch_id == branch.id])
+                        branches_to_update.append(branch)
+
+                # Bulk update all branch chapter_count
+                Branch.objects.bulk_update(
+                    branches_to_update,
+                    ["chapter_count"],
+                    batch_size=500
+                )
+
+            self.stdout.write(
+                f"  - Created {total_chapters_for_novel} chapters for large novel: {novel.title}"
+            )
+            else:
+                # Create minimum chapters for regular novels
+                num_chapters = KoreanDataGenerator.random_int(
+                    min_chapters_per_novel, min_chapters_per_novel + 10
+                )
+
+                # Most chapters on main branch, few on side branches
+                main_branch_chapters = int(num_chapters * 0.8)
                 side_chapters_total = num_chapters - main_branch_chapters
 
                 # Create chapters for main branch

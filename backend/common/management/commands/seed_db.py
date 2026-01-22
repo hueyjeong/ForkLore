@@ -1166,43 +1166,44 @@ class Command(BaseCommand):
         return stats
 
     # =========================================================================
-    # Wallet and Transaction Creation
-    # =========================================================================
-
-    def _create_wallets_and_transactions(self, users: list[User]) -> dict[str, int]:
+         # Wallet and Transaction Creation
+        # =========================================================================
+ 
+        def _create_wallets_and_transactions(self, users: list[User]) -> dict[str, int]:
         """Create wallets and coin transactions for users."""
         stats = {}
 
+ 
         wallets = []
-        transactions_created = []
+        transactions_to_create = []
         for user in users:
             balance = user.coin
             # Use get_or_create to handle OneToOne constraint
             wallet, created = Wallet.objects.get_or_create(user=user, defaults={"balance": balance})
             if created:
                 wallets.append(wallet)
-
+ 
                 # Create transactions only for newly created wallets
                 num_transactions = KoreanDataGenerator.random_int(5, 20)
                 current_balance = 0
-
+ 
                 for _ in range(num_transactions):
                     transaction_type = KoreanDataGenerator.random_choice(
                         list(TransactionType.choices)
                     )[0]
                     amount = KoreanDataGenerator.random_int(100, 5000)
-
+ 
                     if transaction_type == TransactionType.SPEND:
                         amount = -amount
-
+ 
                     current_balance += amount
                     if current_balance < 0:
                         current_balance = 0
                         continue
-
+ 
                     # Update wallet balance after each transaction
                     current_balance = max(current_balance, 0)
-
+ 
                     transaction = CoinTransaction(
                         wallet=wallet,
                         transaction_type=transaction_type,
@@ -1216,12 +1217,14 @@ class Command(BaseCommand):
                         else "charge",
                         reference_id=KoreanDataGenerator.random_int(1, 100),
                     )
-                    transaction.save()
-                    transactions_created.append(transaction)
-
+                    transactions_to_create.append(transaction)
+ 
+        # Bulk create transactions
+        CoinTransaction.objects.bulk_create(transactions_to_create)
+ 
         stats["wallets"] = len(wallets)
-        stats["coin_transactions"] = len(transactions_created)
-
+        stats["coin_transactions"] = len(transactions_to_create)
+ 
         return stats
 
     # =========================================================================

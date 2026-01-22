@@ -687,28 +687,34 @@ class Command(BaseCommand):
                 main_branch_chapters = int(total_chapters_for_novel * 0.7)
                 side_chapters_total = total_chapters_for_novel - main_branch_chapters
 
-                # Create chapters for main branch
+                # Build chapters for main branch
                 for chapter_num in range(1, main_branch_chapters + 1):
-                    chapter = self._create_single_chapter(main_branch, chapter_num)
+                    chapter = self._build_single_chapter(main_branch, chapter_num)
                     chapters.append(chapter)
 
-                # Create chapters for side branches (if any)
+                # Build chapters for side branches (if any)
                 if len(novel_branches) > 1:
                     side_branches_for_novel = novel_branches[1:]
                     chapters_per_side = side_chapters_total // len(side_branches_for_novel)
 
                     for branch in side_branches_for_novel:
                         for chapter_num in range(1, chapters_per_side + 1):
-                            chapter = self._create_single_chapter(branch, chapter_num)
+                            chapter = self._build_single_chapter(branch, chapter_num)
                             chapters.append(chapter)
 
-                total_chapters_for_novel = len([c for c in chapters if c.branch.novel == novel])
+                total_chapters_for_novel = len(
+                    [
+                        c
+                        for c in chapters
+                        if c.branch == novel_branches[0] or c.branch in novel_branches[1:]
+                    ]
+                )
 
                 self.stdout.write(
                     f"  - Created {total_chapters_for_novel} chapters for large novel: {novel.title}"
                 )
             else:
-                # Create minimum chapters for regular novels
+                # Build minimum chapters for regular novels
                 num_chapters = KoreanDataGenerator.random_int(
                     min_chapters_per_novel, min_chapters_per_novel + 10
                 )
@@ -717,22 +723,26 @@ class Command(BaseCommand):
                 main_branch_chapters = int(num_chapters * 0.8)
                 side_chapters_total = num_chapters - main_branch_chapters
 
-                # Create chapters for main branch
+                # Build chapters for main branch
                 for chapter_num in range(1, main_branch_chapters + 1):
-                    chapter = self._create_single_chapter(main_branch, chapter_num)
+                    chapter = self._build_single_chapter(main_branch, chapter_num)
                     chapters.append(chapter)
 
-                # Create chapters for side branches (if any)
+                # Build chapters for side branches (if any)
                 if len(novel_branches) > 1 and side_chapters_total > 0:
                     side_branches_for_novel = novel_branches[1:]
                     chapters_per_side = max(1, side_chapters_total // len(side_branches_for_novel))
 
                     for branch in side_branches_for_novel:
                         for chapter_num in range(1, chapters_per_side + 1):
-                            chapter = self._create_single_chapter(branch, chapter_num)
+                            chapter = self._build_single_chapter(branch, chapter_num)
                             chapters.append(chapter)
 
-                total_chapters_for_novel = len([c for c in chapters if c.branch.novel == novel])
+                total_chapters_for_novel = len([c for c in chapters if c.branch in novel_branches])
+
+        # Bulk create all chapters
+        chapters = Chapter.objects.bulk_create(chapters, batch_size=500)
+        self.stdout.write(f"  - Bulk created {len(chapters)} chapters total")
 
         # Update branch chapter_count using bulk_update
         # Collect all branches with their chapter counts
@@ -741,7 +751,7 @@ class Command(BaseCommand):
             novel_branches = novel_to_branches[novel]
             # Count chapters per branch
             for branch in novel_branches:
-                branch.chapter_count = len([c for c in chapters if c.branch_id == branch.id])
+                branch.chapter_count = len([c for c in chapters if c.branch == branch])
                 branches_to_update.append(branch)
 
         # Bulk update all branch chapter_count
@@ -749,15 +759,15 @@ class Command(BaseCommand):
 
         return chapters
 
-    def _create_single_chapter(self, branch: Branch, chapter_number: int) -> Chapter:
-        """Create a single chapter for a branch.
+    def _build_single_chapter(self, branch: Branch, chapter_number: int) -> Chapter:
+        """Build a single chapter object for a branch (without saving).
 
         Args:
             branch: Branch to create chapter for
             chapter_number: Chapter number within the branch
 
         Returns:
-            Created chapter
+            Chapter object (not saved)
         """
         status = KoreanDataGenerator.weighted_choice(
             list(ChapterStatus.choices),
@@ -772,7 +782,7 @@ class Command(BaseCommand):
         content_template = KoreanDataGenerator.random_choice(KoreanDataGenerator.CHAPTER_CONTENTS)
         content = content_template.format(title=title)
 
-        chapter = Chapter(
+        return Chapter(
             branch=branch,
             chapter_number=chapter_number,
             title=title,
@@ -792,9 +802,6 @@ class Command(BaseCommand):
             like_count=KoreanDataGenerator.random_int(0, 500),
             comment_count=KoreanDataGenerator.random_int(0, 100),
         )
-        chapter.save()
-
-        return chapter
 
     # =========================================================================
     # Wiki Creation

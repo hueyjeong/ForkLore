@@ -45,3 +45,5 @@ target/
 .kilocode
 .claude
 .agent
+.roo
+.gemini

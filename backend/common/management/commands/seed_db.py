@@ -734,45 +734,7 @@ class Command(BaseCommand):
                 branches_to_update.append(branch)
 
         # Bulk update all branch chapter_count
-        Branch.objects.bulk_update(
-            branches_to_update,
-            ["chapter_count"],
-            batch_size=500
-        )
-
-        return chapters
-            else:
-                # Create minimum chapters for regular novels
-                num_chapters = KoreanDataGenerator.random_int(
-                    min_chapters_per_novel, min_chapters_per_novel + 10
-                )
-
-                # Most chapters on main branch, few on side branches
-                main_branch_chapters = int(num_chapters * 0.8)
-                side_chapters_total = num_chapters - main_branch_chapters
-
-                # Create chapters for main branch
-                for chapter_num in range(1, main_branch_chapters + 1):
-                    chapter = self._create_single_chapter(main_branch, chapter_num)
-                    chapters.append(chapter)
-
-                # Create chapters for side branches (if any)
-                if len(novel_branches) > 1:
-                    side_branches_for_novel = novel_branches[1:]
-                    if side_branches_for_novel:
-                        chapters_per_side = max(
-                            1, side_chapters_total // len(side_branches_for_novel)
-                        )
-                        for branch in side_branches_for_novel:
-                            for chapter_num in range(1, chapters_per_side + 1):
-                                chapter = self._create_single_chapter(branch, chapter_num)
-                                chapters.append(chapter)
-
-        # Update branch chapter counts in bulk
-        for novel in novels:
-            for branch in novel_to_branches[novel]:
-                branch.chapter_count = Chapter.objects.filter(branch=branch).count()
-                branch.save(update_fields=["chapter_count"])
+        Branch.objects.bulk_update(branches_to_update, ["chapter_count"], batch_size=500)
 
         return chapters
 
@@ -1140,12 +1102,15 @@ class Command(BaseCommand):
             if is_chapter_like:
                 content_type = chapter_ct
                 obj = KoreanDataGenerator.random_choice(chapters)
+                # Chapter doesn't have author, use branch author
+                obj_author_id = obj.branch.author.id
             else:
                 content_type = comment_ct
                 obj = KoreanDataGenerator.random_choice(comments)
+                obj_author_id = obj.user.id
 
             # User cannot like own content
-            if obj.author.id == user.id:
+            if obj_author_id == user.id:
                 continue
 
             # Use get_or_create to handle unique constraint
@@ -1202,14 +1167,13 @@ class Command(BaseCommand):
         return stats
 
     # =========================================================================
-         # Wallet and Transaction Creation
-        # =========================================================================
- 
-        def _create_wallets_and_transactions(self, users: list[User]) -> dict[str, int]:
+    # Wallet and Transaction Creation
+    # =========================================================================
+
+    def _create_wallets_and_transactions(self, users: list[User]) -> dict[str, int]:
         """Create wallets and coin transactions for users."""
         stats = {}
 
- 
         wallets = []
         transactions_to_create = []
         for user in users:
@@ -1218,28 +1182,28 @@ class Command(BaseCommand):
             wallet, created = Wallet.objects.get_or_create(user=user, defaults={"balance": balance})
             if created:
                 wallets.append(wallet)
- 
+
                 # Create transactions only for newly created wallets
                 num_transactions = KoreanDataGenerator.random_int(5, 20)
                 current_balance = 0
- 
+
                 for _ in range(num_transactions):
                     transaction_type = KoreanDataGenerator.random_choice(
                         list(TransactionType.choices)
                     )[0]
                     amount = KoreanDataGenerator.random_int(100, 5000)
- 
+
                     if transaction_type == TransactionType.SPEND:
                         amount = -amount
- 
+
                     current_balance += amount
                     if current_balance < 0:
                         current_balance = 0
                         continue
- 
+
                     # Update wallet balance after each transaction
                     current_balance = max(current_balance, 0)
- 
+
                     transaction = CoinTransaction(
                         wallet=wallet,
                         transaction_type=transaction_type,
@@ -1254,13 +1218,13 @@ class Command(BaseCommand):
                         reference_id=KoreanDataGenerator.random_int(1, 100),
                     )
                     transactions_to_create.append(transaction)
- 
+
         # Bulk create transactions
         CoinTransaction.objects.bulk_create(transactions_to_create)
- 
+
         stats["wallets"] = len(wallets)
         stats["coin_transactions"] = len(transactions_to_create)
- 
+
         return stats
 
     # =========================================================================

@@ -1,4 +1,4 @@
-# development-guideline.md
+# development-guidelines.md
 
 코드 수정 시 이슈/브랜치/커밋 관련 기본 규칙을 정의합니다.
 

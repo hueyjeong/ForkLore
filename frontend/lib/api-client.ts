@@ -40,12 +40,17 @@ apiClient.interceptors.response.use(
         }
 
         // Silent Refresh API 호출
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken,
+        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh/`, {
+          refresh: refreshToken,
         });
 
-        const { accessToken: newAccessToken } = data;
+        const newAccessToken = data.data.access;
+        const newRefreshToken = data.data.refresh;
+        
         setCookie('access_token', newAccessToken);
+        if (newRefreshToken) {
+          setCookie('refresh_token', newRefreshToken);
+        }
         
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return apiClient(originalRequest);

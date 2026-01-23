@@ -19,14 +19,14 @@ export interface SignUpRequest {
 
 // 토큰 갱신 요청
 export interface TokenRefreshRequest {
-  refreshToken: string;
+  refresh: string;
 }
 
 // 토큰 응답
 export interface TokenResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  access: string;
+  refresh: string;
+  user?: UserResponse;
 }
 
 // 사용자 응답

@@ -18,11 +18,11 @@ export async function login(data: LoginRequest): Promise<TokenResponse> {
     data
   );
 
-  const { accessToken, refreshToken } = response.data.data;
+  const { access, refresh } = response.data.data;
 
   // 토큰 저장
-  setAccessToken(accessToken);
-  setRefreshToken(refreshToken);
+  setAccessToken(access);
+  setRefreshToken(refresh);
 
   return response.data.data;
 }
@@ -47,15 +47,17 @@ export async function refreshToken(
 ): Promise<TokenResponse> {
   const response = await apiClient.post<ApiResponse<TokenResponse>>(
     '/auth/refresh/',
-    { refreshToken } as TokenRefreshRequest
+    { refresh: refreshToken }
   );
 
-  const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+  const { access, refresh: newRefreshToken } =
     response.data.data;
 
   // 새 토큰 저장
-  setAccessToken(newAccessToken);
-  setRefreshToken(newRefreshToken);
+  setAccessToken(access);
+  if (newRefreshToken) {
+    setRefreshToken(newRefreshToken);
+  }
 
   return response.data.data;
 }

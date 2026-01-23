@@ -53,6 +53,15 @@ class NovelDetailSerializer(serializers.ModelSerializer):
     """Serializer for novel detail view."""
 
     author = AuthorSerializer(read_only=True)
+    average_rating = serializers.SerializerMethodField()
+
+    def get_average_rating(self, obj):
+        """Return average rating for the novel.
+
+        Currently returns None as rating system is not yet implemented.
+        This is a placeholder to prevent 500 errors on frontend.
+        """
+        return None
 
     class Meta:
         model = Novel
@@ -73,6 +82,7 @@ class NovelDetailSerializer(serializers.ModelSerializer):
             "branch_count",
             "linked_branch_count",
             "author",
+            "average_rating",
             "created_at",
             "updated_at",
         ]

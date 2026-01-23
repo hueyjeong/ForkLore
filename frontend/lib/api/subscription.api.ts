@@ -4,6 +4,7 @@ import {
   Subscription,
   SubscriptionCreate,
 } from '@/types/subscription.types';
+import axios from 'axios';
 
 const BASE_URL = '/subscriptions/';
 
@@ -16,10 +17,9 @@ export async function getSubscriptionStatus(): Promise<Subscription | null> {
       BASE_URL
     );
     return response.data.data;
-  } catch (error) {
+  } catch (error: unknown) {
     // Return null if 404 (not found/not subscribed)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((error as any).response?.status === 404) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
       return null;
     }
     throw error;

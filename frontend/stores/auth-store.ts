@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthStore>()(
           // 로그인 후 사용자 정보 조회
           const user = await authApi.getMyProfile();
           set({ user, isLoading: false });
-        } catch (error) {
+        } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '로그인에 실패했습니다.';
           set({ error: errorMessage, isLoading: false });
           throw error;
@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true, error: null });
           await authApi.signup(data);
           set({ isLoading: false });
-        } catch (error) {
+        } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : '회원가입에 실패했습니다.';
           set({ error: errorMessage, isLoading: false });
           throw error;
@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthStore>()(
           set({ isLoading: true });
           const user = await authApi.getMyProfile();
           set({ user, isLoading: false });
-        } catch (error) {
+        } catch (error: unknown) {
           set({ user: null, isLoading: false });
         }
       },

@@ -34,7 +34,7 @@ export async function getNovel(id: number): Promise<Novel> {
     }
     
     return response.data.data;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`[API Error] Failed to fetch novel ${id}:`, error);
     throw error;
   }

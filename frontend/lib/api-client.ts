@@ -19,13 +19,13 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error: unknown) => Promise.reject(error)
+  (error) => Promise.reject(error)
 );
 
 // Response Interceptor: 401 에러 시 Refresh Token으로 재시도
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
-  async (error: unknown) => {
+  async (error) => {
     if (!isAxiosError(error)) {
       return Promise.reject(error);
     }
@@ -61,7 +61,7 @@ apiClient.interceptors.response.use(
         
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return apiClient(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: unknown) {
         // Refresh 실패 시 로그아웃 처리
         deleteCookie('access_token');
         deleteCookie('refresh_token');

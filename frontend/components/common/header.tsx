@@ -18,9 +18,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/stores/auth-store"
 
 export function Header() {
   const [isScrolled, setIsScrolled] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -103,28 +111,55 @@ export function Header() {
           
           <ThemeToggle />
 
-          {/* User Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/50 p-0 overflow-hidden border border-border/50">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/avatars/01.png" alt="@user" />
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    <User className="h-4 w-4" />
-                  </AvatarFallback>
-                </Avatar>
+          {/* Conditional User Menu */}
+          {!mounted ? (
+            // Prevent hydration mismatch
+            <div className="h-8 w-8" />
+          ) : user ? (
+            // Logged-in state
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent/50 p-0 overflow-hidden border border-border/50">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.profileImageUrl || "/avatars/01.png"} alt={user.nickname} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass w-56 p-2 border-border/20">
+                <DropdownMenuLabel className="font-premium">{user.nickname}</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-border/20" />
+                <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary cursor-pointer">
+                  <Link href="/profile">프로필</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary cursor-pointer">
+                  <Link href="/library">서재</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="focus:bg-primary/10 focus:text-primary cursor-pointer">
+                  <Link href="/settings">설정</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-border/20" />
+                <DropdownMenuItem 
+                  onClick={logout}
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                >
+                  로그아웃
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            // Logged-out state
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/login">로그인</Link>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="glass w-56 p-2 border-border/20">
-              <DropdownMenuLabel className="font-premium">내 계정</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-border/20" />
-              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">프로필</DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">서재</DropdownMenuItem>
-              <DropdownMenuItem className="focus:bg-primary/10 focus:text-primary cursor-pointer">설정</DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-border/20" />
-              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">로그아웃</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <Button size="sm" asChild>
+                <Link href="/signup">회원가입</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </header>

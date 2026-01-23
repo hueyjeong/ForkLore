@@ -99,7 +99,7 @@ export interface WikiTagUpdateRequest {
 }
 
 export interface WikiListParams extends PageParams {
-  branch_id: number;
+  branchId: number;
   tagId?: number;
   search?: string;
   chapter?: number; // For context-aware snapshot retrieval

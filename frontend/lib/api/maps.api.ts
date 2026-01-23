@@ -13,7 +13,7 @@ import {
   MapListParams,
 } from '@/types/maps.types';
 
-const BASE_URL = '/maps';
+const BASE_URL = '/maps/';
 
 /**
  * Get list of maps for a branch
@@ -23,7 +23,7 @@ export async function getMaps(
   params?: Omit<MapListParams, 'branch_id'>
 ): Promise<PaginatedResponse<Map>> {
   const response = await apiClient.get<ApiResponse<PaginatedResponse<Map>>>(
-    `/branches/${branchId}/maps`,
+    `/branches/${branchId}/maps/`,
     { params }
   );
   return response.data.data;
@@ -35,7 +35,7 @@ export async function getMaps(
  * @param chapterId - Optional chapter ID for spoiler-aware retrieval
  */
 export async function getMap(id: number, chapterId?: number): Promise<Map> {
-  const response = await apiClient.get<ApiResponse<Map>>(`${BASE_URL}/${id}`, {
+  const response = await apiClient.get<ApiResponse<Map>>(`${BASE_URL}${id}/`, {
     params: chapterId ? { chapter: chapterId } : undefined,
   });
   return response.data.data;
@@ -49,7 +49,7 @@ export async function createMap(
   data: MapCreateRequest
 ): Promise<Map> {
   const response = await apiClient.post<ApiResponse<Map>>(
-    `/branches/${branchId}/maps`,
+    `/branches/${branchId}/maps/`,
     data
   );
   return response.data.data;
@@ -59,7 +59,7 @@ export async function createMap(
  * Update an existing map
  */
 export async function updateMap(id: number, data: MapUpdateRequest): Promise<Map> {
-  const response = await apiClient.patch<ApiResponse<Map>>(`${BASE_URL}/${id}`, data);
+  const response = await apiClient.patch<ApiResponse<Map>>(`${BASE_URL}${id}/`, data);
   return response.data.data;
 }
 
@@ -67,7 +67,7 @@ export async function updateMap(id: number, data: MapUpdateRequest): Promise<Map
  * Delete a map
  */
 export async function deleteMap(id: number): Promise<void> {
-  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}/${id}`);
+  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}${id}/`);
 }
 
 /**
@@ -75,7 +75,7 @@ export async function deleteMap(id: number): Promise<void> {
  */
 export async function getMapSnapshots(mapId: number): Promise<MapSnapshot[]> {
   const response = await apiClient.get<ApiResponse<MapSnapshot[]>>(
-    `${BASE_URL}/${mapId}/snapshots`
+    `${BASE_URL}${mapId}/snapshots/`
   );
   return response.data.data;
 }
@@ -88,7 +88,7 @@ export async function createMapSnapshot(
   data: MapSnapshotCreateRequest
 ): Promise<MapSnapshot> {
   const response = await apiClient.post<ApiResponse<MapSnapshot>>(
-    `${BASE_URL}/${mapId}/snapshots`,
+    `${BASE_URL}${mapId}/snapshots/`,
     data
   );
   return response.data.data;
@@ -98,7 +98,7 @@ export async function createMapSnapshot(
  * Delete a map snapshot
  */
 export async function deleteMapSnapshot(snapshotId: number): Promise<void> {
-  await apiClient.delete<ApiResponse<void>>(`/snapshots/${snapshotId}`);
+  await apiClient.delete<ApiResponse<void>>(`/snapshots/${snapshotId}/`);
 }
 
 /**
@@ -106,7 +106,7 @@ export async function deleteMapSnapshot(snapshotId: number): Promise<void> {
  */
 export async function getMapLayers(snapshotId: number): Promise<MapLayer[]> {
   const response = await apiClient.get<ApiResponse<MapLayer[]>>(
-    `/snapshots/${snapshotId}/layers`
+    `/snapshots/${snapshotId}/layers/`
   );
   return response.data.data;
 }
@@ -119,7 +119,7 @@ export async function createMapLayer(
   data: MapLayerCreateRequest
 ): Promise<MapLayer> {
   const response = await apiClient.post<ApiResponse<MapLayer>>(
-    `/snapshots/${snapshotId}/layers`,
+    `/snapshots/${snapshotId}/layers/`,
     data
   );
   return response.data.data;
@@ -132,7 +132,7 @@ export async function updateMapLayer(
   id: number,
   data: Partial<MapLayerCreateRequest>
 ): Promise<MapLayer> {
-  const response = await apiClient.patch<ApiResponse<MapLayer>>(`/layers/${id}`, data);
+  const response = await apiClient.patch<ApiResponse<MapLayer>>(`/layers/${id}/`, data);
   return response.data.data;
 }
 
@@ -140,7 +140,7 @@ export async function updateMapLayer(
  * Delete a map layer
  */
 export async function deleteMapLayer(id: number): Promise<void> {
-  await apiClient.delete<ApiResponse<void>>(`/layers/${id}`);
+  await apiClient.delete<ApiResponse<void>>(`/layers/${id}/`);
 }
 
 /**
@@ -148,7 +148,7 @@ export async function deleteMapLayer(id: number): Promise<void> {
  */
 export async function getMapObjects(layerId: number): Promise<MapObject[]> {
   const response = await apiClient.get<ApiResponse<MapObject[]>>(
-    `/layers/${layerId}/objects`
+    `/layers/${layerId}/objects/`
   );
   return response.data.data;
 }
@@ -161,7 +161,7 @@ export async function createMapObject(
   data: MapObjectCreateRequest
 ): Promise<MapObject> {
   const response = await apiClient.post<ApiResponse<MapObject>>(
-    `/layers/${layerId}/objects`,
+    `/layers/${layerId}/objects/`,
     data
   );
   return response.data.data;
@@ -174,7 +174,7 @@ export async function updateMapObject(
   id: number,
   data: Partial<MapObjectCreateRequest>
 ): Promise<MapObject> {
-  const response = await apiClient.patch<ApiResponse<MapObject>>(`/objects/${id}`, data);
+  const response = await apiClient.patch<ApiResponse<MapObject>>(`/objects/${id}/`, data);
   return response.data.data;
 }
 
@@ -182,5 +182,5 @@ export async function updateMapObject(
  * Delete a map object
  */
 export async function deleteMapObject(id: number): Promise<void> {
-  await apiClient.delete<ApiResponse<void>>(`/objects/${id}`);
+  await apiClient.delete<ApiResponse<void>>(`/objects/${id}/`);
 }

@@ -8,7 +8,7 @@ import {
   WikiListParams,
 } from '@/types/wiki.types';
 
-const BASE_URL = '/wikis';
+const BASE_URL = '/wikis/';
 
 /**
  * Get list of wiki entries for a branch
@@ -18,7 +18,7 @@ export async function getWikis(
   params?: Omit<WikiListParams, 'branchId'>
 ): Promise<PaginatedResponse<WikiEntry>> {
   const response = await apiClient.get<ApiResponse<PaginatedResponse<WikiEntry>>>(
-    `/branches/${branchId}/wikis`,
+    `/branches/${branchId}/wikis/`,
     { params }
   );
   return response.data.data;
@@ -33,7 +33,7 @@ export async function getWiki(
   id: number,
   chapterId?: number
 ): Promise<WikiEntry> {
-  const response = await apiClient.get<ApiResponse<WikiEntry>>(`${BASE_URL}/${id}`, {
+  const response = await apiClient.get<ApiResponse<WikiEntry>>(`${BASE_URL}${id}/`, {
     params: chapterId ? { chapter: chapterId } : undefined,
   });
   return response.data.data;
@@ -47,7 +47,7 @@ export async function createWiki(
   data: WikiEntryCreateRequest
 ): Promise<WikiEntry> {
   const response = await apiClient.post<ApiResponse<WikiEntry>>(
-    `/branches/${branchId}/wikis`,
+    `/branches/${branchId}/wikis/`,
     data
   );
   return response.data.data;
@@ -57,7 +57,7 @@ export async function createWiki(
  * Update an existing wiki entry
  */
 export async function updateWiki(id: number, data: WikiEntryUpdateRequest): Promise<WikiEntry> {
-  const response = await apiClient.patch<ApiResponse<WikiEntry>>(`${BASE_URL}/${id}`, data);
+  const response = await apiClient.patch<ApiResponse<WikiEntry>>(`${BASE_URL}${id}/`, data);
   return response.data.data;
 }
 
@@ -65,7 +65,7 @@ export async function updateWiki(id: number, data: WikiEntryUpdateRequest): Prom
  * Delete a wiki entry
  */
 export async function deleteWiki(id: number): Promise<void> {
-  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}/${id}`);
+  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}${id}/`);
 }
 
 /**
@@ -73,7 +73,7 @@ export async function deleteWiki(id: number): Promise<void> {
  */
 export async function getWikiSnapshots(wikiId: number): Promise<WikiSnapshot[]> {
   const response = await apiClient.get<ApiResponse<WikiSnapshot[]>>(
-    `${BASE_URL}/${wikiId}/snapshots`
+    `${BASE_URL}${wikiId}/snapshots/`
   );
   return response.data.data;
 }
@@ -86,7 +86,7 @@ export async function createWikiSnapshot(
   chapterId: number
 ): Promise<WikiSnapshot> {
   const response = await apiClient.post<ApiResponse<WikiSnapshot>>(
-    `${BASE_URL}/${wikiId}/snapshots`,
+    `${BASE_URL}${wikiId}/snapshots/`,
     { chapterId }
   );
   return response.data.data;

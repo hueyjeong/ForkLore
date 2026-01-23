@@ -5,7 +5,7 @@ import {
   SubscriptionCreate,
 } from '@/types/subscription.types';
 
-const BASE_URL = '/subscriptions';
+const BASE_URL = '/subscriptions/';
 
 /**
  * Get current subscription status
@@ -41,5 +41,5 @@ export async function subscribe(data: SubscriptionCreate): Promise<Subscription>
  * Cancel subscription
  */
 export async function cancelSubscription(subscriptionId: number): Promise<void> {
-  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}/${subscriptionId}`);
+  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}${subscriptionId}/`);
 }

@@ -14,7 +14,7 @@ import { setAccessToken, setRefreshToken, clearTokens } from '@/lib/token';
  */
 export async function login(data: LoginRequest): Promise<TokenResponse> {
   const response = await apiClient.post<ApiResponse<TokenResponse>>(
-    '/auth/login',
+    '/auth/login/',
     data
   );
 
@@ -32,7 +32,7 @@ export async function login(data: LoginRequest): Promise<TokenResponse> {
  */
 export async function signup(data: SignUpRequest): Promise<number> {
   const response = await apiClient.post<ApiResponse<number>>(
-    '/auth/signup',
+    '/auth/signup/',
     data
   );
 
@@ -46,7 +46,7 @@ export async function refreshToken(
   refreshToken: string
 ): Promise<TokenResponse> {
   const response = await apiClient.post<ApiResponse<TokenResponse>>(
-    '/auth/refresh',
+    '/auth/refresh/',
     { refreshToken } as TokenRefreshRequest
   );
 
@@ -64,7 +64,7 @@ export async function refreshToken(
  * 내 프로필 조회 API
  */
 export async function getMyProfile(): Promise<UserResponse> {
-  const response = await apiClient.get<ApiResponse<UserResponse>>('/users/me');
+  const response = await apiClient.get<ApiResponse<UserResponse>>('/users/me/');
   return response.data.data;
 }
 

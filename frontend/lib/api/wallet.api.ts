@@ -11,7 +11,7 @@ import {
  * Get wallet balance
  */
 export async function getWalletBalance(): Promise<Wallet> {
-  const response = await apiClient.get<ApiResponse<Wallet>>('/users/me/wallet');
+  const response = await apiClient.get<ApiResponse<Wallet>>('/users/me/wallet/');
   return response.data.data;
 }
 
@@ -20,7 +20,7 @@ export async function getWalletBalance(): Promise<Wallet> {
  */
 export async function chargeWallet(data: WalletCharge): Promise<WalletBalanceResponse> {
   const response = await apiClient.post<ApiResponse<WalletBalanceResponse>>(
-    '/wallet/charge',
+    '/wallet/charge/',
     data
   );
   return response.data.data;
@@ -31,7 +31,7 @@ export async function chargeWallet(data: WalletCharge): Promise<WalletBalanceRes
  */
 export async function getWalletTransactions(): Promise<CoinTransaction[]> {
   const response = await apiClient.get<ApiResponse<CoinTransaction[]>>(
-    '/users/me/wallet/transactions'
+    '/users/me/wallet/transactions/'
   );
   return response.data.data;
 }

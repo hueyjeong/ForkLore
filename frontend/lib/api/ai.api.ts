@@ -21,7 +21,7 @@ export async function getWikiSuggestions(
   data: WikiSuggestionRequest
 ): Promise<WikiSuggestionResponse> {
   const response = await apiClient.post<ApiResponse<WikiSuggestionResponse>>(
-    `${BASE_URL}/${branchId}/ai/wiki-suggestions`,
+    `${BASE_URL}/${branchId}/ai/wiki-suggestions/`,
     data
   );
   return response.data.data;
@@ -35,7 +35,7 @@ export async function checkConsistency(
   data: ConsistencyCheckRequest
 ): Promise<ConsistencyCheckResponse> {
   const response = await apiClient.post<ApiResponse<ConsistencyCheckResponse>>(
-    `${BASE_URL}/${branchId}/ai/consistency-check`,
+    `${BASE_URL}/${branchId}/ai/consistency-check/`,
     data
   );
   return response.data.data;
@@ -49,7 +49,7 @@ export async function askBranch(
   data: AskRequest
 ): Promise<AskResponse> {
   const response = await apiClient.post<ApiResponse<AskResponse>>(
-    `${BASE_URL}/${branchId}/ai/ask`,
+    `${BASE_URL}/${branchId}/ai/ask/`,
     data
   );
   return response.data.data;
@@ -63,7 +63,7 @@ export async function createChunks(
   data: ChunkTaskRequest
 ): Promise<ChunkTaskResponse> {
   const response = await apiClient.post<ApiResponse<ChunkTaskResponse>>(
-    `${BASE_URL}/${branchId}/ai/create-chunks`,
+    `${BASE_URL}/${branchId}/ai/create-chunks/`,
     data
   );
   return response.data.data;

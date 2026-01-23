@@ -6,13 +6,10 @@ export interface ApiResponse<T> {
 }
 
 export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
   results: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
 }
 
 export interface PageParams {

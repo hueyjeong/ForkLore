@@ -101,7 +101,12 @@ export function InfiniteNovelList({
       return getNovels(params);
     },
     initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.hasNext ? lastPage.page + 1 : undefined,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.next) return undefined;
+      const url = new URL(lastPage.next);
+      const page = url.searchParams.get('page');
+      return page ? parseInt(page, 10) : undefined;
+    },
   });
 
   const novels = useMemo(() => {

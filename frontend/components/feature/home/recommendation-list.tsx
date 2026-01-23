@@ -17,11 +17,14 @@ interface RecommendationListProps {
 export function RecommendationList({ genre }: RecommendationListProps) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['novels', 'recommendation', genre],
-    queryFn: () => getNovels({ 
-      limit: 6, 
-      sort: 'created_at',
-      ...(genre && { genre })
-    }),
+    queryFn: () => {
+      const params = { 
+        limit: 6, 
+        sort: 'created_at',
+        ...(genre && { genre: genre as any })
+      };
+      return getNovels(params);
+    },
   });
 
   const novels = data?.results || [];

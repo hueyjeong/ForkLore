@@ -20,7 +20,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         
         {/* Genre Filter (Sticky) */}
         <section className="container mx-auto max-w-6xl">
-          <GenreFilter />
+          <Suspense fallback={<div className="h-[60px]" />}>
+            <GenreFilter />
+          </Suspense>
         </section>
         
         {/* Rankings */}

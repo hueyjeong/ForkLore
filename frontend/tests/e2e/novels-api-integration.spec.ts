@@ -14,7 +14,7 @@ test.describe('Novels API Integration', () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  test.skip('should display novels on list page', async ({ page }) => {
+  test('should display novels on list page', async ({ page }) => {
     await page.goto('http://localhost:3000/novels');
 
     const title = page.locator('h1:has-text("작품")');

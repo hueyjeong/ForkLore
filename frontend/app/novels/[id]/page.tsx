@@ -11,8 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getNovel } from '@/lib/api/novels.api';
 
-export default async function NovelDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function NovelDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   let novel;
   try {

@@ -82,9 +82,9 @@ export function RecommendationList({ genre }: RecommendationListProps) {
               <div className="flex h-full">
                 {/* Image */}
                 <div className="relative w-32 shrink-0 bg-muted">
-                  {novel.cover_image_url ? (
+                  {(novel.cover_image_url ?? (novel as any).coverImageUrl) ? (
                     <Image
-                      src={novel.cover_image_url}
+                      src={novel.cover_image_url ?? (novel as any).coverImageUrl}
                       alt={novel.title}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

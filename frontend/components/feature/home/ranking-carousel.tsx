@@ -69,9 +69,9 @@ export function RankingCarousel() {
               {/* Cover */}
               <div className="overflow-hidden rounded-xl shadow-md transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
                 <div className="relative aspect-[2/3] w-full bg-muted">
-                  {novel.cover_image_url ? (
+                  {(novel.cover_image_url ?? (novel as any).coverImageUrl) ? (
                     <Image
-                      src={novel.cover_image_url}
+                      src={novel.cover_image_url ?? (novel as any).coverImageUrl}
                       alt={novel.title}
                       fill
                       className="object-cover"

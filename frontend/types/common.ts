@@ -19,6 +19,8 @@ export interface PageParams {
   order?: 'asc' | 'desc';
 }
 
+export type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
+
 export interface ErrorResponse {
   success: false;
   message: string;

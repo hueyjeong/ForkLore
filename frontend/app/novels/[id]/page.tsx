@@ -10,14 +10,27 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getNovel } from '@/lib/api/novels.api';
+import { getBranches } from '@/lib/api/branches.api';
+import { getChapters } from '@/lib/api/chapters.api';
 
 export default async function NovelDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const { id } = resolvedParams;
+  const novelId = Number(id);
 
   let novel;
+  let mainBranch;
+  let chaptersData;
+
   try {
-    novel = await getNovel(Number(id));
+    novel = await getNovel(novelId);
+    
+    const branches = await getBranches(novelId);
+    mainBranch = branches.results.find(b => b.isMain) || branches.results[0];
+    
+    if (mainBranch) {
+      chaptersData = await getChapters(mainBranch.id, { limit: 100 });
+    }
   } catch (error: unknown) {
     const maybeError = error as { response?: { status?: number }; status?: number };
     const status = maybeError?.response?.status ?? maybeError?.status;
@@ -49,17 +62,16 @@ export default async function NovelDetailPage({ params }: { params: Promise<{ id
 
   const tags = [novel.genre];
 
-  const createdAt = new Date(novel.createdAt);
-  const CHAPTERS = Array.from({ length: novel.totalChapterCount || 0 }).map((_, i) => {
-    const chapterDate = new Date(createdAt.getTime() + i * 24 * 60 * 60 * 1000);
+  const CHAPTERS = chaptersData?.results.map((chapter) => {
     return {
-      id: i + 1,
-      title: `Chapter ${i + 1}`,
-      date: chapterDate.toISOString().split('T')[0],
-      coins: i < 3 ? 0 : 10,
+      id: chapter.id,
+      title: chapter.title,
+      date: new Date(chapter.publishedAt || chapter.createdAt).toISOString().split('T')[0],
+      coins: chapter.price || 0,
       isRead: false,
     };
-  });
+  }) || [];
+
   const REVIEWS: Array<{ id: number; user: string; content: string; rating: number; date: string }> = [];
 
   return (

@@ -105,7 +105,7 @@ export function RecommendationList({ genre }: RecommendationListProps) {
                       </h3>
                       <div className="flex items-center text-xs font-medium text-yellow-500">
                         <ThumbsUp className="mr-1 h-3 w-3 fill-current" />
-                        {novel.total_like_count}
+                        {(novel.total_like_count ?? (novel as any).totalLikeCount ?? 0).toLocaleString()}
                       </div>
                     </div>
                     <p className="line-clamp-2 text-xs text-muted-foreground">

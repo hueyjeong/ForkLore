@@ -41,9 +41,9 @@ export default async function NovelDetailPage({ params }: { params: { id: string
   };
 
   const stats = {
-    views: formatViews(novel.total_view_count),
-    likes: formatLikes(novel.total_like_count),
-    rating: novel.average_rating ?? 0,
+    views: formatViews(novel.total_view_count ?? (novel as any).totalViewCount ?? 0),
+    likes: formatLikes(novel.total_like_count ?? (novel as any).totalLikeCount ?? 0),
+    rating: novel.average_rating ?? (novel as any).averageRating ?? 0,
   };
 
   const tags = [novel.genre];

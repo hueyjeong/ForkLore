@@ -51,11 +51,11 @@ export function NovelDetailHero({ novel }: NovelDetailHeroProps) {
           {/* Stats */}
           <div className="mb-6 flex space-x-6 text-sm md:text-base">
             <div className="flex flex-col items-center md:items-start">
-              <span className="font-bold text-foreground">{novel.total_view_count.toLocaleString()}</span>
+              <span className="font-bold text-foreground">{(novel.total_view_count ?? (novel as any).totalViewCount ?? 0).toLocaleString()}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">Reads</span>
             </div>
             <div className="flex flex-col items-center md:items-start">
-              <span className="font-bold text-foreground">{novel.total_like_count.toLocaleString()}</span>
+              <span className="font-bold text-foreground">{(novel.total_like_count ?? (novel as any).totalLikeCount ?? 0).toLocaleString()}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">Likes</span>
             </div>
             {/* Rating is not in the Novel interface, omitting or assuming it might be added later or calculated */}

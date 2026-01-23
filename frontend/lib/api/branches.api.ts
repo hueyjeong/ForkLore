@@ -17,7 +17,7 @@ const BASE_URL = '/branches';
  */
 export async function getBranches(
   novelId: number,
-  params?: Omit<BranchListParams, 'novel_id'>
+  params?: Omit<BranchListParams, 'novelId'>
 ): Promise<PaginatedResponse<Branch>> {
   const response = await apiClient.get<ApiResponse<PaginatedResponse<Branch>>>(
     `/novels/${novelId}/branches`,

@@ -42,7 +42,7 @@ const createMockResponse = (results: Purchase[]) => ({
       results,
       total: results.length,
       page: 1,
-      limit: 50,
+      size: 50,
       hasNext: false,
     },
   },
@@ -87,7 +87,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
       expect(title).toBeInTheDocument();
     });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/purchases', { params: { page: 1, limit: 50 } });
+    expect(apiClient.get).toHaveBeenCalledWith('/purchases', { params: { page: 1, size: 50 } });
     expect(apiClient.get).toHaveBeenCalledTimes(1);
 
     expect(screen.getByText('The Beginning')).toBeInTheDocument();

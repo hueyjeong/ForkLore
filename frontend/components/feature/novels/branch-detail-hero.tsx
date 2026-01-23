@@ -18,10 +18,10 @@ export function BranchDetailHero({ branch }: BranchDetailHeroProps) {
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
       
       {/* Background Image (if available) - darker and more blurred than novel hero */}
-      {branch.cover_image_url && (
+      {branch.coverImageUrl && (
         <div className="absolute inset-0 opacity-20 blur-xl">
            <Image
-            src={branch.cover_image_url}
+            src={branch.coverImageUrl}
             alt={branch.name}
             fill
             className="object-cover"
@@ -37,7 +37,7 @@ export function BranchDetailHero({ branch }: BranchDetailHeroProps) {
           {/* Cover Image (smaller than novel) */}
           <div className="relative h-40 w-28 shrink-0 overflow-hidden rounded-lg shadow-xl ring-1 ring-border/50 md:h-56 md:w-40">
             <Image
-              src={branch.cover_image_url || '/placeholder-cover.jpg'}
+              src={branch.coverImageUrl || '/placeholder-cover.jpg'}
               alt={branch.name}
               fill
               className="object-cover transition-transform hover:scale-105 duration-500"
@@ -47,15 +47,15 @@ export function BranchDetailHero({ branch }: BranchDetailHeroProps) {
           {/* Info */}
           <div className="flex flex-col items-start flex-1 min-w-0">
             <div className="flex flex-wrap gap-2 mb-3">
-              <Badge variant={branch.is_main ? "default" : "secondary"} className="uppercase tracking-wider font-bold">
-                {branch.is_main ? 'Main Branch' : branch.branch_type.replaceAll('_', ' ')}
+              <Badge variant={branch.isMain ? "default" : "secondary"} className="uppercase tracking-wider font-bold">
+                {branch.isMain ? 'Main Branch' : branch.branchType.replaceAll('_', ' ')}
               </Badge>
-              {branch.canon_status === CanonStatus.MERGED && (
+              {branch.canonStatus === CanonStatus.MERGED && (
                  <Badge variant="outline" className="border-emerald-500/50 text-emerald-500 bg-emerald-500/10">
                    Canon Merged
                  </Badge>
               )}
-               {branch.canon_status === CanonStatus.CANDIDATE && (
+               {branch.canonStatus === CanonStatus.CANDIDATE && (
                  <Badge variant="outline" className="border-amber-500/50 text-amber-500 bg-amber-500/10">
                    Canon Candidate
                  </Badge>
@@ -75,20 +75,20 @@ export function BranchDetailHero({ branch }: BranchDetailHeroProps) {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground mb-6">
               <div className="flex items-center gap-1.5" title="Total Views">
                 <Eye className="h-4 w-4" />
-                <span className="font-mono font-medium text-foreground">{branch.view_count.toLocaleString()}</span>
+                <span className="font-mono font-medium text-foreground">{branch.viewCount.toLocaleString()}</span>
               </div>
               <div className="flex items-center gap-1.5" title="Total Votes">
                 <Heart className="h-4 w-4" />
-                <span className="font-mono font-medium text-foreground">{branch.vote_count.toLocaleString()}</span>
+                <span className="font-mono font-medium text-foreground">{branch.voteCount.toLocaleString()}</span>
               </div>
               <div className="flex items-center gap-1.5" title="Total Chapters">
                 <FileText className="h-4 w-4" />
-                <span className="font-mono font-medium text-foreground">{branch.chapter_count}</span>
+                <span className="font-mono font-medium text-foreground">{branch.chapterCount}</span>
               </div>
-              {branch.fork_point_chapter && (
+              {branch.forkPointChapter && (
                  <div className="flex items-center gap-1.5 text-xs bg-muted px-2 py-0.5 rounded-full" title="Fork Point">
                   <GitBranch className="h-3 w-3" />
-                  <span>Forked at Ch. {branch.fork_point_chapter}</span>
+                  <span>Forked at Ch. {branch.forkPointChapter}</span>
                 </div>
               )}
             </div>

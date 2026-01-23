@@ -74,12 +74,12 @@ export function ForkModal({ parentBranchId, trigger }: ForkModalProps) {
   const { mutate: createFork, isPending } = useMutation({
     mutationFn: (values: z.infer<typeof forkSchema>) => {
       if (!parentBranch) throw new Error("Parent branch not loaded")
-      return createBranch(parentBranch.novel_id, {
+      return createBranch(parentBranch.novelId, {
         ...values,
-        fork_point_chapter: parentBranch.chapter_count, // Assuming fork from end, or 0? 
+        forkPointChapter: parentBranch.chapterCount, // Assuming fork from end, or 0? 
         // Actually the API creates a fork. 
         // We usually fork from a specific point, but API requirements say:
-        // BranchCreateRequest: { name, description, branch_type, fork_point_chapter? }
+        // BranchCreateRequest: { name, description, branch_type, forkPointChapter? }
         // If we fork a branch, we usually link it to the parent.
         // The API might handle the parent linking if we pass it? 
         // Wait, CreateBranch request DOES NOT have parent_branch_id field?
@@ -108,7 +108,7 @@ export function ForkModal({ parentBranchId, trigger }: ForkModalProps) {
   //   description?: string;
   //   cover_image_url?: string;
   //   branch_type?: BranchType;
-  //   fork_point_chapter?: number | null;
+  //   forkPointChapter?: number | null;
   // }
   // Where is parent_branch_id passed?
   // Maybe it's handled by the URL? 
@@ -123,11 +123,11 @@ export function ForkModal({ parentBranchId, trigger }: ForkModalProps) {
   // BUT, `Branch` type HAS `parent_branch_id`.
   // If `BranchCreateRequest` creates a branch, how do we set `parent_branch_id`?
   // Maybe I should look at `createBranch` implementation in backend if possible? No, I am frontend dev.
-  // I will assume `fork_point_chapter` implies the fork point, but without `parent_branch_id` it's ambiguous if there are multiple branches.
+  // I will assume `forkPointChapter` implies the fork point, but without `parent_branch_id` it's ambiguous if there are multiple branches.
   // MAYBE `createBranch` isn't the right endpoint for forking?
   // Or maybe `BranchCreateRequest` is incomplete in the types file I read vs what backend expects.
   // I will proceed with what I have. If the type is strictly checked, I can't pass `parent_branch_id`.
-  // I will just pass what is allowed. Maybe `fork_point_chapter` is enough if the backend logic handles it (unlikely without parent ID).
+  // I will just pass what is allowed. Maybe `forkPointChapter` is enough if the backend logic handles it (unlikely without parent ID).
   // Actually, I'll stick to the types.
 
   return (

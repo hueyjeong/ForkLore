@@ -19,8 +19,8 @@ class TestNovelViewSetTags(TestCase):
         novel_endpoints_found = False
 
         for path, methods in schema["paths"].items():
-            # /api/v1/novels/novels/ 경로이면서 브랜치가 아닌 것만
-            if "/novels/novels/" in path and "/branches" not in path:
+            # /api/v1/novels/ 경로이면서 브랜치가 아닌 것만
+            if "/novels/" in path and "/branches" not in path:
                 novel_endpoints_found = True
                 for method, operation in methods.items():
                     if method != "parameters":
@@ -48,7 +48,7 @@ class TestBranchViewSetTags(TestCase):
 
         for path, methods in schema["paths"].items():
             # nested branch 경로 찾기
-            if "/novels/novels/" in path and "/branches/" in path:
+            if "/novels/" in path and "/branches/" in path:
                 # link-requests는 제외 (별도 ViewSet)
                 if "/link-requests" in path:
                     continue
@@ -83,7 +83,7 @@ class TestBranchDetailViewSetTags(TestCase):
 
         for path, methods in schema["paths"].items():
             # 독립적인 branch 상세 경로 찾기
-            if "/novels/branches/{id}" in path:
+            if "/branches/{id}" in path:
                 branch_detail_found = True
                 for method, operation in methods.items():
                     if method != "parameters":

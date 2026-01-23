@@ -37,7 +37,7 @@ export default async function BranchDetailPage({ params }: BranchDetailPageProps
       <div className="container mx-auto mt-8 max-w-4xl px-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold font-serif tracking-tight">Chapters</h2>
-          <span className="text-sm text-muted-foreground">{branch.chapter_count} chapters</span>
+          <span className="text-sm text-muted-foreground">{branch.chapterCount} chapters</span>
         </div>
         
         <div className="rounded-xl border bg-card/50 shadow-sm backdrop-blur-sm">

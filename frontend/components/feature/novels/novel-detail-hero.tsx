@@ -15,7 +15,7 @@ export function NovelDetailHero({ novel }: NovelDetailHeroProps) {
       {/* Background Image with Blur */}
       <div className="absolute inset-0">
         <Image
-          src={novel.cover_image_url || '/placeholder-cover.jpg'}
+          src={novel.coverImageUrl || '/placeholder-cover.jpg'}
           alt={novel.title}
           fill
           className="object-cover opacity-60 blur-sm"
@@ -29,7 +29,7 @@ export function NovelDetailHero({ novel }: NovelDetailHeroProps) {
         {/* Cover Image */}
         <div className="relative mb-4 h-48 w-32 shrink-0 overflow-hidden rounded-lg shadow-2xl md:mb-0 md:mr-8 md:h-72 md:w-48">
           <Image
-            src={novel.cover_image_url || '/placeholder-cover.jpg'}
+            src={novel.coverImageUrl || '/placeholder-cover.jpg'}
             alt={novel.title}
             fill
             className="object-cover"
@@ -51,20 +51,15 @@ export function NovelDetailHero({ novel }: NovelDetailHeroProps) {
           {/* Stats */}
           <div className="mb-6 flex space-x-6 text-sm md:text-base">
             <div className="flex flex-col items-center md:items-start">
-              <span className="font-bold text-foreground">{(novel.total_view_count ?? (novel as any).totalViewCount ?? 0).toLocaleString()}</span>
+              <span className="font-bold text-foreground">{(novel.totalViewCount ?? 0).toLocaleString()}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">Reads</span>
             </div>
             <div className="flex flex-col items-center md:items-start">
-              <span className="font-bold text-foreground">{(novel.total_like_count ?? (novel as any).totalLikeCount ?? 0).toLocaleString()}</span>
+              <span className="font-bold text-foreground">{(novel.totalLikeCount ?? 0).toLocaleString()}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">Likes</span>
             </div>
-            {/* Rating is not in the Novel interface, omitting or assuming it might be added later or calculated */}
-            {/* <div className="flex flex-col items-center md:items-start">
-                <span className="font-bold text-foreground">★ {novel.rating}</span>
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Rating</span>
-              </div> */}
              <div className="flex flex-col items-center md:items-start">
-              <span className="font-bold text-foreground">{novel.total_chapter_count}</span>
+              <span className="font-bold text-foreground">{novel.totalChapterCount}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">Chapters</span>
             </div>
           </div>

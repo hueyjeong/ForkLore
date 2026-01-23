@@ -58,40 +58,40 @@ export interface Novel {
   id: number;
   title: string;
   description: string;
-  cover_image_url: string;
+  coverImageUrl: string;
   genre: Genre;
-  age_rating: AgeRating;
+  ageRating: AgeRating;
   status: NovelStatus;
-  is_exclusive: boolean;
-  is_premium: boolean;
-  allow_branching: boolean;
-  total_view_count: number;
-  total_like_count: number;
-  // TODO: Backend must always return average_rating (never omit).
+  isExclusive: boolean;
+  isPremium: boolean;
+  allowBranching: boolean;
+  totalViewCount: number;
+  totalLikeCount: number;
+  // TODO: Backend must always return averageRating (never omit).
   // Keep as required field; frontend uses ?? 0 as fallback for null.
-  average_rating: number | null;
-  total_chapter_count: number;
-  branch_count: number;
-  linked_branch_count: number;
+  averageRating: number | null;
+  totalChapterCount: number;
+  branchCount: number;
+  linkedBranchCount: number;
   author: Author;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface NovelSummary {
   id: number;
   title: string;
-  cover_image_url: string;
+  coverImageUrl: string;
   genre: Genre;
-  age_rating: AgeRating;
+  ageRating: AgeRating;
   status: NovelStatus;
-  is_exclusive: boolean;
-  is_premium: boolean;
-  total_view_count: number;
-  total_like_count: number;
-  branch_count: number;
+  isExclusive: boolean;
+  isPremium: boolean;
+  totalViewCount: number;
+  totalLikeCount: number;
+  branchCount: number;
   author: Author;
-  created_at: string;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -101,29 +101,29 @@ export interface NovelSummary {
 export interface NovelCreateRequest {
   title: string;
   description?: string;
-  cover_image_url?: string;
+  coverImageUrl?: string;
   genre: Genre;
-  age_rating?: AgeRating;
+  ageRating?: AgeRating;
   status?: NovelStatus;
-  allow_branching?: boolean;
+  allowBranching?: boolean;
 }
 
 export interface NovelUpdateRequest {
   title?: string;
   description?: string;
-  cover_image_url?: string;
+  coverImageUrl?: string;
   genre?: Genre;
-  age_rating?: AgeRating;
+  ageRating?: AgeRating;
   status?: NovelStatus;
-  allow_branching?: boolean;
+  allowBranching?: boolean;
 }
 
 export interface NovelListParams extends PageParams {
   genre?: Genre;
-  age_rating?: AgeRating;
+  ageRating?: AgeRating;
   status?: NovelStatus;
-  is_exclusive?: boolean;
-  is_premium?: boolean;
-  author_id?: number;
+  isExclusive?: boolean;
+  isPremium?: boolean;
+  authorId?: number;
   search?: string;
 }

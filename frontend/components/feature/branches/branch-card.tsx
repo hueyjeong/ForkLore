@@ -29,7 +29,7 @@ interface BranchCardProps {
 export const BranchCard = memo(function BranchCard({ branch }: BranchCardProps) {
   // TODO: The API response should ideally include has_voted field.
   // For now, we'll maintain local state, defaulting to false.
-  const [voteCount, setVoteCount] = useState(branch.vote_count)
+  const [voteCount, setVoteCount] = useState(branch.voteCount)
   const [isVoted, setIsVoted] = useState(false)
 
   const { mutate: toggleVote, isPending } = useMutation({
@@ -69,8 +69,8 @@ export const BranchCard = memo(function BranchCard({ branch }: BranchCardProps) 
               by {branch.author.nickname}
             </CardDescription>
           </div>
-          <Badge variant={typeColors[branch.branch_type]}>
-            {branch.branch_type.replace("_", " ")}
+          <Badge variant={typeColors[branch.branchType]}>
+            {branch.branchType.replace("_", " ")}
           </Badge>
         </div>
       </CardHeader>
@@ -83,7 +83,7 @@ export const BranchCard = memo(function BranchCard({ branch }: BranchCardProps) 
         <div className="flex gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <BookOpen className="h-4 w-4" />
-            <span>{branch.chapter_count}</span>
+            <span>{branch.chapterCount}</span>
           </div>
           <div className="flex items-center gap-1">
             <Heart className={cn("h-4 w-4", isVoted && "fill-red-500 text-red-500")} />

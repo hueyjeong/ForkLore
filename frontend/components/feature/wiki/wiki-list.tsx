@@ -66,9 +66,9 @@ function WikiCard({ wiki, index }: { wiki: WikiEntry; index: number }) {
       <Link href={`/wikis/${wiki.id}`}>
         <Card className="group h-full overflow-hidden border-border/50 bg-card/50 transition-all hover:border-primary/50 hover:bg-card hover:shadow-lg">
           <div className="aspect-video w-full overflow-hidden bg-muted/30 relative">
-            {wiki.image_url ? (
+            {wiki.imageUrl ? (
               <img
-                src={wiki.image_url}
+                src={wiki.imageUrl}
                 alt={wiki.name}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
@@ -86,9 +86,9 @@ function WikiCard({ wiki, index }: { wiki: WikiEntry; index: number }) {
           </div>
           
           <CardContent className="p-4 pt-3">
-             {wiki.hidden_note && (
+             {wiki.hiddenNote && (
                 <p className="text-xs text-muted-foreground italic mb-2 line-clamp-2">
-                    {wiki.hidden_note}
+                    {wiki.hiddenNote}
                 </p>
              )}
             <div className="flex flex-wrap gap-1.5">
@@ -115,7 +115,7 @@ function WikiCard({ wiki, index }: { wiki: WikiEntry; index: number }) {
             </div>
           </CardContent>
           <CardFooter className="p-4 pt-0 text-xs text-muted-foreground flex justify-between items-center">
-             <span>First appearance: Ch. {wiki.first_appearance ?? '-'}</span>
+             <span>First appearance: Ch. {wiki.firstAppearance ?? '-'}</span>
           </CardFooter>
         </Card>
       </Link>

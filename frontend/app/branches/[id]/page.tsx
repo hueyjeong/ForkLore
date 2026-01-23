@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: BranchDetailPageProps): Promi
       title: `${branch.name} - ForkLore`,
       description: branch.description || `Read ${branch.name} on ForkLore`,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       title: 'Branch Not Found - ForkLore',
     };

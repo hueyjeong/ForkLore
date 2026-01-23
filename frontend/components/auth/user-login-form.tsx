@@ -46,8 +46,15 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
       await login(data)
       toast.success("로그인에 성공했습니다.")
       router.push("/")
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "로그인에 실패했습니다."
+    } catch (error: any) {
+      let errorMessage = "로그인에 실패했습니다."
+      
+      if (error.response?.status === 401) {
+        errorMessage = "이메일 또는 비밀번호가 일치하지 않습니다."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)

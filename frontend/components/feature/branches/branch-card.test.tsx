@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@/tests/utils/test-utils'
 import { BranchCard } from './branch-card'
-import { Branch, BranchType } from '@/types/branches.types'
+import { Branch, BranchType, BranchVisibility, CanonStatus } from '@/types/branches.types'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
 
@@ -26,8 +26,8 @@ const mockBranch: Branch = {
   coverImageUrl: 'https://example.com/cover.jpg',
   isMain: false,
   branchType: BranchType.MAIN,
-  visibility: 'PUBLIC' as any,
-  canonStatus: 'NON_CANON' as any,
+  visibility: BranchVisibility.PUBLIC,
+  canonStatus: CanonStatus.NON_CANON,
   parentBranchId: null,
   forkPointChapter: null,
   voteCount: 10,

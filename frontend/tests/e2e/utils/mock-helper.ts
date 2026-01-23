@@ -111,7 +111,7 @@ export class MockHelper {
    */
   async mockNovel(id: number | string, overrides: Partial<MockNovel> = {}) {
     const numericId = Number(id);
-    await this.mockRoute(new RegExp(`/novels/${numericId}$`), { 
+    await this.mockRoute(new RegExp(`/novels/${numericId}/?$`), { 
       ...defaultNovel, 
       id: numericId, 
       ...overrides 
@@ -134,7 +134,7 @@ export class MockHelper {
     
     // We match the base /novels endpoint but careful not to match /novels/:id
     // This regex looks for /novels optionally followed by query params, but not followed by /something
-    await this.mockRoute(/\/novels(\?.*)?$/, response);
+    await this.mockRoute(/\/novels\/?(\?.*)?$/, response);
   }
 
   /**
@@ -142,7 +142,7 @@ export class MockHelper {
    */
   async mockChapter(id: number | string, overrides: Partial<MockChapter> = {}) {
     const numericId = Number(id);
-    await this.mockRoute(new RegExp(`/chapters/${numericId}$`), { 
+    await this.mockRoute(new RegExp(`/chapters/${numericId}/?$`), { 
       ...defaultChapter, 
       id: numericId, 
       ...overrides 
@@ -162,7 +162,7 @@ export class MockHelper {
       hasNext: false,
       hasPrev: false,
     };
-    await this.mockRoute(new RegExp(`/branches/${branchId}/chapters`), response);
+    await this.mockRoute(new RegExp(`/branches/${branchId}/chapters/?$`), response);
   }
 
   /**
@@ -178,7 +178,7 @@ export class MockHelper {
       hasNext: false,
       hasPrev: false,
     };
-    await this.mockRoute(new RegExp(`/branches/${branchId}/wikis`), response);
+    await this.mockRoute(new RegExp(`/branches/${branchId}/wikis/?$`), response);
   }
 
   /**

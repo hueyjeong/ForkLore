@@ -4,15 +4,24 @@ import { NovelpiaCard } from './novelpia-card';
 import { Novel, Genre, AgeRating, NovelStatus } from '@/types/novels.types';
 
 // Mock next/image
+import type { ImageProps } from 'next/image';
+import type { LinkProps } from 'next/link';
+
 vi.mock('next/image', () => ({
-  default: ({ src, alt, fill, className }: any) => (
-    <img src={src} alt={alt} className={className} data-fill={fill?.toString()} />
+  default: ({ src, alt, fill, className }: Partial<ImageProps>) => (
+    <img src={src as string} alt={alt} className={className} data-fill={fill} />
   ),
+}));
+
+vi.mock('next/link', () => ({
+  default: ({ children, href }: Partial<LinkProps> & { children: React.ReactNode }) => <a href={href as string}>{children}</a>,
 }));
 
 // Mock next/link
 vi.mock('next/link', () => ({
-  default: ({ children, href }: any) => <a href={href}>{children}</a>,
+  default: ({ children, href }: { children: React.ReactNode; href: string }) => (
+    <a href={href}>{children}</a>
+  ),
 }));
 
 describe('NovelpiaCard', () => {

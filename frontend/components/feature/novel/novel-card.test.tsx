@@ -4,8 +4,10 @@ import { NovelCard } from './novel-card';
 
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, whileHover, ...props }: any) => (
-      <div className={className} {...props}>{children}</div>
+    div: ({ children, className, whileHover, ...props }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <div className={className as string} {...props}>
+        {children}
+      </div>
     ),
   },
 }));
@@ -57,13 +59,13 @@ describe('NovelCard', () => {
   });
 
   it('should be wrapped with React.memo (check displayName)', () => {
-    const memoizedComponent = NovelCard as React.MemoExoticComponent<any>;
+    const memoizedComponent = NovelCard as React.MemoExoticComponent<typeof NovelCard>;
     expect(memoizedComponent.$$typeof).toBe(Symbol.for('react.memo'));
   });
 
   it('should re-render when title prop changes', () => {
     const renderSpy = vi.fn();
-    const NovelCardWithSpy = vi.fn((props: any) => {
+    const NovelCardWithSpy = vi.fn((props: Partial<Novel>) => {
       renderSpy(props);
       return <NovelCard {...props} />;
     });
@@ -78,7 +80,7 @@ describe('NovelCard', () => {
 
   it('should re-render when rating prop changes', () => {
     const renderSpy = vi.fn();
-    const NovelCardWithSpy = vi.fn((props: any) => {
+    const NovelCardWithSpy = vi.fn((props: Partial<Novel>) => {
       renderSpy(props);
       return <NovelCard {...props} />;
     });

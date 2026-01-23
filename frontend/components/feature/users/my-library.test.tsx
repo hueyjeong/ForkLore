@@ -72,7 +72,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
 describe('MyLibrary - useQuery Refactoring', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiClient.get as any).mockResolvedValue(createMockResponse(mockPurchases));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse(mockPurchases));
   });
 
   it('should fetch purchases using useQuery', async () => {
@@ -96,7 +96,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
   });
 
   it('should show Loader2 spinner while loading', async () => {
-    (apiClient.get as any).mockImplementation(
+    vi.mocked(apiClient.get).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(createMockResponse(mockPurchases)), 100))
     );
 
@@ -117,7 +117,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
   });
 
   it('should show empty state when no purchases', async () => {
-    (apiClient.get as any).mockResolvedValue(createMockResponse([]));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse([]));
 
     render(
       <TestWrapper>
@@ -137,7 +137,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
   it('should show toast error on API failure', async () => {
     const toastSpy = vi.spyOn(toast, 'error');
 
-    (apiClient.get as any).mockRejectedValue(new Error('API Error'));
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('API Error'));
 
     render(
       <TestWrapper>

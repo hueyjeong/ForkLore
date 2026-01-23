@@ -31,7 +31,7 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
 describe('RankingTabs', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (getNovels as any).mockResolvedValue({ results: [] });
+    vi.mocked(getNovels).mockResolvedValue({ results: [] });
   });
 
   it('renders three tabs: 일간, 주간, 월간', () => {

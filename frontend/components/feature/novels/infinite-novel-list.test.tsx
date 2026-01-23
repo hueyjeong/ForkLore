@@ -91,7 +91,7 @@ const createMockResponse = (page = 1, hasNext = true) => ({
 describe('InfiniteNovelList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiClient.get as any).mockResolvedValue(createMockResponse(1, true));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse(1, true));
   });
 
   it('renders initial set of novels', async () => {
@@ -111,7 +111,7 @@ describe('InfiniteNovelList', () => {
     const initialLinks = screen.getAllByRole('link');
 
     const loadMoreButton = screen.getByTestId('load-more');
-    (apiClient.get as any).mockResolvedValue(createMockResponse(2, false));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse(2, false));
     fireEvent.click(loadMoreButton);
 
     await waitFor(() => {

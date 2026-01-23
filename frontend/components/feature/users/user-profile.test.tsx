@@ -65,8 +65,8 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
 describe('UserProfile - useQueries Refactoring', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (getMyProfile as any).mockResolvedValue(mockProfile);
-    (getWalletBalance as any).mockResolvedValue(mockWallet);
+    vi.mocked(getMyProfile).mockResolvedValue(mockProfile);
+    vi.mocked(getWalletBalance).mockResolvedValue(mockWallet);
   });
 
   it('should fetch profile and wallet data in parallel using useQueries', async () => {
@@ -93,10 +93,10 @@ describe('UserProfile - useQueries Refactoring', () => {
 
   it('should show Loader2 spinner while loading', async () => {
     // Make the API calls slow
-    (getMyProfile as any).mockImplementation(
+    vi.mocked(getMyProfile).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(mockProfile), 100))
     );
-    (getWalletBalance as any).mockImplementation(
+    vi.mocked(getWalletBalance).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(mockWallet), 100))
     );
 
@@ -122,7 +122,7 @@ describe('UserProfile - useQueries Refactoring', () => {
   it('should show toast error on API failure', async () => {
     const toastSpy = vi.spyOn(toast, 'error');
 
-    (getMyProfile as any).mockRejectedValue(new Error('API Error'));
+    vi.mocked(getMyProfile).mockRejectedValue(new Error('API Error'));
 
     render(
       <TestWrapper>
@@ -141,7 +141,7 @@ describe('UserProfile - useQueries Refactoring', () => {
       recentTransactions: [],
     };
 
-    (getWalletBalance as any).mockResolvedValue(walletWithBalance);
+    vi.mocked(getWalletBalance).mockResolvedValue(walletWithBalance);
 
     render(
       <TestWrapper>
@@ -163,7 +163,7 @@ describe('UserProfile - useQueries Refactoring', () => {
       role: 'AUTHOR',
     };
 
-    (getMyProfile as any).mockResolvedValue(profileWithImage);
+    vi.mocked(getMyProfile).mockResolvedValue(profileWithImage);
 
     render(
       <TestWrapper>

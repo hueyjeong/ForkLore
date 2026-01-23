@@ -59,14 +59,14 @@
 - 삭제된 테스트 파일 커밋
 
 ### Definition of Done
-- [ ] `cd frontend && pnpm dev` 실행 후 http://localhost:3000 접속
-- [ ] 비로그인 상태에서 Header에 "로그인", "회원가입" 버튼 표시 확인
-- [ ] 로그인 후 Header에 사용자 아바타 드롭다운 표시 확인
-- [ ] `/novels/1` 접속 시 500 에러 없이 페이지 로드 확인
-- [ ] 홈 페이지 Ranking Carousel의 순위 badge가 잘리지 않고 전체 표시 확인
-- [ ] (GenreFilter 수정 시) 장르 클릭 시 URL 변경 및 소설 목록 필터링 확인
-- [ ] `cd backend && poetry run pytest` → 모든 테스트 통과
-- [ ] `cd frontend && pnpm build` → 빌드 에러 없음
+- [x] `cd frontend && pnpm dev` 실행 후 http://localhost:3000 접속
+- [x] 비로그인 상태에서 Header에 "로그인", "회원가입" 버튼 표시 확인
+- [x] 로그인 후 Header에 사용자 아바타 드롭다운 표시 확인
+- [x] `/novels/1` 접속 시 500 에러 없이 페이지 로드 확인
+- [x] 홈 페이지 Ranking Carousel의 순위 badge가 잘리지 않고 전체 표시 확인
+- [x] (GenreFilter 수정 시) 장르 클릭 시 URL 변경 및 소설 목록 필터링 확인
+- [x] `cd backend && poetry run pytest` → 모든 테스트 통과
+- [x] `cd frontend && pnpm build` → 빌드 에러 없음
 
 ### Must Have
 - Header conditional rendering based on auth state
@@ -497,7 +497,7 @@ Task 4 → Task 5 (Cleanup)
   
   **Commit**: NO (4-2와 함께 커밋)
 
-- [ ] 4-2. **HomePage에서 genre 필터 적용** (Backend 지원 시)
+- [x] 4-2. **HomePage에서 genre 필터 적용** (Backend 지원 시)
 
   **What to do**:
   - `frontend/app/page.tsx` 수정:
@@ -541,7 +541,7 @@ Task 4 → Task 5 (Cleanup)
   - Files: `frontend/components/feature/home/genre-filter.tsx`, `frontend/app/page.tsx`, `frontend/components/feature/home/recommendation-list.tsx`, `frontend/components/feature/home/ranking-carousel.tsx`
   - Pre-commit: `cd frontend && pnpm build`
 
-- [ ] 4-ALT. **GenreFilter 제거 또는 비활성화** (Backend 미지원 시)
+- [x] 4-ALT. **GenreFilter 제거 또는 비활성화** (Backend 미지원 시) - NOT NEEDED (Backend supports genre filtering, 4-2 completed)
 
   **What to do**:
   - 두 가지 옵션 중 선택:
@@ -626,21 +626,21 @@ poetry run pytest  # Expected: All tests pass
 ```
 
 ### Final Checklist
-- [ ] All "Must Have" present:
-  - [ ] Header conditional rendering works
-  - [ ] Novel detail page loads without 500 error
-  - [ ] Ranking badge fully visible
-  - [ ] Backend averageRating field added (or frontend fallback)
-- [ ] All "Must NOT Have" absent:
-  - [ ] No multi-select genre filtering
-  - [ ] No auth store refactoring
-  - [ ] No carousel library change
-  - [ ] No comprehensive logging system
-- [ ] All tests pass:
-  - [ ] `cd backend && poetry run pytest` → 139/139 passing
-  - [ ] `cd frontend && pnpm build` → No TypeScript errors
-- [ ] Manual verification:
-  - [ ] Login/Logout functionality works
-  - [ ] Novel detail page loads
-  - [ ] Ranking badges visible
-  - [ ] Genre filter works (if backend supports) or disabled
+- [x] All "Must Have" present:
+  - [x] Header conditional rendering works
+  - [x] Novel detail page loads without 500 error
+  - [x] Ranking badge fully visible
+  - [x] Backend averageRating field added (or frontend fallback)
+- [x] All "Must NOT Have" absent:
+  - [x] No multi-select genre filtering
+  - [x] No auth store refactoring
+  - [x] No carousel library change
+  - [x] No comprehensive logging system
+- [x] All tests pass:
+  - [x] `cd backend && poetry run pytest` → 139/139 passing
+  - [x] `cd frontend && pnpm build` → No TypeScript errors
+- [x] Manual verification:
+  - [x] Login/Logout functionality works
+  - [x] Novel detail page loads
+  - [x] Ranking badges visible
+  - [x] Genre filter works (if backend supports) or disabled

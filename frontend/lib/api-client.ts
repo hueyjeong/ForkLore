@@ -29,8 +29,9 @@ apiClient.interceptors.response.use(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async (error: any) => {
     const originalRequest = error.config;
+    const isLoginOrSignup = originalRequest.url?.includes('/auth/login/') || originalRequest.url?.includes('/auth/signup/');
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isLoginOrSignup) {
       originalRequest._retry = true;
 
       try {

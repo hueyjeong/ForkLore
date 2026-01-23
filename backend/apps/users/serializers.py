@@ -27,7 +27,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "email": self.user.email,
             "nickname": self.user.nickname,
             "role": self.user.role,
-            "profileImageUrl": self.user.profile_image_url,
+            "profile_image_url": self.user.profile_image_url,
         }
         return data
 

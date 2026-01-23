@@ -43,7 +43,7 @@ export function MyLibrary() {
       {purchases.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
             <BookOpen className="w-12 h-12 mb-4 opacity-20" />
-            <p>You haven't purchased any chapters yet.</p>
+            <p>You haven&apos;t purchased any chapters yet.</p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

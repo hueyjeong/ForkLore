@@ -56,7 +56,7 @@ export function UserSignupForm({ className, ...props }: UserSignupFormProps) {
       toast.success("회원가입이 완료되었습니다. 로그인해주세요.")
       router.push("/login")
     } catch (error: unknown) {
-      let errorMessage = "회원가입에 실패했습니다."
+      let errorMessage = "회원가입에 실패했습니다.";
       
       if (isAxiosError<ErrorResponse>(error)) {
         if (error.response?.data?.errors) {

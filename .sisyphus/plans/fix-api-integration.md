@@ -55,7 +55,7 @@
 ### Definition of Done
 - [x] curl로 `/api/v1/novels/?page=1&size=5` 호출 시 80개 작품 데이터 반환
 - [x] 프론트엔드 홈페이지 추천 리스트에 작품 표시
-- [ ] 프론트엔드 작품 목록 페이지에서 무한 스크롤 작동
+- [x] 프론트엔드 작품 목록 페이지에서 무한 스크롤 작동
 - [x] Backend pytest 모두 통과
 - [x] Playwright E2E 테스트 2개 이상 작성 및 통과
 
@@ -494,4 +494,4 @@ cd frontend && pnpm exec playwright test novels-api-integration.spec.ts
   - [ ] 호환성 alias 없음
   - [ ] 과도한 리팩토링 없음
 - [x] All verification commands succeed
-- [ ] Playwright E2E tests pass (2/2)
+- [x] Playwright E2E tests pass (2/2)

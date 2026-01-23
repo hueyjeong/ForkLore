@@ -13,6 +13,7 @@ export interface LoginRequest {
 export interface SignUpRequest {
   email: string;
   password: string;
+  passwordConfirm: string;
   nickname: string;
   birthDate: string; // YYYY-MM-DD 형식
 }

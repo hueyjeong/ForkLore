@@ -22,29 +22,29 @@ test.describe('Fork Lifecycle', () => {
     await mockHelper.mockChapter('10', { 
       id: 10, 
       title: 'Chapter 1', 
-      chapter_number: 1 
+      chapterNumber: 1 
     });
     
     // Mock existing branches (Main branch)
     const mainBranch: MockBranch = {
       id: 100,
-      novel_id: 1,
+      novelId: 1,
       name: 'Main Story',
       description: 'The original story',
-      cover_image_url: 'https://example.com/cover.jpg',
-      is_main: true,
-      branch_type: BranchTypeEnum.enum.MAIN,
+      coverImageUrl: 'https://example.com/cover.jpg',
+      isMain: true,
+      branchType: BranchTypeEnum.enum.MAIN,
       visibility: BranchVisibilityEnum.enum.PUBLIC,
-      canon_status: CanonStatusEnum.enum.MERGED,
-      parent_branch_id: null,
-      fork_point_chapter: null,
-      vote_count: 100,
-      vote_threshold: 0,
-      view_count: 1000,
-      chapter_count: 10,
+      canonStatus: CanonStatusEnum.enum.MERGED,
+      parentBranchId: null,
+      forkPointChapter: null,
+      voteCount: 100,
+      voteThreshold: 0,
+      viewCount: 1000,
+      chapterCount: 10,
       author: { id: 100, nickname: 'AuthorOne' },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
     await mockHelper.mockBranchList('1', [mainBranch]);
   });
@@ -53,23 +53,23 @@ test.describe('Fork Lifecycle', () => {
   test.fixme('Scenario 1: Successful Forking', async ({ page }) => {
     const newBranch: MockBranch = {
       id: 101,
-      novel_id: 1,
+      novelId: 1,
       name: 'My Fork',
       description: 'A new perspective',
-      cover_image_url: 'https://example.com/cover.jpg',
-      is_main: false,
-      branch_type: BranchTypeEnum.enum.SIDE_STORY,
+      coverImageUrl: 'https://example.com/cover.jpg',
+      isMain: false,
+      branchType: BranchTypeEnum.enum.SIDE_STORY,
       visibility: BranchVisibilityEnum.enum.PUBLIC,
-      canon_status: CanonStatusEnum.enum.NON_CANON,
-      parent_branch_id: 100,
-      fork_point_chapter: 1,
-      vote_count: 0,
-      vote_threshold: 0,
-      view_count: 0,
-      chapter_count: 0,
+      canonStatus: CanonStatusEnum.enum.NON_CANON,
+      parentBranchId: 100,
+      forkPointChapter: 1,
+      voteCount: 0,
+      voteThreshold: 0,
+      viewCount: 0,
+      chapterCount: 0,
       author: { id: 1, nickname: 'TestReader' },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     // Mock successful creation

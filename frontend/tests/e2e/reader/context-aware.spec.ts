@@ -10,15 +10,15 @@ test.describe('Reader Context Awareness', () => {
   const defaultWikiEntry: MockWikiEntry = {
     id: 1,
     name: 'Test Wiki',
-    image_url: 'https://via.placeholder.com/150',
-    first_appearance: 1,
-    hidden_note: '',
-    ai_metadata: null,
+    imageUrl: 'https://via.placeholder.com/150',
+    firstAppearance: 1,
+    hiddenNote: '',
+    aiMetadata: null,
     tags: [],
     snapshots: [],
     snapshot: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 
   test.beforeEach(async ({ page }) => {
@@ -29,20 +29,20 @@ test.describe('Reader Context Awareness', () => {
     await mockHelper.mockUser();
     
     // Mock Novel (ID 1)
-    await mockHelper.mockNovel(1, { title: 'Context Novel', allow_branching: true });
+    await mockHelper.mockNovel(1, { title: 'Context Novel', allowBranching: true });
     
     // Mock Chapters
     const chapter1 = { 
         id: 10, 
-        chapter_number: 1, 
+        chapterNumber: 1, 
         title: 'Chapter 1',
-        content_html: '<p>Once upon a time in a land far away.</p>' 
+        contentHtml: '<p>Once upon a time in a land far away.</p>' 
     };
     const chapter2 = { 
         id: 11, 
-        chapter_number: 2, 
+        chapterNumber: 2, 
         title: 'Chapter 2',
-        content_html: '<p>The story continues...</p>'
+        contentHtml: '<p>The story continues...</p>'
     };
     await mockHelper.mockChapter(10, chapter1);
     await mockHelper.mockChapter(11, chapter2);
@@ -57,13 +57,13 @@ test.describe('Reader Context Awareness', () => {
          ...defaultWikiEntry, 
          id: 1, 
          name: 'Wiki A', 
-         first_appearance: 1 
+         firstAppearance: 1 
      };
      const entryB: MockWikiEntry = { 
          ...defaultWikiEntry, 
          id: 2, 
          name: 'Wiki B', 
-         first_appearance: 2 
+         firstAppearance: 2 
      };
 
      // Scenario: Reader at Chapter 1

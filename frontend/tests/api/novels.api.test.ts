@@ -18,7 +18,7 @@ describe('Novels API', () => {
 
     await getNovels({ page: 1, limit: 10 });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/novels', { params: { page: 1, limit: 10 } });
+    expect(apiClient.get).toHaveBeenCalledWith('/novels/', { params: { page: 1, limit: 10 } });
   });
 
   it('getNovel should call apiClient.get with correct url', async () => {
@@ -27,6 +27,6 @@ describe('Novels API', () => {
 
     await getNovel(1);
 
-    expect(apiClient.get).toHaveBeenCalledWith('/novels/1');
+    expect(apiClient.get).toHaveBeenCalledWith('/novels/1/');
   });
 });

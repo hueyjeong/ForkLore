@@ -19,20 +19,20 @@ const mockPurchases: Purchase[] = [
     chapter: {
       id: 1,
       title: 'The Beginning',
-      chapter_number: 1,
+      chapterNumber: 1,
     },
     cost: 100,
-    purchased_at: '2024-01-15T10:30:00Z',
+    purchasedAt: '2024-01-15T10:30:00Z',
   },
   {
     id: 2,
     chapter: {
       id: 2,
       title: 'The Journey',
-      chapter_number: 2,
+      chapterNumber: 2,
     },
     cost: 150,
-    purchased_at: '2024-01-16T14:45:00Z',
+    purchasedAt: '2024-01-16T14:45:00Z',
   },
 ];
 
@@ -87,7 +87,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
       expect(title).toBeInTheDocument();
     });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/purchases', { params: { page: 1, size: 50 } });
+    expect(apiClient.get).toHaveBeenCalledWith('/purchases/', { params: { page: 1, size: 50 } });
     expect(apiClient.get).toHaveBeenCalledTimes(1);
 
     expect(screen.getByText('The Beginning')).toBeInTheDocument();

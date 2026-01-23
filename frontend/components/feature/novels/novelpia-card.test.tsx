@@ -23,21 +23,21 @@ describe('NovelpiaCard', () => {
       id: 1,
       nickname: '테스트 작가'
     },
-    cover_image_url: '/test-cover.jpg',
-    total_view_count: 1200000, // 1.2M
-    total_like_count: 53200, // 53.2K
-    total_chapter_count: 224,
+    coverImageUrl: '/test-cover.jpg',
+    totalViewCount: 1200000, // 1.2M
+    totalLikeCount: 53200, // 53.2K
+    totalChapterCount: 224,
     description: '이것은 테스트 소설의 설명입니다.',
     genre: Genre.FANTASY,
-    age_rating: AgeRating.AGE_15,
+    ageRating: AgeRating.AGE_15,
     status: NovelStatus.ONGOING,
-    is_exclusive: true,
-    is_premium: true,
-    allow_branching: true,
-    branch_count: 0,
-    linked_branch_count: 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date(Date.now() - 16 * 60 * 1000).toISOString(), // 16분 전
+    isExclusive: true,
+    isPremium: true,
+    allowBranching: true,
+    branchCount: 0,
+    linkedBranchCount: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date(Date.now() - 16 * 60 * 1000).toISOString(), // 16분 전
   };
 
   it('renders novel information correctly', () => {
@@ -72,7 +72,7 @@ describe('NovelpiaCard', () => {
   it('formats "just now" for very recent updates', () => {
     const recentNovel = {
       ...mockNovel,
-      updated_at: new Date(Date.now() - 30 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 30 * 1000).toISOString(),
     };
     render(<NovelpiaCard novel={recentNovel} />);
     expect(screen.getByText('방금 전 UP')).toBeDefined();

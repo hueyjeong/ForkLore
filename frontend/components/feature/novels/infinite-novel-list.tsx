@@ -147,7 +147,7 @@ export function InfiniteNovelList({
   }
 
   return (
-    <>
+    <div data-testid="virtuoso-list">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {novels.map((novel) => (
           <div key={novel.id}>
@@ -161,6 +161,7 @@ export function InfiniteNovelList({
           <button
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
+            data-testid="load-more"
             className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
           >
             {isFetchingNextPage ? (
@@ -171,6 +172,6 @@ export function InfiniteNovelList({
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }

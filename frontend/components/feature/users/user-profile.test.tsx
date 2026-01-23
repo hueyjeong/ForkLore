@@ -38,7 +38,7 @@ const mockProfile: UserResponse = {
 
 const mockWallet: Wallet = {
   balance: 1000,
-  recent_transactions: [],
+  recentTransactions: [],
 };
 
 function createTestQueryClient() {
@@ -138,7 +138,7 @@ describe('UserProfile - useQueries Refactoring', () => {
   it('should render wallet balance correctly', async () => {
     const walletWithBalance: Wallet = {
       balance: 50000,
-      recent_transactions: [],
+      recentTransactions: [],
     };
 
     (getWalletBalance as any).mockResolvedValue(walletWithBalance);

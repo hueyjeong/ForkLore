@@ -110,8 +110,17 @@ export function InfiniteNovelList({
   });
 
   const novels = useMemo(() => {
-    return data?.pages.flatMap((page) => page.results) || [];
-  }, [data]);
+    const result = data?.pages.flatMap((page) => page.results) || [];
+    console.log('[InfiniteNovelList] Novels:', result.length, 'Loading:', isLoading, 'Error:', isError);
+    return result;
+  }, [data, isLoading, isError]);
+
+  console.log('[InfiniteNovelList] Render state:', { 
+    novelsCount: novels.length, 
+    isLoading, 
+    isError,
+    pagesCount: data?.pages?.length 
+  });
 
   if (isLoading) {
     return (
@@ -138,37 +147,30 @@ export function InfiniteNovelList({
   }
 
   return (
-    <Virtuoso
-      useWindowScroll
-      data={novels}
-      endReached={() => {
-        if (hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      }}
-      overscan={200}
-      itemContent={(_, novel) => (
-        <div className="mb-4">
-          <NovelpiaCard novel={novel} />
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {novels.map((novel) => (
+          <div key={novel.id}>
+            <NovelpiaCard novel={novel} />
+          </div>
+        ))}
+      </div>
+      
+      {hasNextPage && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+          >
+            {isFetchingNextPage ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              '더 보기'
+            )}
+          </button>
         </div>
       )}
-      components={{
-        List: ({ children, ...props }) => (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" {...props}>
-            {children}
-          </div>
-        ),
-        Item: ({ children, ...props }) => (
-          <div {...props}>{children}</div>
-        ),
-        Footer: () => (
-          isFetchingNextPage ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : null
-        )
-      }}
-    />
+    </>
   );
 }

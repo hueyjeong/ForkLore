@@ -9,7 +9,8 @@ interface StatsRowProps {
   className?: string;
 }
 
-function formatNumber(num: number): string {
+function formatNumber(num: number | null | undefined): string {
+  if (num == null) return '0';
   if (num >= 1000000) {
     const m = num / 1000000;
     return `${Number(m.toFixed(2))}M`;

@@ -141,7 +141,7 @@ Task 4 → Task 5 (Cleanup)
 
 ### 0. 사전 조사 및 결정
 
-- [ ] 0. **Backend Genre Filtering Support 확인**
+- [x] 0. **Backend Genre Filtering Support 확인**
 
   **What to do**:
   - Backend API에 `GET /novels?genre=XXX` 필터링 지원 확인
@@ -176,7 +176,7 @@ Task 4 → Task 5 (Cleanup)
 
 ### 1. Bug #3 - 로그인 메뉴 상태 수정 (CRITICAL)
 
-- [ ] 1. **Header 컴포넌트 Auth State 연결**
+- [x] 1. **Header 컴포넌트 Auth State 연결**
 
   **What to do**:
   - `frontend/components/common/header.tsx` 수정
@@ -238,7 +238,7 @@ Task 4 → Task 5 (Cleanup)
 
 ### 2. Bug #2 - 소설 상세 페이지 500 에러 수정 (HIGH)
 
-- [ ] 2-1. **Backend: NovelDetailSerializer에 averageRating 필드 추가**
+- [x] 2-1. **Backend: NovelDetailSerializer에 averageRating 필드 추가**
 
   **What to do**:
   - `backend/apps/novels/serializers.py:NovelDetailSerializer` 수정
@@ -288,7 +288,7 @@ Task 4 → Task 5 (Cleanup)
   - Files: `backend/apps/novels/serializers.py`
   - Pre-commit: `cd backend && poetry run pytest apps/novels/tests/test_serializers.py`
 
-- [ ] 2-2. **Frontend: Novel Detail 페이지 에러 핸들링 추가**
+- [x] 2-2. **Frontend: Novel Detail 페이지 에러 핸들링 추가**
 
   **What to do**:
   - `frontend/app/novels/[id]/page.tsx` 수정:
@@ -367,7 +367,7 @@ Task 4 → Task 5 (Cleanup)
   - Files: `frontend/app/novels/[id]/page.tsx`, `frontend/lib/api/novels.api.ts`, `frontend/app/novels/[id]/error.tsx`
   - Pre-commit: `cd frontend && pnpm build`
 
-- [ ] 2-3. **Next.js Image Domain 설정 확인**
+- [x] 2-3. **Next.js Image Domain 설정 확인**
 
   **What to do**:
   - `next.config.ts` 확인
@@ -398,7 +398,7 @@ Task 4 → Task 5 (Cleanup)
 
 ### 3. Bug #4 - 랭킹 Ring UI 잘림 수정 (MEDIUM)
 
-- [ ] 3. **Ranking Carousel Badge Clipping 해결**
+- [x] 3. **Ranking Carousel Badge Clipping 해결**
 
   **What to do**:
   - `frontend/components/feature/home/ranking-carousel.tsx` Line 63 수정
@@ -456,7 +456,7 @@ Task 4 → Task 5 (Cleanup)
 
 **Note**: Task 0의 backend 지원 확인 결과에 따라 진행 여부 결정
 
-- [ ] 4-1. **GenreFilter URL 기반으로 리팩토링** (Backend 지원 시)
+- [x] 4-1. **GenreFilter URL 기반으로 리팩토링** (Backend 지원 시)
 
   **What to do**:
   - `frontend/components/feature/home/genre-filter.tsx` 수정:
@@ -565,7 +565,7 @@ Task 4 → Task 5 (Cleanup)
 
 ### 5. 정리 작업
 
-- [ ] 5. **테스트 파일 삭제 커밋**
+- [x] 5. **테스트 파일 삭제 커밋**
 
   **What to do**:
   - 이미 working tree에서 삭제된 3개 테스트 파일을 staged 상태로 변경 후 커밋:

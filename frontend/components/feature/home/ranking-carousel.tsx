@@ -69,9 +69,9 @@ export function RankingCarousel() {
               {/* Cover */}
               <div className="overflow-hidden rounded-xl shadow-md transition-transform duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
                 <div className="relative aspect-[2/3] w-full bg-muted">
-                  {novel.cover_image_url ? (
+                  {novel.coverImageUrl ? (
                     <Image
-                      src={novel.cover_image_url}
+                      src={novel.coverImageUrl}
                       alt={novel.title}
                       fill
                       className="object-cover"
@@ -93,10 +93,10 @@ export function RankingCarousel() {
                 <p className="text-xs text-muted-foreground">{novel.author.nickname}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Eye className="h-3 w-3" /> {novel.total_view_count.toLocaleString()}
+                    <Eye className="h-3 w-3" /> {novel.totalViewCount.toLocaleString()}
                   </span>
                   <span className="flex items-center gap-1 text-yellow-500">
-                    <ThumbsUp className="h-3 w-3" /> {novel.total_like_count.toLocaleString()}
+                    <ThumbsUp className="h-3 w-3" /> {novel.totalLikeCount.toLocaleString()}
                   </span>
                 </div>
               </div>

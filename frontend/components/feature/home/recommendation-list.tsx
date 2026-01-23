@@ -71,9 +71,9 @@ export function RecommendationList() {
               <div className="flex h-full">
                 {/* Image */}
                 <div className="relative w-32 shrink-0 bg-muted">
-                  {novel.cover_image_url ? (
+                  {novel.coverImageUrl ? (
                     <Image
-                      src={novel.cover_image_url}
+                      src={novel.coverImageUrl}
                       alt={novel.title}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -94,7 +94,7 @@ export function RecommendationList() {
                       </h3>
                       <div className="flex items-center text-xs font-medium text-yellow-500">
                         <ThumbsUp className="mr-1 h-3 w-3 fill-current" />
-                        {novel.total_like_count}
+                        {novel.totalLikeCount}
                       </div>
                     </div>
                     <p className="line-clamp-2 text-xs text-muted-foreground">

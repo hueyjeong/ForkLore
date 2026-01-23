@@ -70,10 +70,10 @@ export function InfiniteNovelList({
       if (category && category !== '전체') {
         switch (category) {
           case '멤버십':
-            params.is_premium = true;
+            params.isPremium = true;
             break;
           case '독점':
-            params.is_exclusive = true;
+            params.isExclusive = true;
             break;
           case '완결':
             params.status = NovelStatus.COMPLETED;
@@ -88,13 +88,13 @@ export function InfiniteNovelList({
       }
 
       if (category === '신작') {
-        params.sort = 'created_at';
+        params.sort = 'createdAt';
         params.order = 'desc';
       } else if (sort === 'popular') {
-        params.sort = 'total_view_count';
+        params.sort = 'totalViewCount';
         params.order = 'desc';
       } else if (sort === 'latest') {
-        params.sort = 'created_at';
+        params.sort = 'createdAt';
         params.order = 'desc';
       }
 

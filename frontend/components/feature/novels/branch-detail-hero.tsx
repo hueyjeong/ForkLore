@@ -18,10 +18,10 @@ export function BranchDetailHero({ branch }: BranchDetailHeroProps) {
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
       
       {/* Background Image (if available) - darker and more blurred than novel hero */}
-      {branch.cover_image_url && (
+      {branch.coverImageUrl && (
         <div className="absolute inset-0 opacity-20 blur-xl">
            <Image
-            src={branch.cover_image_url}
+            src={branch.coverImageUrl}
             alt={branch.name}
             fill
             className="object-cover"
@@ -37,7 +37,7 @@ export function BranchDetailHero({ branch }: BranchDetailHeroProps) {
           {/* Cover Image (smaller than novel) */}
           <div className="relative h-40 w-28 shrink-0 overflow-hidden rounded-lg shadow-xl ring-1 ring-border/50 md:h-56 md:w-40">
             <Image
-              src={branch.cover_image_url || '/placeholder-cover.jpg'}
+              src={branch.coverImageUrl || '/placeholder-cover.jpg'}
               alt={branch.name}
               fill
               className="object-cover transition-transform hover:scale-105 duration-500"

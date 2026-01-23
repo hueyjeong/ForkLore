@@ -30,8 +30,8 @@ function getRelativeTime(dateString: string): string {
 }
 
 export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
-  const relativeTime = getRelativeTime(novel.updated_at);
-  const tags = [getGenreLabel(novel.genre), getAgeRatingLabel(novel.age_rating)];
+  const relativeTime = getRelativeTime(novel.updatedAt);
+  const tags = [getGenreLabel(novel.genre), getAgeRatingLabel(novel.ageRating)];
 
   return (
     <Link 
@@ -40,7 +40,7 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
     >
       <div className="relative w-24 sm:w-32 aspect-[3/4] flex-shrink-0 overflow-hidden rounded-md border">
         <Image
-          src={novel.cover_image_url || '/placeholder.png'}
+          src={novel.coverImageUrl || '/placeholder.png'}
           alt={novel.title}
           fill
           className="object-cover"
@@ -51,7 +51,7 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
       <div className="flex flex-col flex-1 min-w-0 py-0.5">
         <div className="flex items-start justify-between gap-2 mb-1.5">
           <div className="flex flex-wrap items-center gap-2 overflow-hidden min-h-6">
-            <NovelBadge isPremium={novel.is_premium} isExclusive={novel.is_exclusive} />
+            <NovelBadge isPremium={novel.isPremium} isExclusive={novel.isExclusive} />
             <h3 className="font-bold text-base sm:text-lg truncate" title={novel.title}>
               {novel.title}
             </h3>
@@ -66,9 +66,9 @@ export function NovelpiaCard({ novel, className }: NovelpiaCardProps) {
         </p>
 
         <StatsRow
-          views={novel.total_view_count}
-          episodeCount={novel.total_chapter_count}
-          recommendCount={novel.total_like_count}
+          views={novel.totalViewCount}
+          episodeCount={novel.totalChapterCount}
+          recommendCount={novel.totalLikeCount}
           className="mb-3"
         />
 

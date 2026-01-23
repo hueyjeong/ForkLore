@@ -145,7 +145,7 @@ export function WikiDetail({ wikiId, initialData }: WikiDetailProps) {
                   >
                     <div className="flex items-center justify-between mb-1">
                         <span suppressHydrationWarning className="text-xs font-medium text-muted-foreground">
-                            {new Date(snapshot.created_at).toLocaleDateString()}
+                            {new Date(snapshot.createdAt).toLocaleDateString()}
                         </span>
                         {snapshot.valid_from_chapter > 0 && (
                             <Badge variant="outline" className="text-[10px] h-5 px-1.5">

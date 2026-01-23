@@ -186,7 +186,7 @@ export class MockHelper {
    */
   async mockBranchCreation(novelId: number | string, newBranch: MockBranch) {
     const numericId = Number(novelId);
-    const pattern = new RegExp(`/novels/${numericId}/branches$`);
+    const pattern = new RegExp(`/novels/${numericId}/branches/?$`);
 
     await this.page.route(pattern, async (route) => {
       if (route.request().method() !== 'POST') {
@@ -213,7 +213,7 @@ export class MockHelper {
    */
   async mockBranchConflict(novelId: number | string) {
     const numericId = Number(novelId);
-    await this.page.route(new RegExp(`/novels/${numericId}/branches$`), async (route) => {
+    await this.page.route(new RegExp(`/novels/${numericId}/branches/?$`), async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 409,
@@ -236,7 +236,7 @@ export class MockHelper {
    */
   async mockBranchList(novelId: number | string, branches: MockBranch[]) {
     const numericId = Number(novelId);
-    const pattern = new RegExp(`/novels/${numericId}/branches(\\?.*)?$`);
+    const pattern = new RegExp(`/novels/${numericId}/branches/?(\\?.*)?$`);
 
     const response: PaginatedResponse<MockBranch> = {
       results: branches,

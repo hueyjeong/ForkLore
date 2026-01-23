@@ -56,7 +56,7 @@ export function RankingCarousel() {
       </div>
 
       <ScrollArea className="w-full whitespace-nowrap px-4">
-        <div className="flex w-max space-x-4 pb-4">
+        <div className="flex w-max space-x-4 pb-4 pt-3">
           {novels.map((novel: Novel, index: number) => (
             <Link key={novel.id} href={`/novels/${novel.id}`} className="group relative block w-[160px] md:w-[200px]">
               {/* Rank Badge */}
@@ -93,10 +93,10 @@ export function RankingCarousel() {
                 <p className="text-xs text-muted-foreground">{novel.author.nickname}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Eye className="h-3 w-3" /> {novel.totalViewCount.toLocaleString()}
+                    <Eye className="h-3 w-3" /> {(novel.totalViewCount ?? 0).toLocaleString()}
                   </span>
                   <span className="flex items-center gap-1 text-yellow-500">
-                    <ThumbsUp className="h-3 w-3" /> {novel.totalLikeCount.toLocaleString()}
+                    <ThumbsUp className="h-3 w-3" /> {(novel.totalLikeCount ?? 0).toLocaleString()}
                   </span>
                 </div>
               </div>

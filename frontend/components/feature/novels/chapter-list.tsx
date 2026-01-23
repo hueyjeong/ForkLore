@@ -100,10 +100,10 @@ export function ChapterList({ novelId, branchId }: ChapterListProps) {
           >
             <div className="flex flex-col">
               <span className="font-medium group-hover:text-primary transition-colors">
-                 Chapter {chapter.chapter_number}: {chapter.title}
+                 Chapter {chapter.chapterNumber}: {chapter.title}
               </span>
               <span className="text-xs text-muted-foreground">
-                {chapter.published_at ? new Date(chapter.published_at).toLocaleDateString() : 'Draft'}
+                {chapter.publishedAt ? new Date(chapter.publishedAt).toLocaleDateString() : 'Draft'}
               </span>
             </div>
             <div>

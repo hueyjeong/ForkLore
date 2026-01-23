@@ -13,6 +13,7 @@ interface NovelpiaCardProps {
 }
 
 function getRelativeTime(dateString: string): string {
+  if (!dateString) return '알 수 없음';
   const now = new Date();
   const date = new Date(dateString);
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);

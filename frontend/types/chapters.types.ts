@@ -21,7 +21,7 @@ export enum AccessType {
 
 export interface ChapterNav {
   id: number;
-  chapter_number: number;
+  chapterNumber: number;
   title: string;
 }
 
@@ -31,38 +31,38 @@ export interface ChapterNav {
 
 export interface Chapter {
   id: number;
-  chapter_number: number;
+  chapterNumber: number;
   title: string;
-  content_html: string;
-  word_count: number;
+  contentHtml: string;
+  wordCount: number;
   status: ChapterStatus;
-  access_type: AccessType;
+  accessType: AccessType;
   price: number;
-  scheduled_at: string | null;
-  published_at: string | null;
-  view_count: number;
-  like_count: number;
-  comment_count: number;
-  created_at: string;
-  updated_at: string;
-  prev_chapter: ChapterNav | null;
-  next_chapter: ChapterNav | null;
+  scheduledAt: string | null;
+  publishedAt: string | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+  prevChapter: ChapterNav | null;
+  nextChapter: ChapterNav | null;
 }
 
 export interface ChapterSummary {
   id: number;
-  chapter_number: number;
+  chapterNumber: number;
   title: string;
-  word_count: number;
+  wordCount: number;
   status: ChapterStatus;
-  access_type: AccessType;
+  accessType: AccessType;
   price: number;
-  scheduled_at: string | null;
-  published_at: string | null;
-  view_count: number;
-  like_count: number;
-  comment_count: number;
-  created_at: string;
+  scheduledAt: string | null;
+  publishedAt: string | null;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -72,24 +72,24 @@ export interface ChapterSummary {
 export interface ChapterCreateRequest {
   title: string;
   content: string;
-  access_type?: AccessType;
+  accessType?: AccessType;
   price?: number;
 }
 
 export interface ChapterUpdateRequest {
   title?: string;
   content?: string;
-  access_type?: AccessType;
+  accessType?: AccessType;
   price?: number;
 }
 
 export interface ChapterScheduleRequest {
-  scheduled_at: string; // ISO datetime string
+  scheduledAt: string; // ISO datetime string
 }
 
 export interface ChapterListParams extends PageParams {
-  branch_id: number;
+  branchId: number;
   status?: ChapterStatus;
-  access_type?: AccessType;
-  chapter_number?: number;
+  accessType?: AccessType;
+  chapterNumber?: number;
 }

@@ -14,15 +14,15 @@ import { setAccessToken, setRefreshToken, clearTokens } from '@/lib/token';
  */
 export async function login(data: LoginRequest): Promise<TokenResponse> {
   const response = await apiClient.post<ApiResponse<TokenResponse>>(
-    '/auth/login',
+    '/auth/login/',
     data
   );
 
-  const { accessToken, refreshToken } = response.data.data;
+  const { access, refresh } = response.data.data;
 
   // 토큰 저장
-  setAccessToken(accessToken);
-  setRefreshToken(refreshToken);
+  setAccessToken(access);
+  setRefreshToken(refresh);
 
   return response.data.data;
 }
@@ -32,7 +32,7 @@ export async function login(data: LoginRequest): Promise<TokenResponse> {
  */
 export async function signup(data: SignUpRequest): Promise<number> {
   const response = await apiClient.post<ApiResponse<number>>(
-    '/auth/signup',
+    '/auth/signup/',
     data
   );
 
@@ -46,16 +46,18 @@ export async function refreshToken(
   refreshToken: string
 ): Promise<TokenResponse> {
   const response = await apiClient.post<ApiResponse<TokenResponse>>(
-    '/auth/refresh',
-    { refreshToken } as TokenRefreshRequest
+    '/auth/refresh/',
+    { refresh: refreshToken }
   );
 
-  const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+  const { access, refresh: newRefreshToken } =
     response.data.data;
 
   // 새 토큰 저장
-  setAccessToken(newAccessToken);
-  setRefreshToken(newRefreshToken);
+  setAccessToken(access);
+  if (newRefreshToken) {
+    setRefreshToken(newRefreshToken);
+  }
 
   return response.data.data;
 }
@@ -64,7 +66,7 @@ export async function refreshToken(
  * 내 프로필 조회 API
  */
 export async function getMyProfile(): Promise<UserResponse> {
-  const response = await apiClient.get<ApiResponse<UserResponse>>('/users/me');
+  const response = await apiClient.get<ApiResponse<UserResponse>>('/users/me/');
   return response.data.data;
 }
 

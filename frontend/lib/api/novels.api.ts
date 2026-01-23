@@ -7,7 +7,7 @@ import {
   NovelListParams,
 } from '@/types/novels.types';
 
-const BASE_URL = '/novels';
+const BASE_URL = '/novels/';
 
 /**
  * Get list of novels
@@ -26,8 +26,18 @@ export async function getNovels(
  * Get novel details
  */
 export async function getNovel(id: number): Promise<Novel> {
-  const response = await apiClient.get<ApiResponse<Novel>>(`${BASE_URL}/${id}`);
-  return response.data.data;
+  try {
+    const response = await apiClient.get<ApiResponse<Novel>>(`${BASE_URL}${id}/`);
+    
+    if (!response.data?.data) {
+      throw new Error('Invalid response format: missing data field');
+    }
+    
+    return response.data.data;
+  } catch (error) {
+    console.error(`[API Error] Failed to fetch novel ${id}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -46,7 +56,7 @@ export async function updateNovel(
   data: NovelUpdateRequest
 ): Promise<Novel> {
   const response = await apiClient.patch<ApiResponse<Novel>>(
-    `${BASE_URL}/${id}`,
+    `${BASE_URL}${id}/`,
     data
   );
   return response.data.data;
@@ -56,5 +66,5 @@ export async function updateNovel(
  * Delete a novel
  */
 export async function deleteNovel(id: number): Promise<void> {
-  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}/${id}`);
+  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}${id}/`);
 }

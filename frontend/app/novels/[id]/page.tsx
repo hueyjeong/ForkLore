@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BookOpen, Star, Share2, Heart, List, MessageCircle, ChevronLeft } from 'lucide-react';
+import { isAxiosError } from 'axios';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,16 +11,35 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getNovel } from '@/lib/api/novels.api';
+import { getBranches } from '@/lib/api/branches.api';
+import { getChapters } from '@/lib/api/chapters.api';
 
-export default async function NovelDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function NovelDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
+  const novelId = Number(id);
 
   let novel;
+  let mainBranch;
+  let chaptersData;
+
   try {
-    novel = await getNovel(Number(id));
+    novel = await getNovel(novelId);
+    
+    const branches = await getBranches(novelId);
+    mainBranch = branches.results.find(b => b.isMain) || branches.results[0];
+    
+    if (mainBranch) {
+      chaptersData = await getChapters(mainBranch.id, { size: 100 });
+    }
   } catch (error: unknown) {
-    const maybeError = error as { response?: { status?: number }; status?: number };
-    const status = maybeError?.response?.status ?? maybeError?.status;
+    let status: number | undefined;
+    
+    if (isAxiosError(error)) {
+      status = error.response?.status;
+    } else if (typeof error === 'object' && error !== null && 'status' in error) {
+      status = (error as { status: number }).status;
+    }
 
     if (status === 404) {
       notFound();
@@ -41,24 +61,23 @@ export default async function NovelDetailPage({ params }: { params: { id: string
   };
 
   const stats = {
-    views: formatViews(novel.totalViewCount),
-    likes: formatLikes(novel.totalLikeCount),
+    views: formatViews(novel.totalViewCount ?? 0),
+    likes: formatLikes(novel.totalLikeCount ?? 0),
     rating: novel.averageRating ?? 0,
   };
 
   const tags = [novel.genre];
 
-  const createdAt = new Date(novel.createdAt);
-  const CHAPTERS = Array.from({ length: novel.totalChapterCount || 0 }).map((_, i) => {
-    const chapterDate = new Date(createdAt.getTime() + i * 24 * 60 * 60 * 1000);
+  const CHAPTERS = chaptersData?.results.map((chapter) => {
     return {
-      id: i + 1,
-      title: `Chapter ${i + 1}`,
-      date: chapterDate.toISOString().split('T')[0],
-      coins: i < 3 ? 0 : 10,
+      id: chapter.id,
+      title: chapter.title,
+      date: new Date(chapter.publishedAt || chapter.createdAt).toISOString().split('T')[0],
+      coins: chapter.price || 0,
       isRead: false,
     };
-  });
+  }) || [];
+
   const REVIEWS: Array<{ id: number; user: string; content: string; rating: number; date: string }> = [];
 
   return (
@@ -68,7 +87,7 @@ export default async function NovelDetailPage({ params }: { params: { id: string
         {/* Background Image with Blur */}
         <div className="absolute inset-0">
           <Image
-            src={novel.coverImageUrl}
+            src={novel.coverImageUrl || '/placeholder.png'}
             alt={novel.title}
             fill
             className="object-cover opacity-60 blur-sm"
@@ -82,7 +101,7 @@ export default async function NovelDetailPage({ params }: { params: { id: string
           {/* Cover Image */}
           <div className="relative mb-4 h-48 w-32 shrink-0 overflow-hidden rounded-lg shadow-2xl md:mb-0 md:mr-8 md:h-72 md:w-48">
             <Image
-              src={novel.coverImageUrl}
+              src={novel.coverImageUrl || '/placeholder.png'}
               alt={novel.title}
               fill
               className="object-cover"

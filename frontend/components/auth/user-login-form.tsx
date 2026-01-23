@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { isAxiosError } from "axios"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons"
 import { useAuthStore } from "@/stores/auth-store"
+import type { ErrorResponse } from "@/types/common"
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface UserLoginFormProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -46,8 +48,21 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
       await login(data)
       toast.success("로그인에 성공했습니다.")
       router.push("/")
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "로그인에 실패했습니다."
+    } catch (error: unknown) {
+      let errorMessage = "로그인에 실패했습니다."
+      
+      if (isAxiosError<ErrorResponse>(error)) {
+        if (error.response?.status === 401) {
+          errorMessage = "이메일 또는 비밀번호가 일치하지 않습니다."
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        } else {
+          errorMessage = error.message
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      
       toast.error(errorMessage)
     } finally {
       setIsLoading(false)

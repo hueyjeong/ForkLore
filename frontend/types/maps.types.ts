@@ -31,13 +31,13 @@ export enum ContributorType {
 
 export interface MapObject {
   id: number;
-  object_type: ObjectType;
+  objectType: ObjectType;
   coordinates: Record<string, unknown>; // JSON field
   label: string;
   description: string;
-  wiki_entry_id: number | null;
-  style_json: Record<string, unknown> | null;
-  created_at: string;
+  wikiEntryId: number | null;
+  styleJson: Record<string, unknown> | null;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -47,12 +47,12 @@ export interface MapObject {
 export interface MapLayer {
   id: number;
   name: string;
-  layer_type: LayerType;
-  z_index: number;
-  is_visible: boolean;
-  style_json: Record<string, unknown> | null;
+  layerType: LayerType;
+  zIndex: number;
+  isVisible: boolean;
+  styleJson: Record<string, unknown> | null;
   objects: MapObject[];
-  created_at: string;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -61,10 +61,10 @@ export interface MapLayer {
 
 export interface MapSnapshot {
   id: number;
-  valid_from_chapter: number;
-  base_image_url: string;
+  validFromChapter: number;
+  baseImageUrl: string;
   layers: MapLayer[];
-  created_at: string;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -77,11 +77,11 @@ export interface Map {
   description: string;
   width: number;
   height: number;
-  source_map_id: number | null;
+  sourceMapId: number | null;
   snapshots: MapSnapshot[];
   snapshot: MapSnapshot | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface MapSummary {
@@ -90,7 +90,7 @@ export interface MapSummary {
   description: string;
   width: number;
   height: number;
-  created_at: string;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -112,28 +112,28 @@ export interface MapUpdateRequest {
 }
 
 export interface MapSnapshotCreateRequest {
-  valid_from_chapter: number;
-  base_image_url?: string;
+  validFromChapter: number;
+  baseImageUrl?: string;
 }
 
 export interface MapLayerCreateRequest {
   name: string;
-  layer_type?: LayerType;
-  z_index?: number;
-  is_visible?: boolean;
-  style_json?: Record<string, unknown> | null;
+  layerType?: LayerType;
+  zIndex?: number;
+  isVisible?: boolean;
+  styleJson?: Record<string, unknown> | null;
 }
 
 export interface MapObjectCreateRequest {
-  object_type: ObjectType;
+  objectType: ObjectType;
   coordinates: Record<string, unknown>;
   label?: string;
   description?: string;
-  wiki_entry_id?: number | null;
-  style_json?: Record<string, unknown> | null;
+  wikiEntryId?: number | null;
+  styleJson?: Record<string, unknown> | null;
 }
 
 export interface MapListParams extends PageParams {
-  branch_id: number;
+  branchId: number;
   search?: string;
 }

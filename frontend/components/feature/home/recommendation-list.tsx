@@ -8,12 +8,23 @@ import { Badge } from '@/components/ui/badge';
 import { Star, ThumbsUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getNovels } from '@/lib/api/novels.api';
-import { Novel } from '@/types/novels.types';
+import { Novel, Genre } from '@/types/novels.types';
 
-export function RecommendationList() {
+interface RecommendationListProps {
+  genre?: string;
+}
+
+export function RecommendationList({ genre }: RecommendationListProps) {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['novels', 'recommendation'],
-    queryFn: () => getNovels({ size: 6, sort: 'created_at' }),
+    queryKey: ['novels', 'recommendation', genre],
+    queryFn: () => {
+      const params = { 
+        size: 6, 
+        sort: 'created_at',
+        ...(genre && { genre: genre as Genre })
+      };
+      return getNovels(params);
+    },
   });
 
   const novels = data?.results || [];
@@ -94,7 +105,7 @@ export function RecommendationList() {
                       </h3>
                       <div className="flex items-center text-xs font-medium text-yellow-500">
                         <ThumbsUp className="mr-1 h-3 w-3 fill-current" />
-                        {novel.totalLikeCount}
+                        {(novel.totalLikeCount ?? 0).toLocaleString()}
                       </div>
                     </div>
                     <p className="line-clamp-2 text-xs text-muted-foreground">

@@ -8,17 +8,17 @@ import {
   ChapterListParams,
 } from '@/types/chapters.types';
 
-const BASE_URL = '/chapters';
+const BASE_URL = '/chapters/';
 
 /**
  * Get list of chapters for a branch
  */
 export async function getChapters(
   branchId: number,
-  params?: Omit<ChapterListParams, 'branch_id'>
+  params?: Omit<ChapterListParams, 'branchId'>
 ): Promise<PaginatedResponse<Chapter>> {
   const response = await apiClient.get<ApiResponse<PaginatedResponse<Chapter>>>(
-    `/branches/${branchId}/chapters`,
+    `/branches/${branchId}/chapters/`,
     { params }
   );
   return response.data.data;
@@ -28,7 +28,7 @@ export async function getChapters(
  * Get chapter details
  */
 export async function getChapter(id: number): Promise<Chapter> {
-  const response = await apiClient.get<ApiResponse<Chapter>>(`${BASE_URL}/${id}`);
+  const response = await apiClient.get<ApiResponse<Chapter>>(`${BASE_URL}${id}/`);
   return response.data.data;
 }
 
@@ -40,7 +40,7 @@ export async function createChapter(
   data: ChapterCreateRequest
 ): Promise<Chapter> {
   const response = await apiClient.post<ApiResponse<Chapter>>(
-    `/branches/${branchId}/chapters`,
+    `/branches/${branchId}/chapters/`,
     data
   );
   return response.data.data;
@@ -54,7 +54,7 @@ export async function updateChapter(
   data: ChapterUpdateRequest
 ): Promise<Chapter> {
   const response = await apiClient.patch<ApiResponse<Chapter>>(
-    `${BASE_URL}/${id}`,
+    `${BASE_URL}${id}/`,
     data
   );
   return response.data.data;
@@ -64,7 +64,7 @@ export async function updateChapter(
  * Delete a chapter
  */
 export async function deleteChapter(id: number): Promise<void> {
-  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}/${id}`);
+  await apiClient.delete<ApiResponse<void>>(`${BASE_URL}${id}/`);
 }
 
 /**
@@ -72,7 +72,7 @@ export async function deleteChapter(id: number): Promise<void> {
  */
 export async function publishChapter(id: number): Promise<Chapter> {
   const response = await apiClient.post<ApiResponse<Chapter>>(
-    `${BASE_URL}/${id}/publish`
+    `${BASE_URL}${id}/publish/`
   );
   return response.data.data;
 }
@@ -85,7 +85,7 @@ export async function scheduleChapter(
   data: ChapterScheduleRequest
 ): Promise<Chapter> {
   const response = await apiClient.post<ApiResponse<Chapter>>(
-    `${BASE_URL}/${id}/schedule`,
+    `${BASE_URL}${id}/schedule/`,
     data
   );
   return response.data.data;
@@ -96,7 +96,7 @@ export async function scheduleChapter(
  */
 export async function unscheduleChapter(id: number): Promise<Chapter> {
   const response = await apiClient.post<ApiResponse<Chapter>>(
-    `${BASE_URL}/${id}/unschedule`
+    `${BASE_URL}${id}/unschedule/`
   );
   return response.data.data;
 }

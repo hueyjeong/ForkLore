@@ -11,8 +11,8 @@ import { Badge } from '@/components/ui/badge';
 
 export function MyLibrary() {
   const { data, isPending, isError } = useQuery({
-    queryKey: ['purchases', { page: 1, limit: 50 }],
-    queryFn: () => getPurchases({ page: 1, limit: 50 }),
+    queryKey: ['purchases', { page: 1, size: 50 }],
+    queryFn: () => getPurchases({ page: 1, size: 50 }),
   });
 
   const purchases = data?.results ?? [];

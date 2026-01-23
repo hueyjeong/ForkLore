@@ -54,7 +54,7 @@ export function InfiniteNovelList({
     queryFn: async ({ pageParam = 1 }) => {
       const params: NovelListParams = {
         page: pageParam,
-        limit: 12,
+        size: 12,
       };
 
       if (genre && genre !== '전체') {
@@ -70,10 +70,10 @@ export function InfiniteNovelList({
       if (category && category !== '전체') {
         switch (category) {
           case '멤버십':
-            params.is_premium = true;
+            params.isPremium = true;
             break;
           case '독점':
-            params.is_exclusive = true;
+            params.isExclusive = true;
             break;
           case '완결':
             params.status = NovelStatus.COMPLETED;
@@ -88,25 +88,39 @@ export function InfiniteNovelList({
       }
 
       if (category === '신작') {
-        params.sort = 'created_at';
+        params.sort = 'createdAt';
         params.order = 'desc';
       } else if (sort === 'popular') {
-        params.sort = 'total_view_count';
+        params.sort = 'totalViewCount';
         params.order = 'desc';
       } else if (sort === 'latest') {
-        params.sort = 'created_at';
+        params.sort = 'createdAt';
         params.order = 'desc';
       }
 
       return getNovels(params);
     },
     initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.hasNext ? lastPage.page + 1 : undefined,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.next) return undefined;
+      const url = new URL(lastPage.next);
+      const page = url.searchParams.get('page');
+      return page ? parseInt(page, 10) : undefined;
+    },
   });
 
   const novels = useMemo(() => {
-    return data?.pages.flatMap((page) => page.results) || [];
-  }, [data]);
+    const result = data?.pages.flatMap((page) => page.results) || [];
+    console.log('[InfiniteNovelList] Novels:', result.length, 'Loading:', isLoading, 'Error:', isError);
+    return result;
+  }, [data, isLoading, isError]);
+
+  console.log('[InfiniteNovelList] Render state:', { 
+    novelsCount: novels.length, 
+    isLoading, 
+    isError,
+    pagesCount: data?.pages?.length 
+  });
 
   if (isLoading) {
     return (
@@ -133,37 +147,30 @@ export function InfiniteNovelList({
   }
 
   return (
-    <Virtuoso
-      useWindowScroll
-      data={novels}
-      endReached={() => {
-        if (hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      }}
-      overscan={200}
-      itemContent={(_, novel) => (
-        <div className="mb-4">
-          <NovelpiaCard novel={novel} />
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {novels.map((novel) => (
+          <div key={novel.id}>
+            <NovelpiaCard novel={novel} />
+          </div>
+        ))}
+      </div>
+      
+      {hasNextPage && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+          >
+            {isFetchingNextPage ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              '더 보기'
+            )}
+          </button>
         </div>
       )}
-      components={{
-        List: ({ children, ...props }) => (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" {...props}>
-            {children}
-          </div>
-        ),
-        Item: ({ children, ...props }) => (
-          <div {...props}>{children}</div>
-        ),
-        Footer: () => (
-          isFetchingNextPage ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : null
-        )
-      }}
-    />
+    </>
   );
 }

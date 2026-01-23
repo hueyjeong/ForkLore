@@ -32,18 +32,18 @@ export interface WalletAdjustment {
 
 export interface CoinTransaction {
   id: number
-  transaction_type: TransactionType
+  transactionType: TransactionType
   amount: number
-  balance_after: number
+  balanceAfter: number
   description: string
-  reference_type: string
-  reference_id: number | null
-  created_at: string
+  referenceType: string
+  referenceId: number | null
+  createdAt: string
 }
 
 export interface Wallet {
   balance: number
-  recent_transactions: CoinTransaction[]
+  recentTransactions: CoinTransaction[]
 }
 
 export interface WalletBalanceResponse {

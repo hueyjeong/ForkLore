@@ -90,7 +90,7 @@ const createMockResponse = (branches: typeof mockBranches) => ({
       results: branches,
       total: branches.length,
       page: 1,
-      limit: 100,
+      size: 100,
       hasNext: false,
     },
   },
@@ -149,7 +149,7 @@ describe('BranchChoices', () => {
 
     // Wait for query to complete
     await waitFor(() => {
-      expect(apiClient.get).toHaveBeenCalledWith('/novels/1/branches', { params: { limit: 100 } });
+      expect(apiClient.get).toHaveBeenCalledWith('/novels/1/branches', { params: { size: 100 } });
     });
 
     // Component should return null (no rendered content) when no matching branches
@@ -174,7 +174,7 @@ describe('BranchChoices', () => {
     expect(screen.queryByText('Fan Fiction Branch')).not.toBeInTheDocument();
 
     // Verify the query was called with correct parameters
-    expect(apiClient.get).toHaveBeenCalledWith('/novels/1/branches', { params: { limit: 100 } });
+    expect(apiClient.get).toHaveBeenCalledWith('/novels/1/branches', { params: { size: 100 } });
   });
 
   it('should render branch cards with correct information', async () => {

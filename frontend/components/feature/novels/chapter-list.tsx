@@ -30,7 +30,7 @@ export function ChapterList({ novelId, branchId }: ChapterListProps) {
   // 2. Find Main Branch or use provided branchId
   const targetBranchId = useMemo(() => {
     if (branchId) return branchId;
-    return branchesData?.results.find((b: Branch) => b.is_main)?.id;
+    return branchesData?.results.find((b: Branch) => b.isMain)?.id;
   }, [branchesData, branchId]);
 
   // 3. Fetch Chapters for Target Branch (enabled only if targetBranchId exists)

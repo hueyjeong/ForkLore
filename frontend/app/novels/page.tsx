@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import { NovelFilters } from '@/components/feature/novels/novel-filters';
 import { NovelListWrapper } from '@/components/feature/novels/novel-list-wrapper';
 import { CategoryTabsWrapper } from '@/components/feature/novels/category-tabs-wrapper';
@@ -12,17 +11,9 @@ export default function NovelsPage() {
         </h1>
 
         <div className="space-y-6">
-          <Suspense fallback={<div className="h-10 animate-pulse bg-muted rounded-lg" />}>
-            <CategoryTabsWrapper />
-          </Suspense>
-
-          <Suspense fallback={<div className="h-32 animate-pulse bg-muted rounded-lg" />}>
-            <NovelFilters />
-          </Suspense>
-
-          <Suspense fallback={<div className="h-96 animate-pulse bg-muted rounded-lg" />}>
-            <NovelListWrapper />
-          </Suspense>
+          <CategoryTabsWrapper />
+          <NovelFilters />
+          <NovelListWrapper />
         </div>
       </main>
     </div>

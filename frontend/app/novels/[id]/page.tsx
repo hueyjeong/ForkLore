@@ -41,15 +41,15 @@ export default async function NovelDetailPage({ params }: { params: { id: string
   };
 
   const stats = {
-    views: formatViews(novel.total_view_count),
-    likes: formatLikes(novel.total_like_count),
-    rating: novel.average_rating ?? 0,
+    views: formatViews(novel.totalViewCount),
+    likes: formatLikes(novel.totalLikeCount),
+    rating: novel.averageRating ?? 0,
   };
 
   const tags = [novel.genre];
 
-  const createdAt = new Date(novel.created_at);
-  const CHAPTERS = Array.from({ length: novel.total_chapter_count || 0 }).map((_, i) => {
+  const createdAt = new Date(novel.createdAt);
+  const CHAPTERS = Array.from({ length: novel.totalChapterCount || 0 }).map((_, i) => {
     const chapterDate = new Date(createdAt.getTime() + i * 24 * 60 * 60 * 1000);
     return {
       id: i + 1,
@@ -68,7 +68,7 @@ export default async function NovelDetailPage({ params }: { params: { id: string
         {/* Background Image with Blur */}
         <div className="absolute inset-0">
           <Image
-            src={novel.cover_image_url}
+            src={novel.coverImageUrl}
             alt={novel.title}
             fill
             className="object-cover opacity-60 blur-sm"
@@ -82,7 +82,7 @@ export default async function NovelDetailPage({ params }: { params: { id: string
           {/* Cover Image */}
           <div className="relative mb-4 h-48 w-32 shrink-0 overflow-hidden rounded-lg shadow-2xl md:mb-0 md:mr-8 md:h-72 md:w-48">
             <Image
-              src={novel.cover_image_url}
+              src={novel.coverImageUrl}
               alt={novel.title}
               fill
               className="object-cover"

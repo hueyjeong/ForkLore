@@ -30,13 +30,13 @@ export enum ReportStatus {
 export interface UserBrief {
   id: number
   nickname: string
-  profile_image: string | null
+  profileImage: string | null
 }
 
 export interface ChapterBrief {
   id: number
   title: string
-  chapter_number: number
+  chapterNumber: number
 }
 
 // =============================================================================
@@ -45,34 +45,34 @@ export interface ChapterBrief {
 
 export interface CommentCreate {
   content: string
-  is_spoiler?: boolean
-  parent_id?: number | null
-  paragraph_index?: number | null
-  selection_start?: number | null
-  selection_end?: number | null
-  quoted_text?: string
+  isSpoiler?: boolean
+  parentId?: number | null
+  paragraphIndex?: number | null
+  selectionStart?: number | null
+  selectionEnd?: number | null
+  quotedText?: string
 }
 
 export interface CommentUpdate {
   content?: string
-  is_spoiler?: boolean
+  isSpoiler?: boolean
 }
 
 export interface Comment {
   id: number
   user: UserBrief
   content: string
-  is_spoiler: boolean
-  is_pinned: boolean
-  like_count: number
-  paragraph_index: number | null
-  selection_start: number | null
-  selection_end: number | null
-  quoted_text: string
-  parent_id: number | null
-  reply_count: number
-  created_at: string
-  updated_at: string
+  isSpoiler: boolean
+  isPinned: boolean
+  likeCount: number
+  paragraphIndex: number | null
+  selectionStart: number | null
+  selectionEnd: number | null
+  quotedText: string
+  parentId: number | null
+  replyCount: number
+  createdAt: string
+  updatedAt: string
 }
 
 // =============================================================================
@@ -81,7 +81,7 @@ export interface Comment {
 
 export interface LikeToggleResponse {
   liked: boolean
-  like_count: number | null
+  likeCount: number | null
 }
 
 // =============================================================================
@@ -89,16 +89,16 @@ export interface LikeToggleResponse {
 // =============================================================================
 
 export interface BookmarkCreate {
-  scroll_position?: number
+  scrollPosition?: number
   note?: string
 }
 
 export interface Bookmark {
   id: number
   chapter: ChapterBrief
-  scroll_position: number
+  scrollPosition: number
   note: string
-  created_at: string
+  createdAt: string
 }
 
 // =============================================================================
@@ -113,8 +113,8 @@ export interface ReadingLog {
   id: number
   chapter: ChapterBrief
   progress: number
-  is_completed: boolean
-  read_at: string
+  isCompleted: boolean
+  readAt: string
 }
 
 export interface ContinueReading {
@@ -129,8 +129,8 @@ export interface ContinueReading {
 export type ReportTargetType = 'comment' | 'chapter' | 'novel' | 'branch'
 
 export interface ReportCreate {
-  target_type: ReportTargetType
-  target_id: number
+  targetType: ReportTargetType
+  targetId: number
   reason: ReportReason
   description?: string
 }
@@ -138,32 +138,32 @@ export interface ReportCreate {
 export interface Report {
   id: number
   reporter: UserBrief
-  target_type: string
-  target_id: number
+  targetType: string
+  targetId: number
   reason: ReportReason
   description: string
   status: ReportStatus
-  created_at: string
+  createdAt: string
 }
 
 export interface ReportAdmin {
   id: number
   reporter: UserBrief
-  target_type: string
-  target_id: number
+  targetType: string
+  targetId: number
   reason: ReportReason
   description: string
   status: ReportStatus
   resolver: UserBrief | null
-  resolved_at: string | null
-  resolution_note: string
-  created_at: string
-  updated_at: string
+  resolvedAt: string | null
+  resolutionNote: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface ReportAction {
   action: 'resolve' | 'reject'
-  resolution_note?: string
+  resolutionNote?: string
 }
 
 // =============================================================================
@@ -174,5 +174,5 @@ export interface Purchase {
   id: number
   chapter: ChapterBrief
   cost: number
-  purchased_at: string
+  purchasedAt: string
 }

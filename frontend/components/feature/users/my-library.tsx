@@ -63,11 +63,11 @@ export function MyLibrary() {
                 <CardContent>
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
-                            Chapter {purchase.chapter.chapter_number}
+                            Chapter {purchase.chapter.chapterNumber}
                         </span>
                         <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {new Date(purchase.purchased_at).toLocaleDateString()}
+                            {new Date(purchase.purchasedAt).toLocaleDateString()}
                         </span>
                     </div>
                     <div className="mt-4 flex justify-between items-center">

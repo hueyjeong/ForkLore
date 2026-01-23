@@ -20,7 +20,8 @@ export interface PageParams {
 }
 
 export interface ErrorResponse {
-  code: string;
+  success: false;
   message: string;
-  details?: Record<string, string[]>;
+  errors?: Record<string, string | string[]>;
+  timestamp: string;
 }

@@ -15,7 +15,7 @@ const BASE_URL = '/chapters/';
  */
 export async function getChapters(
   branchId: number,
-  params?: Omit<ChapterListParams, 'branch_id'>
+  params?: Omit<ChapterListParams, 'branchId'>
 ): Promise<PaginatedResponse<Chapter>> {
   const response = await apiClient.get<ApiResponse<PaginatedResponse<Chapter>>>(
     `/branches/${branchId}/chapters/`,

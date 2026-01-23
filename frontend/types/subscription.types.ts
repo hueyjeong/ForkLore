@@ -25,31 +25,31 @@ export enum SubscriptionStatus {
 // =============================================================================
 
 export interface SubscriptionCreate {
-  plan_type?: PlanType
+  planType?: PlanType
   days?: number
-  payment_id?: string
+  paymentId?: string
 }
 
 export interface Subscription {
   id: number
-  plan_type: PlanType
+  planType: PlanType
   status: SubscriptionStatus
-  started_at: string
-  expires_at: string
-  cancelled_at: string | null
-  auto_renew: boolean
-  created_at: string
+  startedAt: string
+  expiresAt: string
+  cancelledAt: string | null
+  autoRenew: boolean
+  createdAt: string
 }
 
 export interface SubscriptionStatusResponse {
   id: number
-  is_active: boolean
-  plan_type: string
+  isActive: boolean
+  planType: string
   status: string
-  started_at: string
-  expires_at: string
-  cancelled_at: string | null
-  auto_renew: boolean
+  startedAt: string
+  expiresAt: string
+  cancelledAt: string | null
+  autoRenew: boolean
 }
 
 // =============================================================================
@@ -61,17 +61,17 @@ export interface Purchase {
   chapter: {
     id: number
     title: string
-    chapter_number: number
+    chapterNumber: number
   }
-  price_paid: number
-  created_at: string
+  pricePaid: number
+  createdAt: string
 }
 
 export interface PurchaseDetail {
   id: number
-  chapter_id: number
-  chapter_title: string
-  chapter_number: number
-  price_paid: number
-  created_at: string
+  chapterId: number
+  chapterTitle: string
+  chapterNumber: number
+  pricePaid: number
+  createdAt: string
 }

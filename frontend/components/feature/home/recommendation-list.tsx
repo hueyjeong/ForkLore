@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Star, ThumbsUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getNovels } from '@/lib/api/novels.api';
-import { Novel } from '@/types/novels.types';
+import { Novel, Genre } from '@/types/novels.types';
 
 interface RecommendationListProps {
   genre?: string;
@@ -19,9 +19,9 @@ export function RecommendationList({ genre }: RecommendationListProps) {
     queryKey: ['novels', 'recommendation', genre],
     queryFn: () => {
       const params = { 
-        limit: 6, 
+        size: 6, 
         sort: 'created_at',
-        ...(genre && { genre: genre as any })
+        ...(genre && { genre: genre as Genre })
       };
       return getNovels(params);
     },

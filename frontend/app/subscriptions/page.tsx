@@ -42,7 +42,7 @@ export default function SubscriptionsPage() {
             'Support authors',
             'Basic reading stats',
           ]}
-          isCurrentPlan={subscription?.plan_type === PlanType.BASIC && subscription?.status === 'ACTIVE'}
+          isCurrentPlan={subscription?.planType === PlanType.BASIC && subscription?.status === 'ACTIVE'}
         />
         <PricingCard
           planType={PlanType.PREMIUM}
@@ -54,16 +54,16 @@ export default function SubscriptionsPage() {
             'Early access to new features',
             'Priority support',
           ]}
-          isCurrentPlan={subscription?.plan_type === PlanType.PREMIUM && subscription?.status === 'ACTIVE'}
+          isCurrentPlan={subscription?.planType === PlanType.PREMIUM && subscription?.status === 'ACTIVE'}
         />
       </div>
       
       {subscription?.status === 'ACTIVE' && (
         <div className="mt-12 text-center">
             <p className="text-muted-foreground">
-                You are currently subscribed to the {subscription.plan_type} plan.
+                You are currently subscribed to the {subscription.planType} plan.
                 <br />
-                Expires on: {new Date(subscription.expires_at).toLocaleDateString()}
+                Expires on: {new Date(subscription.expiresAt).toLocaleDateString()}
             </p>
         </div>
       )}

@@ -30,7 +30,7 @@ function CheckoutContent() {
   });
 
   const handleSubscribe = () => {
-    mutate({ plan_type: plan });
+    mutate({ planType: plan });
   };
 
   if (!isValidPlan) {

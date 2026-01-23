@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BookOpen, Star, Share2, Heart, List, MessageCircle, ChevronLeft } from 'lucide-react';
+import { isAxiosError } from 'axios';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,11 +30,16 @@ export default async function NovelDetailPage({ params }: { params: Promise<{ id
     mainBranch = branches.results.find(b => b.isMain) || branches.results[0];
     
     if (mainBranch) {
-      chaptersData = await getChapters(mainBranch.id, { limit: 100 });
+      chaptersData = await getChapters(mainBranch.id, { size: 100 });
     }
   } catch (error: unknown) {
-    const maybeError = error as { response?: { status?: number }; status?: number };
-    const status = maybeError?.response?.status ?? maybeError?.status;
+    let status: number | undefined;
+    
+    if (isAxiosError(error)) {
+      status = error.response?.status;
+    } else if (typeof error === 'object' && error !== null && 'status' in error) {
+      status = (error as { status: number }).status;
+    }
 
     if (status === 404) {
       notFound();

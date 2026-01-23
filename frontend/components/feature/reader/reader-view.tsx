@@ -56,14 +56,14 @@ export function ReaderView({ chapterId, novelId }: ReaderViewProps) {
   }
 
   const handleNext = () => {
-    if (chapter.next_chapter?.id) {
-        router.push(`/novels/${novelId}/reader/${chapter.next_chapter.id}`);
+    if (chapter.nextChapter?.id) {
+        router.push(`/novels/${novelId}/reader/${chapter.nextChapter.id}`);
     }
   };
 
   const handlePrev = () => {
-    if (chapter.prev_chapter?.id) {
-        router.push(`/novels/${novelId}/reader/${chapter.prev_chapter.id}`);
+    if (chapter.prevChapter?.id) {
+        router.push(`/novels/${novelId}/reader/${chapter.prevChapter.id}`);
     }
   };
 
@@ -148,11 +148,11 @@ export function ReaderView({ chapterId, novelId }: ReaderViewProps) {
         <article 
           className="prose prose-lg dark:prose-invert prose-p:leading-relaxed prose-headings:font-serif mx-auto transition-all duration-300"
           style={{ fontSize: `${fontSize}%` }}
-          dangerouslySetInnerHTML={{ __html: chapter.content_html }}
+          dangerouslySetInnerHTML={{ __html: chapter.contentHtml }}
         />
 
         {/* Branch Choices */}
-        <BranchChoices novelId={novelId} currentChapterNumber={chapter.chapter_number} />
+        <BranchChoices novelId={novelId} currentChapterNumber={chapter.chapterNumber} />
       </main>
 
       {/* Footer Nav */}
@@ -160,7 +160,7 @@ export function ReaderView({ chapterId, novelId }: ReaderViewProps) {
         <div className="mx-auto flex max-w-2xl justify-between items-center">
            <Button 
                 variant="ghost" 
-                disabled={!chapter.prev_chapter}
+                disabled={!chapter.prevChapter}
                 onClick={handlePrev}
             >
              <ChevronLeft className="mr-2 h-4 w-4" /> Prev
@@ -173,7 +173,7 @@ export function ReaderView({ chapterId, novelId }: ReaderViewProps) {
 
            <Button 
                 variant="ghost" 
-                disabled={!chapter.next_chapter}
+                disabled={!chapter.nextChapter}
                 onClick={handleNext}
            >
              Next <ChevronRight className="ml-2 h-4 w-4" />

@@ -8,9 +8,12 @@ interface MapLayersProps {
   onObjectClick?: (object: MapObject) => void;
 }
 
-// Helper to parse coordinates
-// Assuming coordinates are stored as { lat: number, lng: number } or { latlngs: ... } or similar
-// This might need adjustment based on actual data structure
+interface MapStyle extends L.PathOptions {
+  iconUrl?: string;
+  iconSize?: [number, number];
+  iconAnchor?: [number, number];
+}
+
 const getLatLng = (coords: unknown): L.LatLngExpression | null => {
   if (Array.isArray(coords) && coords.length === 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
     return coords as L.LatLngTuple;
@@ -26,7 +29,6 @@ const getLatLng = (coords: unknown): L.LatLngExpression | null => {
 
 const getLatLngs = (coords: unknown): L.LatLngExpression[] | L.LatLngExpression[][] | null => {
   if (Array.isArray(coords)) {
-    // Check if it's simple array of points or array of arrays
     return coords as L.LatLngExpression[];
   }
   return null;
@@ -45,13 +47,12 @@ const getCircleOptions = (
 };
 
 export function MapLayers({ layers, onObjectClick }: MapLayersProps) {
-  // Sort layers by z_index
-  const sortedLayers = [...layers].sort((a, b) => a.z_index - b.z_index);
+  const sortedLayers = [...layers].sort((a, b) => a.zIndex - b.zIndex);
 
   return (
     <>
       {sortedLayers.map((layer) => {
-        if (!layer.is_visible) return null;
+        if (!layer.isVisible) return null;
 
         return (
           <Fragment key={layer.id}>
@@ -66,28 +67,26 @@ export function MapLayers({ layers, onObjectClick }: MapLayersProps) {
 }
 
 function RenderMapObject({ object, onObjectClick }: { object: MapObject; onObjectClick?: (o: MapObject) => void }) {
-  const { object_type, coordinates, style_json, label, description } = object;
+  const { objectType, coordinates, styleJson, label, description } = object;
   const eventHandlers = {
     click: () => onObjectClick?.(object),
   };
   
-  // Default path options from style_json
-  const pathOptions: L.PathOptions = style_json as L.PathOptions || {};
+  const pathOptions: L.PathOptions = (styleJson as MapStyle) || {};
 
-  switch (object_type) {
+  switch (objectType) {
     case ObjectType.POINT:
     case ObjectType.ICON: {
       const position = getLatLng(coordinates);
       if (!position) return null;
       
-      // For now using default icon. Custom icons would need more logic based on style_json or object props.
-      // If it's an ICON type, we might want to look for an iconUrl in style_json
       let icon = undefined;
-      if (object_type === ObjectType.ICON && style_json?.iconUrl) {
+      const style = styleJson as MapStyle | null;
+      if (objectType === ObjectType.ICON && style?.iconUrl) {
           icon = L.icon({
-              iconUrl: style_json.iconUrl as string,
-              iconSize: (style_json.iconSize as L.PointTuple) || [25, 41],
-              iconAnchor: (style_json.iconAnchor as L.PointTuple) || [12, 41],
+              iconUrl: style.iconUrl,
+              iconSize: style.iconSize || [25, 41],
+              iconAnchor: style.iconAnchor || [12, 41],
           });
       }
 

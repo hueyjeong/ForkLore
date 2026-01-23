@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { isAxiosError } from "axios"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons"
 import { useAuthStore } from "@/stores/auth-store"
+import type { ErrorResponse } from "@/types/common"
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface UserSignupFormProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -53,21 +55,25 @@ export function UserSignupForm({ className, ...props }: UserSignupFormProps) {
       
       toast.success("회원가입이 완료되었습니다. 로그인해주세요.")
       router.push("/login")
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = "회원가입에 실패했습니다."
       
-      if (error.response?.data?.errors) {
-        const errors = error.response.data.errors
-        const firstErrorKey = Object.keys(errors)[0]
-        const firstError = errors[firstErrorKey]
-        if (Array.isArray(firstError)) {
-          errorMessage = `${firstErrorKey}: ${firstError[0]}`
+      if (isAxiosError<ErrorResponse>(error)) {
+        if (error.response?.data?.errors) {
+          const errors = error.response.data.errors
+          const firstErrorKey = Object.keys(errors)[0]
+          const firstError = errors[firstErrorKey]
+          if (Array.isArray(firstError)) {
+            errorMessage = `${firstErrorKey}: ${firstError[0]}`
+          } else {
+            errorMessage = `${firstErrorKey}: ${firstError}`
+          }
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
         } else {
-          errorMessage = `${firstErrorKey}: ${firstError}`
+          errorMessage = error.message
         }
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
-      } else if (error.message) {
+      } else if (error instanceof Error) {
         errorMessage = error.message
       }
       

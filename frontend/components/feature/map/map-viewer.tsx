@@ -87,7 +87,7 @@ export function MapViewer({ mapData, onObjectSelect }: MapViewerProps) {
         style={{ height: '100%', width: '100%', background: '#1a1a1a' }}
         attributionControl={false}
       >
-        <ImageOverlay url={snapshot.base_image_url} bounds={bounds} />
+        <ImageOverlay url={snapshot.baseImageUrl} bounds={bounds} />
         <MapLayers 
           layers={snapshot.layers} 
           onObjectClick={onObjectSelect} 

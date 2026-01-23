@@ -44,7 +44,6 @@ test.describe('Accessibility & Performance', () => {
 
     const lcp = await page.evaluate(() => {
       return new Promise<number>((resolve) => {
-        let timeoutId: ReturnType<typeof setTimeout>;
         const observer = new PerformanceObserver((entryList) => {
           const entries = entryList.getEntries();
           const lastEntry = entries[entries.length - 1];
@@ -54,7 +53,7 @@ test.describe('Accessibility & Performance', () => {
         });
         observer.observe({ type: 'largest-contentful-paint', buffered: true });
 
-        timeoutId = setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           observer.disconnect();
           resolve(Number.POSITIVE_INFINITY);
         }, 5000);

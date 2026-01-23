@@ -14,7 +14,7 @@ vi.mock('@/lib/api-client', () => ({
 describe('Novels API', () => {
   it('getNovels should call apiClient.get with correct params', async () => {
     const mockResponse = { data: { data: { results: [], total: 0 } } };
-    (apiClient.get as any).mockResolvedValue(mockResponse);
+    vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
     await getNovels({ page: 1, limit: 10 });
 
@@ -23,7 +23,7 @@ describe('Novels API', () => {
 
   it('getNovel should call apiClient.get with correct url', async () => {
     const mockResponse = { data: { data: { id: 1, title: 'Test Novel' } } };
-    (apiClient.get as any).mockResolvedValue(mockResponse);
+    vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
     await getNovel(1);
 

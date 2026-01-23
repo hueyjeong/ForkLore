@@ -13,7 +13,7 @@ describe('AuthInitializer', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useAuthStore as any).mockReturnValue(mockRefreshUser);
+    vi.mocked(useAuthStore).mockReturnValue(mockRefreshUser);
   });
 
   it('should call refreshUser on mount', () => {

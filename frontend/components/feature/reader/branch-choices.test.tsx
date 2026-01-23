@@ -117,11 +117,11 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 describe('BranchChoices', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiClient.get as any).mockResolvedValue(createMockResponse(mockBranches));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse(mockBranches));
   });
 
   it('should return null during loading', async () => {
-    (apiClient.get as any).mockImplementation(
+    vi.mocked(apiClient.get).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(createMockResponse(mockBranches)), 100))
     );
 

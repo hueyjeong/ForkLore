@@ -88,11 +88,11 @@ describe('ReaderView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPush.mockClear();
-    (apiClient.get as any).mockResolvedValue(createMockResponse(mockChapter));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse(mockChapter));
   });
 
   it('should render loading state with Loader2 spinner', async () => {
-    (apiClient.get as any).mockImplementation(
+    vi.mocked(apiClient.get).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(createMockResponse(mockChapter)), 100))
     );
 
@@ -127,7 +127,7 @@ describe('ReaderView', () => {
   });
 
   it('should show error state when fetch fails', async () => {
-    (apiClient.get as any).mockRejectedValue(new Error('Network error'));
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Network error'));
 
     render(
       <TestWrapper>
@@ -155,7 +155,9 @@ describe('ReaderView', () => {
       expect(screen.getByText('The Beginning')).toBeInTheDocument();
     });
 
-    (apiClient.get as any).mockResolvedValue(createMockResponse(mockChapter2));
+    expect(apiClient.get).toHaveBeenCalledWith('/chapters/1/');
+
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse(mockChapter2));
 
     rerender(
       <TestWrapper>

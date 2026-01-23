@@ -26,8 +26,18 @@ export async function getNovels(
  * Get novel details
  */
 export async function getNovel(id: number): Promise<Novel> {
-  const response = await apiClient.get<ApiResponse<Novel>>(`${BASE_URL}/${id}`);
-  return response.data.data;
+  try {
+    const response = await apiClient.get<ApiResponse<Novel>>(`${BASE_URL}/${id}`);
+    
+    if (!response.data?.data) {
+      throw new Error('Invalid response format: missing data field');
+    }
+    
+    return response.data.data;
+  } catch (error) {
+    console.error(`[API Error] Failed to fetch novel ${id}:`, error);
+    throw error;
+  }
 }
 
 /**

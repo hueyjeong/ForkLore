@@ -5,6 +5,9 @@
 *.swo
 .DS_Store
 
+# Legacy files
+*.old
+
 # Build & Dependencies
 build/
 out/
@@ -41,9 +44,7 @@ target/
 **/src/main/resources/application-*.yml
 !**/src/main/resources/application-common.yml
 
-.opencode
 .kilocode
-.claude
 .agent
 .roo
 .gemini

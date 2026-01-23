@@ -56,7 +56,7 @@ export function RankingCarousel() {
       </div>
 
       <ScrollArea className="w-full whitespace-nowrap px-4">
-        <div className="flex w-max space-x-4 pb-4">
+        <div className="flex w-max space-x-4 pb-4 pt-3">
           {novels.map((novel: Novel, index: number) => (
             <Link key={novel.id} href={`/novels/${novel.id}`} className="group relative block w-[160px] md:w-[200px]">
               {/* Rank Badge */}

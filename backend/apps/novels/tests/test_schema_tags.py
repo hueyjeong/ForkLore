@@ -43,7 +43,7 @@ class TestBranchViewSetTags(TestCase):
         schema = generator.get_schema()
 
         # BranchViewSet는 NovelViewSet 아래 nested되어 있음
-        # /api/v1/novels/novels/{novel_pk}/branches/ 형태
+        # /api/v1/novels/{novel_pk}/branches/ 형태
         branch_endpoints_found = False
 
         for path, methods in schema["paths"].items():
@@ -78,7 +78,7 @@ class TestBranchDetailViewSetTags(TestCase):
         schema = generator.get_schema()
 
         # BranchDetailViewSet 엔드포인트들
-        # /api/v1/novels/branches/{id}/ 형태
+        # /api/v1/branches/{id}/ 형태
         branch_detail_found = False
 
         for path, methods in schema["paths"].items():

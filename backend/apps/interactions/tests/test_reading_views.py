@@ -65,7 +65,7 @@ class TestContinueReadingView:
         """인증 없이 접근 불가"""
         client = APIClient()
         branch = baker.make("novels.Branch")
-        url = f"/api/v1/novels/branches/{branch.id}/continue-reading/"
+        url = f"/api/v1/branches/{branch.id}/continue-reading/"
 
         response = client.get(url)
 
@@ -83,7 +83,7 @@ class TestContinueReadingView:
 
         client = APIClient()
         client.force_authenticate(user=user)
-        url = f"/api/v1/novels/branches/{branch.id}/continue-reading/"
+        url = f"/api/v1/branches/{branch.id}/continue-reading/"
 
         response = client.get(url)
 
@@ -99,7 +99,7 @@ class TestContinueReadingView:
 
         client = APIClient()
         client.force_authenticate(user=user)
-        url = f"/api/v1/novels/branches/{branch.id}/continue-reading/"
+        url = f"/api/v1/branches/{branch.id}/continue-reading/"
 
         response = client.get(url)
 

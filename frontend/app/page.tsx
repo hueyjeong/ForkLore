@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { HeroSection } from '@/components/feature/home/hero-section';
 import { RankingCarousel } from '@/components/feature/home/ranking-carousel';
 import { RecommendationList } from '@/components/feature/home/recommendation-list';
 import { GenreFilter } from '@/components/feature/home/genre-filter';
 
-export default function HomePage() {
+function RecommendationWrapper({ searchParams }: { searchParams: Promise<{ genre?: string }> }) {
+  const params = React.use(searchParams);
+  return <RecommendationList genre={params.genre} />;
+}
+
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ genre?: string }> }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -26,7 +31,9 @@ export default function HomePage() {
         {/* Recommendations */}
         <section className="bg-muted/30">
           <div className="container mx-auto max-w-6xl">
-             <RecommendationList />
+            <Suspense fallback={<div className="py-8">Loading...</div>}>
+              <RecommendationWrapper searchParams={searchParams} />
+            </Suspense>
           </div>
         </section>
       </main>

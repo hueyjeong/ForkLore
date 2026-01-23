@@ -10,10 +10,18 @@ import { useQuery } from '@tanstack/react-query';
 import { getNovels } from '@/lib/api/novels.api';
 import { Novel } from '@/types/novels.types';
 
-export function RecommendationList() {
+interface RecommendationListProps {
+  genre?: string;
+}
+
+export function RecommendationList({ genre }: RecommendationListProps) {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['novels', 'recommendation'],
-    queryFn: () => getNovels({ limit: 6, sort: 'created_at' }),
+    queryKey: ['novels', 'recommendation', genre],
+    queryFn: () => getNovels({ 
+      limit: 6, 
+      sort: 'created_at',
+      ...(genre && { genre })
+    }),
   });
 
   const novels = data?.results || [];

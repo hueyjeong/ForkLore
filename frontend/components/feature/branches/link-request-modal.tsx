@@ -31,7 +31,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { createLinkRequest } from "@/lib/api/branches.api"
 
 const requestSchema = z.object({
-  request_message: z
+  requestMessage: z
     .string()
     .min(10, "Message must be at least 10 characters")
     .max(500, "Message must be less than 500 characters"),
@@ -48,7 +48,7 @@ export function LinkRequestModal({ branchId, trigger }: LinkRequestModalProps) {
   const form = useForm<z.infer<typeof requestSchema>>({
     resolver: zodResolver(requestSchema),
     defaultValues: {
-      request_message: "",
+      requestMessage: "",
     },
   })
 
@@ -85,7 +85,7 @@ export function LinkRequestModal({ branchId, trigger }: LinkRequestModalProps) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="request_message"
+              name="requestMessage"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Message</FormLabel>

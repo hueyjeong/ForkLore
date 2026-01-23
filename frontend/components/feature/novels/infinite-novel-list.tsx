@@ -54,7 +54,7 @@ export function InfiniteNovelList({
     queryFn: async ({ pageParam = 1 }) => {
       const params: NovelListParams = {
         page: pageParam,
-        limit: 12,
+        size: 12,
       };
 
       if (genre && genre !== '전체') {

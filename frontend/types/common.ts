@@ -14,7 +14,7 @@ export interface PaginatedResponse<T> {
 
 export interface PageParams {
   page?: number;
-  limit?: number;
+  size?: number;
   sort?: string;
   order?: 'asc' | 'desc';
 }

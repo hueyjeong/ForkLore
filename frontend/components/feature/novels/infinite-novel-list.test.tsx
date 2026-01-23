@@ -82,7 +82,7 @@ const createMockResponse = (page = 1, hasNext = true) => ({
       results: mockNovels,
       total: 100,
       page,
-      limit: 12,
+      size: 12,
       hasNext,
     },
   },

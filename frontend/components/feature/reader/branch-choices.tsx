@@ -15,10 +15,10 @@ interface BranchChoicesProps {
 
 export function BranchChoices({ novelId, currentChapterNumber }: BranchChoicesProps) {
   const { data: branches = [], isPending } = useQuery({
-    queryKey: ['branches', novelId, { limit: 100 }],
-    queryFn: () => getBranches(novelId, { limit: 100 }),
+    queryKey: ['branches', novelId, { size: 100 }],
+    queryFn: () => getBranches(novelId, { size: 100 }),
     select: (data) =>
-      data.results.filter((b) => b.fork_point_chapter === currentChapterNumber),
+      data.results.filter((b) => b.forkPointChapter === currentChapterNumber),
   });
 
   if (isPending) return null;
@@ -54,7 +54,7 @@ export function BranchChoices({ novelId, currentChapterNumber }: BranchChoicesPr
                 {branch.name}
               </span>
               <span className="text-xs uppercase tracking-wider text-muted-foreground border px-2 py-0.5 rounded-full">
-                {branch.branch_type}
+                {branch.branchType}
               </span>
             </div>
             {branch.description && (
@@ -65,7 +65,7 @@ export function BranchChoices({ novelId, currentChapterNumber }: BranchChoicesPr
              <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
                 <span className="flex items-center gap-1">
                    <BookOpen className="h-3 w-3" />
-                   {branch.chapter_count} Chapters
+                   {branch.chapterCount} Chapters
                 </span>
              </div>
           </Button>

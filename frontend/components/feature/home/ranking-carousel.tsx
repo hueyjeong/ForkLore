@@ -12,7 +12,7 @@ import { Novel } from '@/types/novels.types';
 export function RankingCarousel() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['novels', 'ranking'],
-    queryFn: () => getNovels({ sort: 'total_view_count', limit: 10 }),
+    queryFn: () => getNovels({ sort: 'total_view_count', size: 10 }),
   });
 
   const novels = data?.results || [];

@@ -8,17 +8,17 @@ import { RankingList } from './ranking-list';
 export function RankingTabs() {
   const { data: dailyData, isLoading: isDailyLoading } = useQuery({
     queryKey: ['novels', 'ranking', 'daily'],
-    queryFn: () => getNovels({ sort: 'total_view_count', limit: 10 }),
+    queryFn: () => getNovels({ sort: 'total_view_count', size: 10 }),
   });
 
   const { data: weeklyData, isLoading: isWeeklyLoading } = useQuery({
     queryKey: ['novels', 'ranking', 'weekly'],
-    queryFn: () => getNovels({ sort: 'total_like_count', limit: 10 }),
+    queryFn: () => getNovels({ sort: 'total_like_count', size: 10 }),
   });
 
   const { data: monthlyData, isLoading: isMonthlyLoading } = useQuery({
     queryKey: ['novels', 'ranking', 'monthly'],
-    queryFn: () => getNovels({ sort: 'total_view_count', limit: 10 }),
+    queryFn: () => getNovels({ sort: 'total_view_count', size: 10 }),
   });
 
   return (

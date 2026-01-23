@@ -19,8 +19,8 @@ export interface WikiTagDefinition {
   color: string;
   icon: string;
   description: string;
-  display_order: number;
-  created_at: string;
+  displayOrder: number;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -30,9 +30,9 @@ export interface WikiTagDefinition {
 export interface WikiSnapshot {
   id: number;
   content: string;
-  valid_from_chapter: number;
-  contributor_type: ContributorType;
-  created_at: string;
+  validFromChapter: number;
+  contributorType: ContributorType;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -42,24 +42,24 @@ export interface WikiSnapshot {
 export interface WikiEntry {
   id: number;
   name: string;
-  image_url: string;
-  first_appearance: number | null;
-  hidden_note: string;
-  ai_metadata: Record<string, unknown> | null;
+  imageUrl: string;
+  firstAppearance: number | null;
+  hiddenNote: string;
+  aiMetadata: Record<string, unknown> | null;
   tags: WikiTagDefinition[];
   snapshots: WikiSnapshot[];
   snapshot: WikiSnapshot | null;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface WikiEntrySummary {
   id: number;
   name: string;
-  image_url: string;
-  first_appearance: number | null;
+  imageUrl: string;
+  firstAppearance: number | null;
   tags: WikiTagDefinition[];
-  created_at: string;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -68,17 +68,17 @@ export interface WikiEntrySummary {
 
 export interface WikiEntryCreateRequest {
   name: string;
-  image_url?: string;
-  first_appearance?: number | null;
-  hidden_note?: string;
-  initial_content?: string;
+  imageUrl?: string;
+  firstAppearance?: number | null;
+  hiddenNote?: string;
+  initialContent?: string;
 }
 
 export interface WikiEntryUpdateRequest {
   name?: string;
-  image_url?: string;
-  first_appearance?: number | null;
-  hidden_note?: string;
+  imageUrl?: string;
+  firstAppearance?: number | null;
+  hiddenNote?: string;
 }
 
 export interface WikiTagCreateRequest {
@@ -86,21 +86,21 @@ export interface WikiTagCreateRequest {
   color?: string;
   icon?: string;
   description?: string;
-  display_order?: number;
+  displayOrder?: number;
 }
 
 export interface WikiSnapshotCreateRequest {
   content: string;
-  valid_from_chapter: number;
+  validFromChapter: number;
 }
 
 export interface WikiTagUpdateRequest {
-  tag_ids: number[];
+  tagIds: number[];
 }
 
 export interface WikiListParams extends PageParams {
   branch_id: number;
-  tag_id?: number;
+  tagId?: number;
   search?: string;
   chapter?: number; // For context-aware snapshot retrieval
 }

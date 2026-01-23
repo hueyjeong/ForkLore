@@ -36,37 +36,37 @@ export enum LinkRequestStatus {
 
 export interface Branch {
   id: number;
-  novel_id: number;
+  novelId: number;
   name: string;
   description: string;
-  cover_image_url: string;
-  is_main: boolean;
-  branch_type: BranchType;
+  coverImageUrl: string;
+  isMain: boolean;
+  branchType: BranchType;
   visibility: BranchVisibility;
-  canon_status: CanonStatus;
-  parent_branch_id: number | null;
-  fork_point_chapter: number | null;
-  vote_count: number;
-  vote_threshold: number;
-  view_count: number;
-  chapter_count: number;
+  canonStatus: CanonStatus;
+  parentBranchId: number | null;
+  forkPointChapter: number | null;
+  voteCount: number;
+  voteThreshold: number;
+  viewCount: number;
+  chapterCount: number;
   author: Author;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface BranchSummary {
   id: number;
   name: string;
-  cover_image_url: string;
-  is_main: boolean;
-  branch_type: BranchType;
+  coverImageUrl: string;
+  isMain: boolean;
+  branchType: BranchType;
   visibility: BranchVisibility;
-  vote_count: number;
-  view_count: number;
-  chapter_count: number;
+  voteCount: number;
+  viewCount: number;
+  chapterCount: number;
   author: Author;
-  created_at: string;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -75,13 +75,13 @@ export interface BranchSummary {
 
 export interface BranchLinkRequest {
   id: number;
-  branch_id: number;
+  branchId: number;
   status: LinkRequestStatus;
-  request_message: string;
-  reviewer_id: number | null;
-  review_comment: string;
-  reviewed_at: string | null;
-  created_at: string;
+  requestMessage: string;
+  reviewerId: number | null;
+  reviewComment: string;
+  reviewedAt: string | null;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -91,15 +91,15 @@ export interface BranchLinkRequest {
 export interface BranchCreateRequest {
   name: string;
   description?: string;
-  cover_image_url?: string;
-  branch_type?: BranchType;
-  fork_point_chapter?: number | null;
+  coverImageUrl?: string;
+  branchType?: BranchType;
+  forkPointChapter?: number | null;
 }
 
 export interface BranchUpdateRequest {
   name?: string;
   description?: string;
-  cover_image_url?: string;
+  coverImageUrl?: string;
 }
 
 export interface BranchVisibilityUpdateRequest {
@@ -107,24 +107,24 @@ export interface BranchVisibilityUpdateRequest {
 }
 
 export interface BranchListParams extends PageParams {
-  novel_id: number;
-  branch_type?: BranchType;
+  novelId: number;
+  branchType?: BranchType;
   visibility?: BranchVisibility;
-  is_main?: boolean;
-  author_id?: number;
+  isMain?: boolean;
+  authorId?: number;
   search?: string;
 }
 
 export interface BranchLinkRequestCreateRequest {
-  request_message?: string;
+  requestMessage?: string;
 }
 
 export interface BranchLinkRequestReviewRequest {
   status: LinkRequestStatus.APPROVED | LinkRequestStatus.REJECTED;
-  review_comment?: string;
+  reviewComment?: string;
 }
 
 export interface BranchLinkRequestListParams extends PageParams {
-  branch_id: number;
+  branchId: number;
   status?: LinkRequestStatus;
 }

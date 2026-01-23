@@ -58,9 +58,9 @@ export function WikiDetail({ wikiId, initialData }: WikiDetailProps) {
         {/* Header */}
         <div className="space-y-4">
           <div className="relative aspect-[21/9] w-full overflow-hidden rounded-xl bg-muted/50 border border-border/50 shadow-sm group">
-            {wiki.image_url ? (
+            {wiki.imageUrl ? (
               <img
-                src={wiki.image_url}
+                src={wiki.imageUrl}
                 alt={wiki.name}
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
@@ -74,9 +74,9 @@ export function WikiDetail({ wikiId, initialData }: WikiDetailProps) {
                 <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl drop-shadow-sm">
                   {wiki.name}
                 </h1>
-                {wiki.first_appearance && (
+                {wiki.firstAppearance && (
                   <p className="text-sm font-medium text-muted-foreground mt-2">
-                    First Appearance: Chapter {wiki.first_appearance}
+                    First Appearance: Chapter {wiki.firstAppearance}
                   </p>
                 )}
              </div>
@@ -147,14 +147,14 @@ export function WikiDetail({ wikiId, initialData }: WikiDetailProps) {
                         <span suppressHydrationWarning className="text-xs font-medium text-muted-foreground">
                             {new Date(snapshot.createdAt).toLocaleDateString()}
                         </span>
-                        {snapshot.valid_from_chapter > 0 && (
+                        {snapshot.validFromChapter > 0 && (
                             <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                                Ch. {snapshot.valid_from_chapter}
+                                Ch. {snapshot.validFromChapter}
                             </Badge>
                         )}
                     </div>
                     <div className="flex items-center text-xs text-muted-foreground/80">
-                        {snapshot.contributor_type === 'AI' ? '🤖 AI Generated' : '👤 User Edit'}
+                        {snapshot.contributorType === 'AI' ? '🤖 AI Generated' : '👤 User Edit'}
                     </div>
                   </button>
                 ))}
@@ -167,11 +167,11 @@ export function WikiDetail({ wikiId, initialData }: WikiDetailProps) {
           )}
         </div>
         
-        {wiki.hidden_note && (
+        {wiki.hiddenNote && (
              <div className="rounded-md bg-yellow-500/10 p-4 border border-yellow-500/20">
                 <h4 className="text-sm font-bold text-yellow-600 dark:text-yellow-400 mb-2">Hidden Note</h4>
                 <p className="text-sm text-yellow-600/90 dark:text-yellow-400/90">
-                    {wiki.hidden_note}
+                    {wiki.hiddenNote}
                 </p>
              </div>
         )}

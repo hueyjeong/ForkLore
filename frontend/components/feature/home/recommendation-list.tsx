@@ -13,7 +13,7 @@ import { Novel } from '@/types/novels.types';
 export function RecommendationList() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['novels', 'recommendation'],
-    queryFn: () => getNovels({ limit: 6, sort: 'created_at' }),
+    queryFn: () => getNovels({ size: 6, sort: 'created_at' }),
   });
 
   const novels = data?.results || [];

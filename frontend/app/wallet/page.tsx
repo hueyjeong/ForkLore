@@ -96,7 +96,7 @@ export default function WalletPage() {
                                     transactions.map((tx) => (
                                         <TableRow key={tx.id}>
                                             <TableCell>{new Date(tx.createdAt).toLocaleDateString()}</TableCell>
-                                            <TableCell className="capitalize">{tx.transaction_type.toLowerCase()}</TableCell>
+                                            <TableCell className="capitalize">{tx.transactionType.toLowerCase()}</TableCell>
                                             <TableCell>{tx.description}</TableCell>
                                             <TableCell className={`text-right font-medium ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                 {tx.amount > 0 ? '+' : ''}{tx.amount}

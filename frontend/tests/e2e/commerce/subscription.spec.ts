@@ -57,22 +57,22 @@ test.describe('Commerce - Subscription', () => {
     // 5. Setup Success Mock
     const newSubscription: {
       id: number;
-      plan_type: string;
+      planType: string;
       status: string;
-      started_at: string;
-      expires_at: string;
-      cancelled_at: string | null;
-      auto_renew: boolean;
-      created_at: string;
+      startedAt: string;
+      expiresAt: string;
+      cancelledAt: string | null;
+      autoRenew: boolean;
+      createdAt: string;
     } = {
       id: 1,
-      plan_type: 'PREMIUM',
+      planType: 'PREMIUM',
       status: 'ACTIVE',
-      started_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      cancelled_at: null,
-      auto_renew: true,
-      created_at: new Date().toISOString(),
+      startedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      cancelledAt: null,
+      autoRenew: true,
+      createdAt: new Date().toISOString(),
     };
 
     // Override route to return success for both POST (Create) and GET (Status)

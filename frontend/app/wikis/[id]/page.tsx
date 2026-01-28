@@ -26,7 +26,7 @@ export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
   let wiki;
   try {
     wiki = await getWiki(wikiId);
-  } catch (error) {
+  } catch (error: unknown) {
     // If server fetch fails (e.g. auth issues or 404), 
     // we'll let the client component handle the loading/error state
     // console.error("Server fetch failed:", error);

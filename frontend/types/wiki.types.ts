@@ -1,4 +1,4 @@
-import { PageParams } from './common';
+import { PageParams, JsonValue } from './common';
 
 // =============================================================================
 // Enums
@@ -45,7 +45,7 @@ export interface WikiEntry {
   imageUrl: string;
   firstAppearance: number | null;
   hiddenNote: string;
-  aiMetadata: Record<string, unknown> | null;
+  aiMetadata: Record<string, JsonValue> | null;
   tags: WikiTagDefinition[];
   snapshots: WikiSnapshot[];
   snapshot: WikiSnapshot | null;
@@ -99,7 +99,7 @@ export interface WikiTagUpdateRequest {
 }
 
 export interface WikiListParams extends PageParams {
-  branch_id: number;
+  branchId: number;
   tagId?: number;
   search?: string;
   chapter?: number; // For context-aware snapshot retrieval

@@ -36,8 +36,9 @@ export function MapViewer({ mapData, onObjectSelect }: MapViewerProps) {
       // Fix for default marker icons in Next.js
       // We are using a simple fix here. In a real prod app, might want to serve these from public/
       const DefaultIcon = leaflet.Icon.Default;
-      // @ts-expect-error - _getIconUrl is a private method in Leaflet but we need to delete it to reset icons
-      delete DefaultIcon.prototype._getIconUrl;
+      
+      // Accessing private property to reset icon paths for Next.js compatibility
+      delete (DefaultIcon.prototype as { _getIconUrl?: unknown })._getIconUrl;
 
       DefaultIcon.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',

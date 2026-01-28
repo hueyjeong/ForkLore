@@ -49,7 +49,7 @@ export function UserLoginForm({ className, ...props }: UserLoginFormProps) {
       toast.success("로그인에 성공했습니다.")
       router.push("/")
     } catch (error: unknown) {
-      let errorMessage = "로그인에 실패했습니다."
+      let errorMessage = "로그인에 실패했습니다.";
       
       if (isAxiosError<ErrorResponse>(error)) {
         if (error.response?.status === 401) {

@@ -34,41 +34,41 @@ const defaultNovel: MockNovel = {
   id: 1,
   title: 'Test Novel',
   description: 'A riveting tale of testing.',
-  cover_image_url: 'https://via.placeholder.com/300x450',
+  coverImageUrl: 'https://via.placeholder.com/300x450',
   genre: 'FANTASY',
-  age_rating: 'ALL',
+  ageRating: 'ALL',
   status: 'ONGOING',
-  is_exclusive: false,
-  is_premium: false,
-  allow_branching: true,
-  total_view_count: 1000,
-  total_like_count: 50,
-  total_chapter_count: 10,
-  branch_count: 2,
-  linked_branch_count: 5,
+  isExclusive: false,
+  isPremium: false,
+  allowBranching: true,
+  totalViewCount: 1000,
+  totalLikeCount: 50,
+  totalChapterCount: 10,
+  branchCount: 2,
+  linkedBranchCount: 5,
   author: { id: 100, nickname: 'AuthorOne' },
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 const defaultChapter: MockChapter = {
   id: 10,
-  chapter_number: 1,
+  chapterNumber: 1,
   title: 'Chapter 1: The Beginning',
-  content_html: '<p>Once upon a time...</p>',
-  word_count: 500,
+  contentHtml: '<p>Once upon a time...</p>',
+  wordCount: 500,
   status: 'PUBLISHED',
-  access_type: 'FREE',
+  accessType: 'FREE',
   price: 0,
-  scheduled_at: null,
-  published_at: new Date().toISOString(),
-  view_count: 100,
-  like_count: 10,
-  comment_count: 5,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  prev_chapter: null,
-  next_chapter: { id: 11, chapter_number: 2, title: 'Chapter 2' },
+  scheduledAt: null,
+  publishedAt: new Date().toISOString(),
+  viewCount: 100,
+  likeCount: 10,
+  commentCount: 5,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  prevChapter: null,
+  nextChapter: { id: 11, chapterNumber: 2, title: 'Chapter 2' },
 };
 
 export class MockHelper {
@@ -111,7 +111,7 @@ export class MockHelper {
    */
   async mockNovel(id: number | string, overrides: Partial<MockNovel> = {}) {
     const numericId = Number(id);
-    await this.mockRoute(new RegExp(`/novels/${numericId}$`), { 
+    await this.mockRoute(new RegExp(`/novels/${numericId}/?$`), { 
       ...defaultNovel, 
       id: numericId, 
       ...overrides 
@@ -134,7 +134,7 @@ export class MockHelper {
     
     // We match the base /novels endpoint but careful not to match /novels/:id
     // This regex looks for /novels optionally followed by query params, but not followed by /something
-    await this.mockRoute(/\/novels(\?.*)?$/, response);
+    await this.mockRoute(/\/novels\/?(\?.*)?$/, response);
   }
 
   /**
@@ -142,7 +142,7 @@ export class MockHelper {
    */
   async mockChapter(id: number | string, overrides: Partial<MockChapter> = {}) {
     const numericId = Number(id);
-    await this.mockRoute(new RegExp(`/chapters/${numericId}$`), { 
+    await this.mockRoute(new RegExp(`/chapters/${numericId}/?$`), { 
       ...defaultChapter, 
       id: numericId, 
       ...overrides 
@@ -162,7 +162,7 @@ export class MockHelper {
       hasNext: false,
       hasPrev: false,
     };
-    await this.mockRoute(new RegExp(`/branches/${branchId}/chapters`), response);
+    await this.mockRoute(new RegExp(`/branches/${branchId}/chapters/?$`), response);
   }
 
   /**
@@ -178,7 +178,7 @@ export class MockHelper {
       hasNext: false,
       hasPrev: false,
     };
-    await this.mockRoute(new RegExp(`/branches/${branchId}/wikis`), response);
+    await this.mockRoute(new RegExp(`/branches/${branchId}/wikis/?$`), response);
   }
 
   /**
@@ -186,7 +186,7 @@ export class MockHelper {
    */
   async mockBranchCreation(novelId: number | string, newBranch: MockBranch) {
     const numericId = Number(novelId);
-    const pattern = new RegExp(`/novels/${numericId}/branches$`);
+    const pattern = new RegExp(`/novels/${numericId}/branches/?$`);
 
     await this.page.route(pattern, async (route) => {
       if (route.request().method() !== 'POST') {
@@ -213,7 +213,7 @@ export class MockHelper {
    */
   async mockBranchConflict(novelId: number | string) {
     const numericId = Number(novelId);
-    await this.page.route(new RegExp(`/novels/${numericId}/branches$`), async (route) => {
+    await this.page.route(new RegExp(`/novels/${numericId}/branches/?$`), async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 409,
@@ -236,7 +236,7 @@ export class MockHelper {
    */
   async mockBranchList(novelId: number | string, branches: MockBranch[]) {
     const numericId = Number(novelId);
-    const pattern = new RegExp(`/novels/${numericId}/branches(\\?.*)?$`);
+    const pattern = new RegExp(`/novels/${numericId}/branches/?(\\?.*)?$`);
 
     const response: PaginatedResponse<MockBranch> = {
       results: branches,

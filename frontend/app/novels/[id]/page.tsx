@@ -37,7 +37,7 @@ export default async function NovelDetailPage({ params }: { params: Promise<{ id
     
     if (isAxiosError(error)) {
       status = error.response?.status;
-    } else if (typeof error === 'object' && error !== null && 'status' in error) {
+    } else if (error && typeof error === 'object' && 'status' in error) {
       status = (error as { status: number }).status;
     }
 

@@ -14,7 +14,7 @@ async function fetchMapData(branchId: number, chapterId?: number) {
 
     const mapData = await getMap(maps[0].id, chapterId);
     return { error: null, data: mapData };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to load map:', error);
     return {
       error: 'Failed to load map data. Please try again later.',

@@ -23,8 +23,8 @@ const Tabs = React.forwardRef<
       {...props}
     >
       {React.Children.map(children, child => {
-        if (React.isValidElement(child)) {
-           return React.cloneElement(child, { active, setActive: handleSetActive } as any)
+        if (React.isValidElement<{ active?: string; setActive?: (v: string) => void }>(child)) {
+           return React.cloneElement(child, { active, setActive: handleSetActive })
         }
         return child
       })}
@@ -47,8 +47,8 @@ const TabsList = React.forwardRef<
     {...props}
   >
     {React.Children.map(children, child => {
-      if (React.isValidElement(child)) {
-        return React.cloneElement(child, { active, setActive } as any)
+      if (React.isValidElement<{ active?: string; setActive?: (v: string) => void }>(child)) {
+        return React.cloneElement(child, { active, setActive })
       }
       return child
     })}
@@ -78,7 +78,7 @@ TabsTrigger.displayName = "TabsTrigger"
 
 const TabsContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { value: string; active?: string; setActive?: any }
+  React.HTMLAttributes<HTMLDivElement> & { value: string; active?: string; setActive?: (v: string) => void }
 >(({ className, value, active, setActive, ...props }, ref) => {
   if (value !== active) return null
   return (

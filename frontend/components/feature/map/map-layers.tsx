@@ -1,4 +1,5 @@
 import { MapLayer, MapObject, ObjectType } from '@/types/maps.types';
+import { JsonValue } from '@/types/common';
 import { Circle, Marker, Polygon, Polyline, Popup, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { Fragment } from 'react';
@@ -14,12 +15,12 @@ interface MapStyle extends L.PathOptions {
   iconAnchor?: [number, number];
 }
 
-const getLatLng = (coords: unknown): L.LatLngExpression | null => {
+const getLatLng = (coords: JsonValue): L.LatLngExpression | null => {
   if (Array.isArray(coords) && coords.length === 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
     return coords as L.LatLngTuple;
   }
-  if (typeof coords === 'object' && coords !== null) {
-    const c = coords as { lat?: unknown; lng?: unknown };
+  if (typeof coords === 'object' && coords !== null && !Array.isArray(coords)) {
+    const c = coords as { lat?: number; lng?: number };
     if (typeof c.lat === 'number' && typeof c.lng === 'number') {
       return [c.lat, c.lng];
     }
@@ -27,7 +28,7 @@ const getLatLng = (coords: unknown): L.LatLngExpression | null => {
   return null;
 };
 
-const getLatLngs = (coords: unknown): L.LatLngExpression[] | L.LatLngExpression[][] | null => {
+const getLatLngs = (coords: JsonValue): L.LatLngExpression[] | L.LatLngExpression[][] | null => {
   if (Array.isArray(coords)) {
     return coords as L.LatLngExpression[];
   }
@@ -35,9 +36,9 @@ const getLatLngs = (coords: unknown): L.LatLngExpression[] | L.LatLngExpression[
 };
 
 const getCircleOptions = (
-  coords: unknown
+  coords: JsonValue
 ): { center: L.LatLngExpression; radius: number } | null => {
-  const c = coords as { center?: unknown; radius?: unknown };
+  const c = coords as { center?: JsonValue; radius?: number };
   const center = getLatLng(c?.center || c);
   const radius = c?.radius;
   if (center && typeof radius === 'number') {

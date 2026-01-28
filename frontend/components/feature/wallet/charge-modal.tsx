@@ -44,7 +44,7 @@ export function ChargeModal({ trigger, onSuccess }: ChargeModalProps) {
       setOpen(false);
       router.refresh();
       onSuccess?.();
-    } catch (error) {
+    } catch (error: unknown) {
       toast.error('Failed to charge wallet');
       console.error(error);
     } finally {
@@ -85,7 +85,7 @@ export function ChargeModal({ trigger, onSuccess }: ChargeModalProps) {
               id="amount"
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
               className="col-span-3"
               min="1"
             />

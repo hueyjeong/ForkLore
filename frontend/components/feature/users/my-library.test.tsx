@@ -19,20 +19,20 @@ const mockPurchases: Purchase[] = [
     chapter: {
       id: 1,
       title: 'The Beginning',
-      chapter_number: 1,
+      chapterNumber: 1,
     },
     cost: 100,
-    purchased_at: '2024-01-15T10:30:00Z',
+    purchasedAt: '2024-01-15T10:30:00Z',
   },
   {
     id: 2,
     chapter: {
       id: 2,
       title: 'The Journey',
-      chapter_number: 2,
+      chapterNumber: 2,
     },
     cost: 150,
-    purchased_at: '2024-01-16T14:45:00Z',
+    purchasedAt: '2024-01-16T14:45:00Z',
   },
 ];
 
@@ -72,7 +72,7 @@ const TestWrapper = ({ children }: { children: React.ReactNode }) => {
 describe('MyLibrary - useQuery Refactoring', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiClient.get as any).mockResolvedValue(createMockResponse(mockPurchases));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse(mockPurchases));
   });
 
   it('should fetch purchases using useQuery', async () => {
@@ -87,7 +87,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
       expect(title).toBeInTheDocument();
     });
 
-    expect(apiClient.get).toHaveBeenCalledWith('/purchases', { params: { page: 1, size: 50 } });
+    expect(apiClient.get).toHaveBeenCalledWith('/purchases/', { params: { page: 1, size: 50 } });
     expect(apiClient.get).toHaveBeenCalledTimes(1);
 
     expect(screen.getByText('The Beginning')).toBeInTheDocument();
@@ -96,7 +96,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
   });
 
   it('should show Loader2 spinner while loading', async () => {
-    (apiClient.get as any).mockImplementation(
+    vi.mocked(apiClient.get).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(createMockResponse(mockPurchases)), 100))
     );
 
@@ -117,7 +117,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
   });
 
   it('should show empty state when no purchases', async () => {
-    (apiClient.get as any).mockResolvedValue(createMockResponse([]));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse([]));
 
     render(
       <TestWrapper>
@@ -137,7 +137,7 @@ describe('MyLibrary - useQuery Refactoring', () => {
   it('should show toast error on API failure', async () => {
     const toastSpy = vi.spyOn(toast, 'error');
 
-    (apiClient.get as any).mockRejectedValue(new Error('API Error'));
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('API Error'));
 
     render(
       <TestWrapper>

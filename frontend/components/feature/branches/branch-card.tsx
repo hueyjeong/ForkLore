@@ -103,7 +103,7 @@ export const BranchCard = memo(function BranchCard({ branch }: BranchCardProps) 
            <Button
             variant="ghost"
             size="icon"
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
               e.preventDefault()
               toggleVote()
             }}

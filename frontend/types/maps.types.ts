@@ -1,4 +1,4 @@
-import { PageParams } from './common';
+import { PageParams, JsonValue } from './common';
 
 // =============================================================================
 // Enums
@@ -32,11 +32,11 @@ export enum ContributorType {
 export interface MapObject {
   id: number;
   objectType: ObjectType;
-  coordinates: Record<string, unknown>; // JSON field
+  coordinates: JsonValue; // JSON field
   label: string;
   description: string;
   wikiEntryId: number | null;
-  styleJson: Record<string, unknown> | null;
+  styleJson: Record<string, JsonValue> | null;
   createdAt: string;
 }
 
@@ -50,7 +50,7 @@ export interface MapLayer {
   layerType: LayerType;
   zIndex: number;
   isVisible: boolean;
-  styleJson: Record<string, unknown> | null;
+  styleJson: Record<string, JsonValue> | null;
   objects: MapObject[];
   createdAt: string;
 }
@@ -121,16 +121,16 @@ export interface MapLayerCreateRequest {
   layerType?: LayerType;
   zIndex?: number;
   isVisible?: boolean;
-  styleJson?: Record<string, unknown> | null;
+  styleJson?: Record<string, JsonValue> | null;
 }
 
 export interface MapObjectCreateRequest {
   objectType: ObjectType;
-  coordinates: Record<string, unknown>;
+  coordinates: JsonValue;
   label?: string;
   description?: string;
   wikiEntryId?: number | null;
-  styleJson?: Record<string, unknown> | null;
+  styleJson?: Record<string, JsonValue> | null;
 }
 
 export interface MapListParams extends PageParams {

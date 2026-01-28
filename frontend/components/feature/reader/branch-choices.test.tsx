@@ -24,63 +24,63 @@ import { apiClient } from '@/lib/api-client';
 const mockBranches = [
   {
     id: 1,
-    novel_id: 1,
+    novelId: 1,
     name: 'Main Branch',
     description: 'The main storyline',
-    cover_image_url: 'https://example.com/1.jpg',
-    is_main: true,
-    branch_type: 'MAIN',
+    coverImageUrl: 'https://example.com/1.jpg',
+    isMain: true,
+    branchType: 'MAIN',
     visibility: 'PUBLIC',
-    canon_status: 'NON_CANON',
-    parent_branch_id: null,
-    fork_point_chapter: 3,
-    vote_count: 10,
-    vote_threshold: 5,
-    view_count: 100,
-    chapter_count: 20,
+    canonStatus: 'NON_CANON',
+    parentBranchId: null,
+    forkPointChapter: 3,
+    voteCount: 10,
+    voteThreshold: 5,
+    viewCount: 100,
+    chapterCount: 20,
     author: { id: 1, username: 'author1', nickname: 'Author One' },
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
   },
   {
     id: 2,
-    novel_id: 1,
+    novelId: 1,
     name: 'Side Story Branch',
     description: 'A side story path',
-    cover_image_url: 'https://example.com/2.jpg',
-    is_main: false,
-    branch_type: 'SIDE_STORY',
+    coverImageUrl: 'https://example.com/2.jpg',
+    isMain: false,
+    branchType: 'SIDE_STORY',
     visibility: 'PUBLIC',
-    canon_status: 'NON_CANON',
-    parent_branch_id: 1,
-    fork_point_chapter: 3,
-    vote_count: 5,
-    vote_threshold: 5,
-    view_count: 50,
-    chapter_count: 10,
+    canonStatus: 'NON_CANON',
+    parentBranchId: 1,
+    forkPointChapter: 3,
+    voteCount: 5,
+    voteThreshold: 5,
+    viewCount: 50,
+    chapterCount: 10,
     author: { id: 1, username: 'author1', nickname: 'Author One' },
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
   },
   {
     id: 3,
-    novel_id: 1,
+    novelId: 1,
     name: 'Fan Fiction Branch',
     description: 'Fan fiction path from chapter 5',
-    cover_image_url: 'https://example.com/3.jpg',
-    is_main: false,
-    branch_type: 'FAN_FIC',
+    coverImageUrl: 'https://example.com/3.jpg',
+    isMain: false,
+    branchType: 'FAN_FIC',
     visibility: 'PUBLIC',
-    canon_status: 'NON_CANON',
-    parent_branch_id: 1,
-    fork_point_chapter: 5,
-    vote_count: 8,
-    vote_threshold: 5,
-    view_count: 80,
-    chapter_count: 15,
+    canonStatus: 'NON_CANON',
+    parentBranchId: 1,
+    forkPointChapter: 5,
+    voteCount: 8,
+    voteThreshold: 5,
+    viewCount: 80,
+    chapterCount: 15,
     author: { id: 2, username: 'author2', nickname: 'Author Two' },
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
   },
 ];
 
@@ -117,11 +117,11 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 describe('BranchChoices', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (apiClient.get as any).mockResolvedValue(createMockResponse(mockBranches));
+    vi.mocked(apiClient.get).mockResolvedValue(createMockResponse(mockBranches));
   });
 
   it('should return null during loading', async () => {
-    (apiClient.get as any).mockImplementation(
+    vi.mocked(apiClient.get).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(createMockResponse(mockBranches)), 100))
     );
 
@@ -149,14 +149,14 @@ describe('BranchChoices', () => {
 
     // Wait for query to complete
     await waitFor(() => {
-      expect(apiClient.get).toHaveBeenCalledWith('/novels/1/branches', { params: { size: 100 } });
+      expect(apiClient.get).toHaveBeenCalledWith('/novels/1/branches/', { params: { size: 100 } });
     });
 
     // Component should return null (no rendered content) when no matching branches
     expect(container.firstChild).toBeNull();
   });
 
-  it('should filter branches by fork_point_chapter using select option', async () => {
+  it('should filter branches by forkPointChapter using select option', async () => {
     render(
       <TestWrapper>
         <BranchChoices novelId={1} currentChapterNumber={3} />
@@ -168,13 +168,13 @@ describe('BranchChoices', () => {
       expect(screen.getByText('Main Branch')).toBeInTheDocument();
     });
 
-    // Should only show branches with fork_point_chapter === 3
+    // Should only show branches with forkPointChapter === 3
     expect(screen.getByText('Main Branch')).toBeInTheDocument();
     expect(screen.getByText('Side Story Branch')).toBeInTheDocument();
     expect(screen.queryByText('Fan Fiction Branch')).not.toBeInTheDocument();
 
     // Verify the query was called with correct parameters
-    expect(apiClient.get).toHaveBeenCalledWith('/novels/1/branches', { params: { size: 100 } });
+    expect(apiClient.get).toHaveBeenCalledWith('/novels/1/branches/', { params: { size: 100 } });
   });
 
   it('should render branch cards with correct information', async () => {

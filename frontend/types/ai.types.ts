@@ -37,7 +37,7 @@ export interface WikiSuggestionResponse {
 // =============================================================================
 
 export interface ConsistencyCheckRequest {
-  chapter_id: number
+  chapterId: number
 }
 
 export interface ConsistencyCheckResponse {
@@ -62,11 +62,11 @@ export interface AskResponse {
 // =============================================================================
 
 export interface ChunkTaskRequest {
-  chapter_id?: number
+  chapterId?: number
 }
 
 export interface ChunkTaskResponse {
-  task_id: string
+  taskId: string
   status: string
 }
 
@@ -75,26 +75,26 @@ export interface ChunkTaskResponse {
 // =============================================================================
 
 export interface AIUsageCheckLimit {
-  action_type: AIActionType
+  actionType: AIActionType
   enforce?: boolean
 }
 
 export interface AIUsageCheckLimitResponse {
   allowed: boolean
   remaining: number
-  daily_limit: number
+  dailyLimit: number
   tier: string
 }
 
 export interface AIUsageRecord {
-  action_type: AIActionType
-  token_count?: number
+  actionType: AIActionType
+  tokenCount?: number
 }
 
 export interface AIUsageRecordResponse {
   used: number
   remaining: number
-  daily_limit: number
+  dailyLimit: number
 }
 
 export interface AIUsageByAction {
@@ -104,7 +104,7 @@ export interface AIUsageByAction {
 
 export interface AIUsageStatus {
   tier: string
-  daily_limit: number
-  usage_by_action: Record<string, AIUsageByAction>
+  dailyLimit: number
+  usageByAction: Record<string, AIUsageByAction>
   date: string
 }

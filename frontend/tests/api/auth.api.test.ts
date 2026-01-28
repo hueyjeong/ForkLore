@@ -23,7 +23,7 @@ describe('Auth API', () => {
 
     await login({ email: 'test@example.com', password: 'password' });
 
-    expect(apiClient.post).toHaveBeenCalledWith('/auth/login', {
+    expect(apiClient.post).toHaveBeenCalledWith('/auth/login/', {
       email: 'test@example.com',
       password: 'password',
     });

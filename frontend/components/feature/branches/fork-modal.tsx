@@ -43,7 +43,7 @@ import { BranchType } from "@/types/branches.types"
 const forkSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   description: z.string().max(500).optional(),
-  branch_type: z.nativeEnum(BranchType),
+  branchType: z.nativeEnum(BranchType),
 })
 
 interface ForkModalProps {
@@ -55,7 +55,7 @@ export function ForkModal({ parentBranchId, trigger }: ForkModalProps) {
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  // Fetch parent branch to get novel_id and fork details
+  // Fetch parent branch to get novelId and fork details
   const { data: parentBranch, isLoading: isLoadingParent } = useQuery({
     queryKey: ["branch", parentBranchId],
     queryFn: () => getBranch(parentBranchId),
@@ -67,7 +67,7 @@ export function ForkModal({ parentBranchId, trigger }: ForkModalProps) {
     defaultValues: {
       name: "",
       description: "",
-      branch_type: BranchType.SIDE_STORY,
+      branchType: BranchType.SIDE_STORY,
     },
   })
 
@@ -79,10 +79,10 @@ export function ForkModal({ parentBranchId, trigger }: ForkModalProps) {
         forkPointChapter: parentBranch.chapterCount, // Assuming fork from end, or 0? 
         // Actually the API creates a fork. 
         // We usually fork from a specific point, but API requirements say:
-        // BranchCreateRequest: { name, description, branch_type, forkPointChapter? }
+        // BranchCreateRequest: { name, description, branchType, forkPointChapter? }
         // If we fork a branch, we usually link it to the parent.
         // The API might handle the parent linking if we pass it? 
-        // Wait, CreateBranch request DOES NOT have parent_branch_id field?
+        // Wait, CreateBranch request DOES NOT have parentBranchId field?
         // Let me check branches.types.ts again.
       })
     },
@@ -106,27 +106,27 @@ export function ForkModal({ parentBranchId, trigger }: ForkModalProps) {
   // export interface BranchCreateRequest {
   //   name: string;
   //   description?: string;
-  //   cover_image_url?: string;
-  //   branch_type?: BranchType;
+  //   coverImageUrl?: string;
+  //   branchType?: BranchType;
   //   forkPointChapter?: number | null;
   // }
-  // Where is parent_branch_id passed?
+  // Where is parentBranchId passed?
   // Maybe it's handled by the URL? 
   // API: POST /novels/{novelId}/branches
   // It seems the API as defined in `branches.api.ts` might be generic create.
   // If I'm "forking", I should probably tell the backend "this is a fork of X".
-  // BUT the provided API signatures and types don't seem to have `parent_branch_id` in `BranchCreateRequest`.
+  // BUT the provided API signatures and types don't seem to have `parentBranchId` in `BranchCreateRequest`.
   // This might be an issue in the API definition or my understanding.
   // However, I must use the provided API.
   // I will assume for now that I just create a branch.
   // Wait, if I can't link it to the parent, it's not really a "fork" in the data structure sense, just a new branch.
-  // BUT, `Branch` type HAS `parent_branch_id`.
-  // If `BranchCreateRequest` creates a branch, how do we set `parent_branch_id`?
+  // BUT, `Branch` type HAS `parentBranchId`.
+  // If `BranchCreateRequest` creates a branch, how do we set `parentBranchId`?
   // Maybe I should look at `createBranch` implementation in backend if possible? No, I am frontend dev.
-  // I will assume `forkPointChapter` implies the fork point, but without `parent_branch_id` it's ambiguous if there are multiple branches.
+  // I will assume `forkPointChapter` implies the fork point, but without `parentBranchId` it's ambiguous if there are multiple branches.
   // MAYBE `createBranch` isn't the right endpoint for forking?
   // Or maybe `BranchCreateRequest` is incomplete in the types file I read vs what backend expects.
-  // I will proceed with what I have. If the type is strictly checked, I can't pass `parent_branch_id`.
+  // I will proceed with what I have. If the type is strictly checked, I can't pass `parentBranchId`.
   // I will just pass what is allowed. Maybe `forkPointChapter` is enough if the backend logic handles it (unlikely without parent ID).
   // Actually, I'll stick to the types.
 
@@ -164,7 +164,7 @@ export function ForkModal({ parentBranchId, trigger }: ForkModalProps) {
 
               <FormField
                 control={form.control}
-                name="branch_type"
+                name="branchType"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Type</FormLabel>

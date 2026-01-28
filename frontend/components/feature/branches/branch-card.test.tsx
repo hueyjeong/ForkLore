@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@/tests/utils/test-utils'
 import { BranchCard } from './branch-card'
-import { Branch, BranchType } from '@/types/branches.types'
+import { Branch, BranchType, BranchVisibility, CanonStatus } from '@/types/branches.types'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
 
@@ -20,27 +20,27 @@ vi.mock('sonner', () => ({
 
 const mockBranch: Branch = {
   id: 1,
-  novel_id: 1,
+  novelId: 1,
   name: 'Test Branch',
   description: 'This is a test branch description.',
-  cover_image_url: 'https://example.com/cover.jpg',
-  is_main: false,
-  branch_type: BranchType.MAIN,
-  visibility: 'PUBLIC' as any,
-  canon_status: 'NON_CANON' as any,
-  parent_branch_id: null,
-  fork_point_chapter: null,
-  vote_count: 10,
-  vote_threshold: 5,
-  view_count: 100,
-  chapter_count: 5,
+  coverImageUrl: 'https://example.com/cover.jpg',
+  isMain: false,
+  branchType: BranchType.MAIN,
+  visibility: BranchVisibility.PUBLIC,
+  canonStatus: CanonStatus.NON_CANON,
+  parentBranchId: null,
+  forkPointChapter: null,
+  voteCount: 10,
+  voteThreshold: 5,
+  viewCount: 100,
+  chapterCount: 5,
   author: {
     id: 1,
     username: 'testuser',
     nickname: 'Test Author',
   },
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
 }
 
 describe('BranchCard', () => {
@@ -82,7 +82,7 @@ describe('BranchCard', () => {
   })
 
   it('should handle vote button click', async () => {
-    const mockVotedBranch = { ...mockBranch, vote_count: 11 }
+    const mockVotedBranch = { ...mockBranch, voteCount: 11 }
     vi.mocked(apiClient.post).mockResolvedValue({
       data: {
         success: true,
@@ -101,12 +101,12 @@ describe('BranchCard', () => {
     fireEvent.click(voteButton)
 
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/branches/1/vote')
+      expect(apiClient.post).toHaveBeenCalledWith('/branches/1/vote/')
     })
   })
 
   it('should handle unvote button click', async () => {
-    const mockVotedBranch = { ...mockBranch, vote_count: 9 }
+    const mockVotedBranch = { ...mockBranch, voteCount: 9 }
     vi.mocked(apiClient.delete).mockResolvedValue({
       data: {
         success: true,
@@ -127,7 +127,7 @@ describe('BranchCard', () => {
 
     // Wait for vote mutation
     await waitFor(() => {
-      expect(apiClient.post).toHaveBeenCalledWith('/branches/1/vote')
+      expect(apiClient.post).toHaveBeenCalledWith('/branches/1/vote/')
     })
 
     // Clear previous mock
@@ -137,7 +137,7 @@ describe('BranchCard', () => {
     fireEvent.click(voteButton)
 
     await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith('/branches/1/vote')
+      expect(apiClient.delete).toHaveBeenCalledWith('/branches/1/vote/')
     })
   })
 
